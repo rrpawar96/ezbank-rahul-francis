@@ -1,5 +1,3 @@
-#!/bin/bash
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements. See the NOTICE file
 # distributed with this work for additional information
@@ -16,11 +14,10 @@
 # KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
+language: java 
 
-#cd fineract-provider
-# NOTE: The --info, while quite a bit more verbose, is VERY useful to understand failures on Travis,
-# where you do not have access to any files like build/reports/tests/index.html, only the Console. 
-# @see http://mrhaki.blogspot.ch/2013/05/gradle-goodness-show-more-information.html
-# @see http://forums.gradle.org/gradle/topics/whats_new_in_gradle_1_1_test_logging for alternative 
-./gradlew --info clean licenseMain licenseTest licenseIntegrationTest test
+jdk: oraclejdk8   
+
+before_script: chmod -R 777 ./travis_build.sh
+
+script: ./travis_build.sh
