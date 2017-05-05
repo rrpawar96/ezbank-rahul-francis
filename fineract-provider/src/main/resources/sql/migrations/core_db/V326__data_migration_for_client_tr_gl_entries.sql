@@ -17,5 +17,4 @@
 -- under the License.
 --
 
-ALTER TABLE `m_client`
-	ADD COLUMN `is_staff` TINYINT(1) NOT NULL DEFAULT '0' AFTER `mobile_no`;
+UPDATE acc_gl_journal_entry g SET g.entity_type_enum = 5 WHERE g.client_transaction_id IS NOT NULL AND g.entity_type_enum = 2;
