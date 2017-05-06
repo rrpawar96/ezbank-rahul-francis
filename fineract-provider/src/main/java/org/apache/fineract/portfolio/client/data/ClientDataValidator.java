@@ -42,16 +42,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.google.gson.JsonElement;
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.reflect.TypeToken; 
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+
 
 @Component
 public final class ClientDataValidator {
 
-    private final FromJsonHelper fromApiJsonHelper;
+    private final FromJsonHelper fromApiJsonHelper; 
+        private final ConfigurationDomainService configurationDomainService;
+
 
     @Autowired
-    public ClientDataValidator(final FromJsonHelper fromApiJsonHelper) {
-        this.fromApiJsonHelper = fromApiJsonHelper;
+    public ClientDataValidator(final FromJsonHelper fromApiJsonHelper, final ConfigurationDomainService configurationDomainService) {
+        this.fromApiJsonHelper = fromApiJsonHelper; 
+        this.configurationDomainService = configurationDomainService;
     }
 
     public void validateForCreate(final String json) {
@@ -181,7 +186,17 @@ public final class ClientDataValidator {
             final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed(ClientApiConstants.dateOfBirthParamName, element);
             baseDataValidator.reset().parameter(ClientApiConstants.dateOfBirthParamName).value(dateOfBirth).notNull()
                     .validateDateBefore(DateUtils.getLocalDateOfTenant());
-        }
+        } 
+
+        //condition for setting minimum age of client at 18
+          if (this.configurationDomainService.isMinimumClientAgeCheckEnabled() > 0 && this.fromApiJsonHelper.parameterExists(ClientApiConstants.dateOfBirthParamName, element)) {
+            final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed(ClientApiConstants.dateOfBirthParamName, element);
+            final Integer maximumClientAge = this.configurationDomainService.isMinimumClientAgeCheckEnabled();
+            baseDataValidator.reset().parameter(ClientApiConstants.dateOfBirthParamName).value(dateOfBirth).notNull()
+                    .validateMinimumClientAge(maximumClientAge);
+          }
+
+
 
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.genderIdParamName, element)) {
             final Integer genderId = this.fromApiJsonHelper.extractIntegerSansLocaleNamed(ClientApiConstants.genderIdParamName, element);

@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+
 
 public class DataValidatorBuilder {
 
@@ -941,6 +943,25 @@ public class DataValidatorBuilder {
                         .append(this.parameter).append(".is.greater.than.date");
                 final StringBuilder defaultEnglishMessage = new StringBuilder("The ").append(this.parameter)
                         .append(" must be less than provided date").append(date);
+                final ApiParameterError error = ApiParameterError.parameterError(validationErrorCode.toString(),
+                        defaultEnglishMessage.toString(), this.parameter, dateVal, date);
+                this.dataValidationErrors.add(error);
+            }
+        }
+        return this;
+    } 
+
+    public DataValidatorBuilder validateMinimumClientAge(Integer minimumClientAge) {
+        if (this.value == null && this.ignoreNullValue) { return this; }
+
+        if (this.value != null) {
+            final LocalDate dateVal = (LocalDate) this.value;
+            final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+            final LocalDate date = currentDate.minusYears(minimumClientAge);
+            if (date.isBefore(dateVal)) {
+                final StringBuilder validationErrorCode = new StringBuilder("validation.msg.").append(this.resource).append(".")
+                        .append(this.parameter).append(".is.greater.than.the.minimum.allowed.date.of.birth");
+                final String defaultEnglishMessage = new String("The minimum age of a client must be 18");
                 final ApiParameterError error = ApiParameterError.parameterError(validationErrorCode.toString(),
                         defaultEnglishMessage.toString(), this.parameter, dateVal, date);
                 this.dataValidationErrors.add(error);
