@@ -16,5 +16,6 @@
 -- specific language governing permissions and limitations
 -- under the License.
 --
+
 INSERT INTO `c_configuration` (`name`, `value`, `date_value`, `enabled`, `is_trap_door`, `description`)
 VALUES ('minimum-client age', NULL, NULL, 1, 0, "The Minimum Allowed Age for a Client");
