@@ -84,6 +84,9 @@ public interface ConfigurationDomainService {
     
     Long getDailyTPTLimit();
 
-    void removeGlobalConfigurationPropertyDataFromCache(String propertyName);
+    void removeGlobalConfigurationPropertyDataFromCache(String propertyName); 
+
+    Integer isMinimumClientAgeCheckEnabled();
+
     
 }
