@@ -35,19 +35,19 @@
 		<http create-session="stateless" use-expressions="true" pattern="/api/**"
 			entry-point-ref="basicAuthenticationEntryPoint">
 			<intercept-url pattern="/api/*/authentication" access="permitAll"
-				method="POST" requires-channel="http" />
+				method="POST" requires-channel="https" />
 			<intercept-url pattern="/api/*/self/authentication" access="permitAll"
-				method="POST" requires-channel="http" />
+				method="POST" requires-channel="https" />
 			<intercept-url pattern="/api/**" access="isFullyAuthenticated()"
-				method="GET" requires-channel="http" />
+				method="GET" requires-channel="https" />
 			<intercept-url pattern="/api/**" access="isFullyAuthenticated()"
-				method="POST" requires-channel="http" />
+				method="POST" requires-channel="https" />
 			<intercept-url pattern="/api/**" access="isFullyAuthenticated()"
-				method="PUT" requires-channel="http" />
+				method="PUT" requires-channel="https" />
 			<intercept-url pattern="/api/**" access="isFullyAuthenticated()"
-				method="DELETE" requires-channel="http" />
+				method="DELETE" requires-channel="https" />
 			<intercept-url pattern="/api/**" access="isFullyAuthenticated()"
-				method="HEAD" requires-channel="http" />
+				method="HEAD" requires-channel="https" />
 	
 			<custom-filter after="SECURITY_CONTEXT_FILTER"
 				ref="basicAuthenticationProcessingFilter" />
@@ -86,17 +86,17 @@
 			access-decision-manager-ref="accessDecisionManager">
 			<anonymous enabled="false" />
 			<intercept-url pattern="/api//v1/**" method="OPTIONS"
-				access="permitAll" requires-channel="http" />
+				access="permitAll" requires-channel="https" />
 			<intercept-url pattern="/api/v1/**" access="isFullyAuthenticated()"
-				method="GET" requires-channel="http" />
+				method="GET" requires-channel="https" />
 			<intercept-url pattern="/api/v1/**" access="isFullyAuthenticated()"
-				method="POST" requires-channel="http" />
+				method="POST" requires-channel="https" />
 			<intercept-url pattern="/api/v1/**" access="isFullyAuthenticated()"
-				method="PUT" requires-channel="http" />
+				method="PUT" requires-channel="https" />
 			<intercept-url pattern="/api/v1/**" access="isFullyAuthenticated()"
-				method="DELETE" requires-channel="http" />
+				method="DELETE" requires-channel="https" />
 			<intercept-url pattern="/api/v1/**" access="isFullyAuthenticated()"
-				method="HEAD" requires-channel="http" />
+				method="HEAD" requires-channel="https" />
 			<custom-filter ref="tenantIdentifierProcessingFilter"
 				position="FIRST" />
 			<custom-filter before="PRE_AUTH_FILTER" ref="resourceServerFilter" />
@@ -107,9 +107,9 @@
 			entry-point-ref="oauthAuthenticationEntryPoint" use-expressions="true"
 			authentication-manager-ref="clientAuthenticationManager">
 			<intercept-url pattern="/api/oauth/token" method="OPTIONS"
-				access="permitAll" requires-channel="http" />
+				access="permitAll" requires-channel="https" />
 			<intercept-url pattern="/api/oauth/token" method="POST"
-				access="isFullyAuthenticated()" requires-channel="http" />
+				access="isFullyAuthenticated()" requires-channel="https" />
 			<anonymous enabled="false" />
 	
 			<custom-filter ref="tenantIdentifierProcessingFilter"
