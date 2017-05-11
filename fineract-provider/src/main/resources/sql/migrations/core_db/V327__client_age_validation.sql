@@ -18,4 +18,4 @@
 --
 
 INSERT INTO `c_configuration` (`name`, `value`, `date_value`, `enabled`, `is_trap_door`, `description`)
-VALUES ('minimum-client age', NULL, NULL, 1, 0, "The Minimum Allowed Age for a Client");
+VALUES ('minimum-client-age', NULL, NULL, 1, 0, "The Minimum Allowed Age for a Client");

@@ -189,9 +189,9 @@ public final class ClientDataValidator {
         } 
 
         //condition for setting minimum age of client at 18
-          if (this.configurationDomainService.isMinimumClientAgeCheckEnabled() > 0 && this.fromApiJsonHelper.parameterExists(ClientApiConstants.dateOfBirthParamName, element)) {
+          if (this.configurationDomainService.getMinimumClientAge() > 0 && this.fromApiJsonHelper.parameterExists(ClientApiConstants.dateOfBirthParamName, element)) {
             final LocalDate dateOfBirth = this.fromApiJsonHelper.extractLocalDateNamed(ClientApiConstants.dateOfBirthParamName, element);
-            final Integer maximumClientAge = this.configurationDomainService.isMinimumClientAgeCheckEnabled();
+            final Integer maximumClientAge = this.configurationDomainService.getMinimumClientAge();
             baseDataValidator.reset().parameter(ClientApiConstants.dateOfBirthParamName).value(dateOfBirth).notNull()
                     .validateMinimumClientAge(maximumClientAge);
           }

@@ -86,7 +86,7 @@ public interface ConfigurationDomainService {
 
     void removeGlobalConfigurationPropertyDataFromCache(String propertyName); 
 
-    Integer isMinimumClientAgeCheckEnabled();
+    Integer getMinimumClientAge();
 
     
 }
