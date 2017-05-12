@@ -325,6 +325,7 @@ sourceSets {
     test {
     	java {
     		exclude '**/core/boot/tests/**'
+            include '**/portfolio/client/**'
     	}
     }
 }
@@ -369,7 +370,7 @@ dependencies {
 test {
 	filter {
         //includeTestsMatching "org.apache.fineract.infrastructure.configuration.spring.SpringConfigurationTest.*"
-        includeTestsMatching "org.apache.fineract.template.TemplateMergeServiceTest.*"
+        //includeTestsMatching "org.apache.fineract.template.TemplateMergeServiceTest.*"
     }
 }
 
