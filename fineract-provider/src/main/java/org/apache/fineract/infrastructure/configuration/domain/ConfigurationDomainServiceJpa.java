@@ -301,7 +301,9 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public Integer getMinimumClientAge() {
         final String propertyName = "minimum-client-age";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-        if (property.isEnabled()) { return property.getValue().intValue(); }
+        if (property.isEnabled()) { 
+            return property.getValue()!=null ? property.getValue().intValue() : 0; 
+        }
         return 0;
     }
-}
+} 
