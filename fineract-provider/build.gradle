@@ -156,7 +156,9 @@ rat {
 
     // intellij files
      '**/fineract-provider/fineract-provider.ipr',
-     '**/fineract-provider/fineract-provider.iws',
+     '**/fineract-provider/fineract-provider.iws', 
+
+     '**/docs/system-architecture/404.css'
 	]
 }
 
