@@ -16,35 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.core.domain;
+package org.apache.fineract.portfolio.savings.exception;
 
-public class EmailDetail {
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-    private final String subject;
-    private final String body;
-    private final String address;
-    private final String contactName;
+public class SavingsAccountCreditsBlockedException extends AbstractPlatformDomainRuleException {
 
-    public EmailDetail(final String subject, final String body, final String address, final String contactName) {
-        this.subject = subject;
-        this.body = body;
-        this.address = address;
-        this.contactName = contactName;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    public String getContactName() {
-        return this.contactName;
-    }
-
-    public String getAddress() {
-        return this.address;
+    public SavingsAccountCreditsBlockedException(final Long accountId) {
+        super("error.msg.savings.account.credit.transaction.not.allowed",
+                "Any Credit transactions to " + accountId + " is not allowed, since the account is blocked for credits", accountId);
     }
 }
