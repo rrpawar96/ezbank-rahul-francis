@@ -117,6 +117,9 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
     
     @Column(name = "is_manual", length = 1, nullable = true)
     private boolean isManualTransaction;
+    
+    @Column(name = "isLoanDisbursement", length = 1, nullable = true)
+    private boolean isLoanDisbursement;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch=FetchType.EAGER)
     @JoinColumn(name = "savings_transaction_id", referencedColumnName = "id", nullable = false)
@@ -315,8 +318,16 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
     public void reverse() {
         this.reversed = true;
     }
+    
+    public boolean isLoanDisbursement() {
+		return isLoanDisbursement;
+	}
 
-    public Money getAmount(final MonetaryCurrency currency) {
+	public void setLoanDisbursement(boolean isLoanDisbursement) {
+		this.isLoanDisbursement = isLoanDisbursement;
+	}
+
+	public Money getAmount(final MonetaryCurrency currency) {
         return Money.of(currency, this.amount);
     }
 
