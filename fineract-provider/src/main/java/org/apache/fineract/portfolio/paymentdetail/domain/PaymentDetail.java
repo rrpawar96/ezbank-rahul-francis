@@ -55,7 +55,13 @@ public final class PaymentDetail extends AbstractPersistableCustom<Long> {
     private String receiptNumber;
 
     @Column(name = "bank_number", length = 50)
-    private String bankNumber;
+    private String bankNumber; 
+
+    @Column(name = "voucher_number", length = 50)
+    private String voucherNumber; 
+
+    @Column(name = "payment_description" length = 500)
+    private String paymentDescription;
 
     protected PaymentDetail() {
 
@@ -67,7 +73,9 @@ public final class PaymentDetail extends AbstractPersistableCustom<Long> {
         final String checkNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.checkNumberParamName);
         final String routingCode = command.stringValueOfParameterNamed(PaymentDetailConstants.routingCodeParamName);
         final String receiptNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.receiptNumberParamName);
-        final String bankNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.bankNumberParamName);
+        final String bankNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.bankNumberParamName); 
+        final String voucherNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.voucherNumberParamName);
+        final String paymentDescription = command.stringValueOfParameterNamed(PaymentDetailConstants.paymentDescriptionParamName);
 
         if (StringUtils.isNotBlank(accountNumber)) {
             changes.put(PaymentDetailConstants.accountNumberParamName, accountNumber);
@@ -83,31 +91,39 @@ public final class PaymentDetail extends AbstractPersistableCustom<Long> {
         }
         if (StringUtils.isNotBlank(bankNumber)) {
             changes.put(PaymentDetailConstants.bankNumberParamName, bankNumber);
+        } 
+        if(StringUtils.isNotBlank(voucherNumber)){
+            changes.put(PaymentDetailConstants.voucherNumberParamName, voucherNumber);
+        }
+        if(StringUtils.isNotBlank(paymentDescription)){
+            changes.put(PaymentDetailConstants.paymentDescriptionParamName, paymentDescription);
         }
         final PaymentDetail paymentDetail = new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                bankNumber);
+                bankNumber,voucherNumber, paymentDescription);
         return paymentDetail;
     }
 
     public static PaymentDetail instance(final PaymentType paymentType, final String accountNumber, final String checkNumber,
-            final String routingCode, final String receiptNumber, final String bankNumber) {
-        return new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber, bankNumber);
+            final String routingCode, final String receiptNumber, final String bankNumber, final String voucherNumber, final String paymentDescription) {
+        return new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber, bankNumber, voucherNumber, paymentDescription);
     }
 
     private PaymentDetail(final PaymentType paymentType, final String accountNumber, final String checkNumber, final String routingCode,
-            final String receiptNumber, final String bankNumber) {
+            final String receiptNumber, final String bankNumber, final String voucherNumber, final String paymentDescription) {
         this.paymentType = paymentType;
         this.accountNumber = accountNumber;
         this.checkNumber = checkNumber;
         this.routingCode = routingCode;
         this.receiptNumber = receiptNumber;
         this.bankNumber = bankNumber;
+        this.voucherNumber = voucherNumber;
+        this.paymentDescription = paymentDescription;
     }
 
     public PaymentDetailData toData() {
         final PaymentTypeData paymentTypeData = this.paymentType.toData();
         final PaymentDetailData paymentDetailData = new PaymentDetailData(getId(), paymentTypeData, this.accountNumber, this.checkNumber,
-                this.routingCode, this.receiptNumber, this.bankNumber);
+                this.routingCode, this.receiptNumber, this.bankNumber, this.voucherNumber, this.paymentDescription);
         return paymentDetailData;
     }
 
