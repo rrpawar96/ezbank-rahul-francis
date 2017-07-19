@@ -16,7 +16,5 @@
 -- specific language governing permissions and limitations
 -- under the License.
 --
-
-ALTER TABLE `m_payment_details`
-ADD COLUMN `voucher_number` BIGINT(20) NULL DEFAULT NULL,
-ADD COLUMN 'payment_description'  VARCHAR(1000) NULL DEFAULT NULL;
+ALTER TABLE `m_payment_detail` ADD COLUMN `voucher_number` BIGINT(20) NULL DEFAULT NULL;
+ALTER TABLE `m_payment_detail` ADD COLUMN `payment_description` VARCHAR(1000) NULL DEFAULT NULL;
