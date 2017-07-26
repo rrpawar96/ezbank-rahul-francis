@@ -30,7 +30,11 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transact
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transactionDateParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withdrawBalanceParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_HOLD_AMOUNT_REQUEST_DATA_PARAMETERS;
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME; 
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.voucherNumberParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.paymentDescriptionParamName;
+
+
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
