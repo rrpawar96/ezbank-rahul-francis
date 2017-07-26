@@ -60,7 +60,7 @@ public final class PaymentDetail extends AbstractPersistableCustom<Long> {
     @Column(name = "voucher_number", length = 50)
     private String voucherNumber; 
 
-    @Column(name = "payment_description" length = 500)
+    @Column(name = "payment_description", length = 500)
     private String paymentDescription;
 
     protected PaymentDetail() {

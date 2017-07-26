@@ -841,7 +841,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
 
 
                     paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                            bankNumber);
+                            bankNumber,voucherNumber,paymentDescription);
                 }
             }
 
