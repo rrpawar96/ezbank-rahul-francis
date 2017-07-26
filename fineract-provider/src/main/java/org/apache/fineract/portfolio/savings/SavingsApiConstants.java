@@ -134,7 +134,10 @@ public class SavingsApiConstants {
     public static final String withdrawBalanceParamName = "withdrawBalance";
     public static final String onHoldFundsParamName = "onHoldFunds";
     public static final String withHoldTaxParamName = "withHoldTax";
-    public static final String taxGroupIdParamName = "taxGroupId";
+    public static final String taxGroupIdParamName = "taxGroupId"; 
+    public static final String voucherNumberParamName = "voucherNumber";
+    public static final String paymentDescriptionParamName = "paymentDescription";
+
 
     // transaction parameters
     public static final String transactionDateParamName = "transactionDate";
