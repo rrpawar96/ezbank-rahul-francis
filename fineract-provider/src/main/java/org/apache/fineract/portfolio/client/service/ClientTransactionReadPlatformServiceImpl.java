@@ -121,7 +121,7 @@ public class ClientTransactionReadPlatformServiceImpl implements ClientTransacti
                     final String paymentDescription = rs.getString("paymentDescription");
 
                     paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                            bankNumber,voucherNumber,paymentDescriptioin);
+                            bankNumber.voucherNumber.paymentDescriptioin);
                 }
             }
 
