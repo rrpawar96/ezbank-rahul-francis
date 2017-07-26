@@ -53,7 +53,8 @@ public class SavingsAccountConstant extends SavingsApiConstants {
 	protected static final Set<String> SAVINGS_ACCOUNT_TRANSACTION_REQUEST_DATA_PARAMETERS = new HashSet<>(
 			Arrays.asList(localeParamName, dateFormatParamName, transactionDateParamName, transactionAmountParamName,
 					paymentTypeIdParamName, transactionAccountNumberParamName, checkNumberParamName,
-					routingCodeParamName, receiptNumberParamName, bankNumberParamName));
+					routingCodeParamName, receiptNumberParamName, bankNumberParamName,voucherNumberParamName,
+					paymentDescriptionParamName));
 
 	protected static final Set<String> SAVINGS_ACCOUNT_TRANSACTION_RESPONSE_DATA_PARAMETERS = new HashSet<>(
 			Arrays.asList(idParamName, accountNoParamName));
@@ -64,7 +65,8 @@ public class SavingsAccountConstant extends SavingsApiConstants {
 	protected static final Set<String> SAVINGS_ACCOUNT_CLOSE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
 			localeParamName, dateFormatParamName, closedOnDateParamName, noteParamName, paymentTypeIdParamName,
 			withdrawBalanceParamName, transactionAccountNumberParamName, checkNumberParamName, routingCodeParamName,
-			receiptNumberParamName, bankNumberParamName, postInterestValidationOnClosure));
+			receiptNumberParamName, bankNumberParamName, postInterestValidationOnClosure,
+			bankNumberParamName,voucherNumberParamName));
 
 	protected static final Set<String> SAVINGS_ACCOUNT_CHARGES_ADD_REQUEST_DATA_PARAMETERS = new HashSet<>(
 			Arrays.asList(chargeIdParamName, amountParamName, dueAsOfDateParamName, dateFormatParamName,
