@@ -40,14 +40,13 @@ public class PaymentDetailData {
     @SuppressWarnings("unused")
     private final String bankNumber; 
     @SuppressWarnings("unused")
-    private final String voucherNumber;
+    private String voucherNumber;
     @SuppressWarnings("unused")
-    private final String paymentDescription; 
+    private String paymentDescription; 
 
 
     public PaymentDetailData(final Long id, final PaymentTypeData paymentType, final String accountNumber, final String checkNumber,
-        final String routingCode, final String receiptNumber, final String bankNumber,final String voucherNumber, 
-        final String paymentDescription) { 
+        final String routingCode, final String receiptNumber, final String bankNumber) { 
 
 
         this.id = id;
@@ -57,24 +56,16 @@ public class PaymentDetailData {
         this.routingCode = routingCode;
         this.receiptNumber = receiptNumber;
         this.bankNumber = bankNumber;
-        this.voucherNumber = voucherNumber;
-        this.paymentDescription = paymentDescription;
     } 
 
     
     public PaymentDetailData(final Long id, final PaymentTypeData paymentType, final String accountNumber, final String checkNumber,
-        final String routingCode, final String receiptNumber, final String bankNumber) { 
+        final String routingCode, final String receiptNumber, final String bankNumber,final String voucherNumber, final String paymentDescription) { 
        
 
-        this.id = id;
-        this.paymentType = paymentType;
-        this.accountNumber = accountNumber;
-        this.checkNumber = checkNumber;
-        this.routingCode = routingCode;
-        this.receiptNumber = receiptNumber;
-        this.bankNumber = bankNumber;
-        this.voucherNumber = "";
-        this.paymentDescription = "";
+       this(id,paymentType,accountNumber,checkNumber,routingCode,receiptNumber,bankNumber);
+       this.voucherNumber = voucherNumber;
+       this.paymentDescription = paymentDescription;
     } 
 
 }
