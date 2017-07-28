@@ -62,7 +62,7 @@ public class CollectionSheetTransactionDataValidator {
             CollectionSheetConstants.bulkSavingsDueTransactionsParamName, PaymentDetailConstants.paymentTypeParamName,
             PaymentDetailConstants.accountNumberParamName, PaymentDetailConstants.checkNumberParamName,
             PaymentDetailConstants.routingCodeParamName, PaymentDetailConstants.receiptNumberParamName,
-            PaymentDetailConstants.bankNumberParamName, CollectionSheetConstants.isTransactionDateOnNonMeetingDateParamName));
+            PaymentDetailConstants.bankNumberParamName, PaymentDetailConstants.voucherNumberParamName,PaymentDetailConstants.paymentDescriptionParamName, CollectionSheetConstants.isTransactionDateOnNonMeetingDateParamName));
 
 	private static final Set<String> INDIVIDUAL_COLLECTIONSHEET_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
 			CollectionSheetConstants.localeParamName, CollectionSheetConstants.dateFormatParamName,
@@ -74,7 +74,7 @@ public class CollectionSheetTransactionDataValidator {
 	private static final Set<String> PAYMENT_CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
 			Arrays.asList(PaymentDetailConstants.accountNumberParamName, PaymentDetailConstants.checkNumberParamName,
 					PaymentDetailConstants.routingCodeParamName, PaymentDetailConstants.receiptNumberParamName,
-					PaymentDetailConstants.bankNumberParamName));
+					PaymentDetailConstants.bankNumberParamName,PaymentDetailConstants.voucherNumberParamName,PaymentDetailConstants.paymentDescriptionParamName));
 
     @Autowired
     public CollectionSheetTransactionDataValidator(final FromJsonHelper fromApiJsonHelper) {
