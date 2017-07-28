@@ -127,12 +127,7 @@ public final class PaymentDetail extends AbstractPersistableCustom<Long> {
 
     private PaymentDetail(final PaymentType paymentType, final String accountNumber, final String checkNumber, final String routingCode,
             final String receiptNumber, final String bankNumber, final String voucherNumber, final String paymentDescription) {
-        this.paymentType = paymentType;
-        this.accountNumber = accountNumber;
-        this.checkNumber = checkNumber;
-        this.routingCode = routingCode;
-        this.receiptNumber = receiptNumber;
-        this.bankNumber = bankNumber;
+        this(paymentType,accountNumber,checkNumber,routingCode,receiptNumber,bankNumber);
         this.voucherNumber = voucherNumber;
         this.paymentDescription = paymentDescription;
     }
