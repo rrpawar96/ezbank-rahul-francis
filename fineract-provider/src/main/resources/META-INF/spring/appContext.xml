@@ -56,6 +56,7 @@
 										  org.apache.fineract.template.service.*,
 										  org.apache.fineract.useradministration.*,
 										  org.apache.fineract.batch,
+										  org.mifosplatform.infrastructure.report.service,
 										  org.apache.fineract.adhocquery.*">
 		<context:exclude-filter expression="org.springframework.stereotype.Controller"
 			type="annotation" />
