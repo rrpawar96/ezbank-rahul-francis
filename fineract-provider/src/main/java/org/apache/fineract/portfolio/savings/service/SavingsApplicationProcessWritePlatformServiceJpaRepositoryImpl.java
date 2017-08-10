@@ -235,6 +235,8 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             if (account.isAccountNumberRequiresAutoGeneration()) {
             	
            	 final AccountNumberFormat accountNumberFormat = this.accountNumberFormatRepository.findByAccountType(EntityAccountType.SAVINGS);
+           	
+           	 
            	// if application is of GLIM type
            	if(account.getAccountType()==5)
            	{

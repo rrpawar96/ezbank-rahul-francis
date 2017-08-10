@@ -151,8 +151,9 @@ public class SavingsAccountAssembler {
             accountType = AccountType.JLG;
         }
         
-        if(((Boolean)command.booleanPrimitiveValueOfParameterNamed("isGSIM"))!=null)
+        if(command.booleanPrimitiveValueOfParameterNamed("isGSIM"))
         {
+        	
         	accountType = AccountType.GSIM;
         }
 
