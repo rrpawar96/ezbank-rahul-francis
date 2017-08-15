@@ -69,6 +69,11 @@ public class ClientApiConstants {
     public static final String localeParamName = "locale";
     public static final String dateFormatParamName = "dateFormat";
     public static final String address = "address";
+    public static final String familyMembers = "familyMembers";
+    public static final String MARITALSTATUS="MARITALSTATUS";
+    public static final String maritalStatusIdParamName="maritalStatusId";
+    
+    
     
     public static final String CLIENT_TYPE_INDIVIDUAL = "Individual";
 
@@ -118,7 +123,9 @@ public class ClientApiConstants {
     public static final String checkNumberParamName = "checkNumber";
     public static final String routingCodeParamName = "routingCode";
     public static final String receiptNumberParamName = "receiptNumber";
-    public static final String bankNumberParamName = "bankNumber";
+    public static final String bankNumberParamName = "bankNumber"; 
+    public static final String voucherNumberParamName = "voucherNumber";
+    public static final String paymentDescriptionParamName = "paymentDescription";
     
     //request parameters for client non person
     public static final String clientNonPersonDetailsParamName = "clientNonPersonDetails";

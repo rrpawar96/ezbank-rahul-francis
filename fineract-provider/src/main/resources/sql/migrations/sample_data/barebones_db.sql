@@ -25,7 +25,8 @@
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET NAMES utf8mb4 */;
+/*!40101 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
@@ -226,6 +227,293 @@ CREATE TABLE IF NOT EXISTS `acc_rule_tags` (
 /*!40000 ALTER TABLE `acc_rule_tags` DISABLE KEYS */;
 /*!40000 ALTER TABLE `acc_rule_tags` ENABLE KEYS */;
 
+-- Dumping structure for procedure mifostenant-default.CashierTransactionSummary
+DROP PROCEDURE IF EXISTS `CashierTransactionSummary`;
+DELIMITER //
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CashierTransactionSummary`(
+	IN `officeId` BIGINT,
+	IN `tellerId` BIGINT,
+	IN `cashierId` BIGINT,
+	IN `currencyCode` TEXT,
+	IN `asOnDate` DATE
+)
+BEGIN
+
+
+-- Create temporary table
+CREATE TEMPORARY TABLE temp_cashier_transactions(
+`transaction_date` DATE,
+`transaction_type` VARCHAR(20), 
+`amount` DECIMAL(19,6));
+
+-- Insert result set into temporary table
+INSERT INTO temp_cashier_transactions 
+SELECT cashier_txn.txn_date AS transaction_date, 
+CASE 
+WHEN cashier_txn.txn_type = 101
+	THEN 'cash_allocated'
+WHEN cashier_txn.txn_type = 102
+	THEN 'cash_settled'
+END AS transaction_type,
+	cashier_txn.txn_amount AS transaction_amount
+FROM m_cashier_transactions cashier_txn
+LEFT JOIN m_cashiers cashier ON cashier.id = cashier_txn.cashier_id
+LEFT JOIN m_tellers teller ON teller.id = cashier.teller_id
+WHERE cashier.teller_id = tellerId
+	AND cashier_txn.cashier_id = cashierId
+	AND cashier_txn.currency_code = currencyCode 
+
+UNION ALL
+
+SELECT savings_txn.transaction_date AS transaction_date, 
+CASE 
+WHEN (((savings_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) 
+		AND acnttrans.id IS NULL)
+	AND renum.enum_value IN ('deposit','withdrawal fee', 'Pay Charge', 'Annual Fee')) 
+	THEN 'cash_in'
+WHEN (((savings_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) 
+		AND acnttrans.id IS NULL)
+	AND renum.enum_value IN ('withdrawal', 'Waive Charge', 'Interest Posting', 'Overdraft Interest')) 
+	THEN 'cash_out'
+WHEN acnttrans.id IS NOT NULL AND acnttrans.from_savings_transaction_id IS NOT NULL
+	THEN 'transfers'
+WHEN ((payType.is_cash_payment = 0) 
+	AND renum.enum_value IN ('deposit','withdrawal fee', 'Pay Charge', 'Annual Fee')) 
+	THEN CONCAT(payType.value, '_in')
+WHEN ((payType.is_cash_payment = 0) 
+	AND renum.enum_value IN ('withdrawal', 'Waive Charge', 'Interest Posting', 'Overdraft Interest')) 
+	THEN CONCAT(payType.value, '_out')
+END AS transaction_type,
+savings_txn.amount AS transaction_amount
+FROM m_savings_account_transaction savings_txn
+LEFT JOIN r_enum_value renum 
+		ON savings_txn.transaction_type_enum = renum.enum_id 
+		AND renum.enum_name = 'savings_transaction_type_enum'
+LEFT JOIN m_payment_detail payDetails ON payDetails.id = savings_txn.payment_detail_id
+LEFT JOIN m_payment_type payType ON payType.id = payDetails.payment_type_id
+LEFT JOIN m_account_transfer_transaction acnttrans 
+		ON (acnttrans.from_savings_transaction_id = savings_txn.id 
+				OR acnttrans.to_savings_transaction_id = savings_txn.id)
+LEFT JOIN m_savings_account savings ON savings_txn.savings_account_id = savings.id
+LEFT JOIN m_appuser au ON savings_txn.appuser_id = au.id
+LEFT JOIN m_staff s ON au.staff_id = s.id
+LEFT JOIN m_cashiers c ON c.staff_id = s.id
+LEFT JOIN m_tellers t ON t.id = c.teller_id
+WHERE savings_txn.is_reversed = 0 
+	AND c.teller_id = tellerId
+	AND c.id = cashierId
+	AND savings.currency_code = currencyCode 
+	AND renum.enum_value IN ('deposit','withdrawal fee', 'Pay Charge', 'Annual Fee', 'withdrawal', 
+										'Waive Charge', 'Interest Posting', 'Overdraft Interest')
+
+
+UNION ALL
+
+
+SELECT loan_txn.transaction_date AS transaction_date, 
+CASE 
+WHEN (((loan_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) 
+		AND acnttrans.id IS NULL)
+	AND renum.enum_value IN ('REPAYMENT_AT_DISBURSEMENT','REPAYMENT', 'RECOVERY_REPAYMENT', 'CHARGE_PAYMENT')) 
+	THEN 'cash_in'
+WHEN (((loan_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) 
+		AND acnttrans.id IS NULL)
+	AND renum.enum_value IN ('DISBURSEMENT', 'WAIVE_INTEREST', 'WRITEOFF', 'WAIVE_CHARGES')) 
+	THEN 'cash_out'
+WHEN acnttrans.id IS NOT NULL AND acnttrans.from_loan_transaction_id IS NOT NULL
+	THEN 'transfers'
+WHEN ((payType.is_cash_payment = 0) 
+	AND renum.enum_value IN ('REPAYMENT_AT_DISBURSEMENT','REPAYMENT', 'RECOVERY_REPAYMENT', 'CHARGE_PAYMENT')) 
+	THEN CONCAT(payType.value, '_in')
+WHEN ((payType.is_cash_payment = 0) 
+	AND renum.enum_value IN ('DISBURSEMENT', 'WAIVE_INTEREST', 'WRITEOFF', 'WAIVE_CHARGES')) 
+	THEN CONCAT(payType.value, '_out')
+END AS transaction_type,
+loan_txn.amount AS transaction_amount
+FROM m_loan_transaction loan_txn
+LEFT JOIN r_enum_value renum ON loan_txn.transaction_type_enum = renum.enum_id 
+	AND renum.enum_name = 'loan_transaction_type_enum'
+LEFT JOIN m_payment_detail payDetails ON payDetails.id = loan_txn.payment_detail_id
+LEFT JOIN m_payment_type payType ON payType.id = payDetails.payment_type_id
+LEFT JOIN m_account_transfer_transaction acnttrans 
+			ON (acnttrans.from_loan_transaction_id = loan_txn.id
+					OR acnttrans.to_loan_transaction_id = loan_txn.id)
+LEFT JOIN m_loan loan ON loan_txn.loan_id = loan.id
+LEFT JOIN m_appuser au ON loan_txn.appuser_id = au.id
+LEFT JOIN m_staff s ON au.staff_id = s.id
+LEFT JOIN m_cashiers c ON c.staff_id = s.id
+LEFT JOIN m_tellers t ON t.id = c.teller_id
+WHERE loan_txn.is_reversed = 0 
+	AND c.id = cashierId
+	AND c.teller_id = tellerId
+	AND loan.currency_code = currencyCode 
+	AND renum.enum_value IN ('REPAYMENT_AT_DISBURSEMENT','REPAYMENT', 'RECOVERY_REPAYMENT', 
+										'CHARGE_PAYMENT', 'DISBURSEMENT', 'WAIVE_INTEREST', 'WRITEOFF', 'WAIVE_CHARGES')
+
+
+UNION ALL
+
+
+SELECT client_txn.transaction_date AS transaction_date, 
+CASE 
+WHEN ((client_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) 
+	AND renum.enum_value IN ('PAY_CHARGE')) 
+	THEN 'cash_in' 
+WHEN ((client_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) 
+	AND renum.enum_value IN ('WAIVE_CHARGE')) 
+	THEN 'cash_out' 
+WHEN ((payType.is_cash_payment = 0) 
+	AND renum.enum_value IN ('PAY_CHARGE')) 
+	THEN CONCAT(payType.value, '_in') 
+WHEN ((payType.is_cash_payment = 0) 
+	AND renum.enum_value IN ('WAIVE_CHARGE')) 
+	THEN CONCAT(payType.value, '_out') ELSE 'invalid'
+END AS transaction_type, 
+client_txn.amount AS transaction_amount
+FROM m_client_transaction client_txn
+LEFT JOIN r_enum_value renum ON client_txn.transaction_type_enum = renum.enum_id 
+	AND renum.enum_name = 'client_transaction_type_enum'
+LEFT JOIN m_payment_detail payDetails ON payDetails.id = client_txn.payment_detail_id
+LEFT JOIN m_payment_type payType ON payType.id = payDetails.payment_type_id
+LEFT JOIN m_appuser au ON client_txn.appuser_id = au.id
+LEFT JOIN m_staff s ON au.staff_id = s.id
+LEFT JOIN m_cashiers c ON c.staff_id = s.id
+LEFT JOIN m_tellers t ON t.id = c.teller_id
+WHERE client_txn.is_reversed = 0 
+	AND c.id = cashierId
+	AND c.teller_id = tellerId
+	AND client_txn.currency_code = currencyCode 
+	AND renum.enum_value IN ('PAY_CHARGE', 'WAIVE_CHARGE');
+
+-- SELECT * FROM temp_cashier_transactions;
+
+
+-- Create final temporary table one
+CREATE TEMPORARY TABLE final_temp_cashier_report(
+`Row Title` VARCHAR(50),
+`Row Value` CHAR(50), 
+`Verification` VARCHAR(20));
+
+
+-- Insert office into final temporary table
+INSERT INTO final_temp_cashier_report SELECT 'Office' AS '', 
+o.name AS '', '' AS ''
+FROM m_office o
+WHERE o.id = officeId;
+
+
+-- Insert teller into final temporary table
+INSERT INTO final_temp_cashier_report SELECT 'Teller' AS '', 
+t.name AS '', '' AS ''
+FROM m_tellers t
+WHERE t.id = tellerId;
+
+-- Insert teller into final temporary table
+INSERT INTO final_temp_cashier_report SELECT 'Cashier' AS '', 
+s.display_name AS '', '' AS ''
+FROM m_cashiers c
+JOIN m_tellers mt ON mt.id = c.teller_id
+JOIN m_staff s ON s.id = c.staff_id
+WHERE c.teller_id = tellerId
+AND c.id = cashierId;
+
+-- Insert currency into final temporary table
+INSERT INTO final_temp_cashier_report VALUES ('Currency', currencyCode, '');
+
+-- Insert date into final temporary table
+INSERT INTO final_temp_cashier_report VALUES ('As On Date', asOnDate, '');
+
+-- Insert opening balance into final temporary table
+INSERT INTO final_temp_cashier_report 
+SELECT 'Beginning cash drawer balance' AS '', 
+CAST(SUM(CASE
+WHEN (transaction_type = 'cash_allocated' AND transaction_date < asOnDate) THEN amount
+WHEN (transaction_type = 'cash_settled' AND transaction_date < asOnDate) THEN (-1 * amount)
+WHEN (transaction_type = 'cash_in' AND transaction_date < asOnDate) THEN amount
+WHEN (transaction_type = 'cash_out' AND transaction_date < asOnDate) THEN (-1 * amount)
+ELSE 0
+END) AS CHAR) AS '', '' AS '' 
+FROM temp_cashier_transactions;
+
+-- Insert ending balance into final temporary table
+INSERT INTO final_temp_cashier_report 
+SELECT 'Ending cash drawer balance' AS '', 
+CAST(SUM(CASE
+WHEN (transaction_type = 'cash_allocated' AND transaction_date <= asOnDate) THEN amount
+WHEN (transaction_type = 'cash_settled' AND transaction_date <= asOnDate) THEN (-1 * amount)
+WHEN (transaction_type = 'cash_in' AND transaction_date <= asOnDate) THEN amount
+WHEN (transaction_type = 'cash_out' AND transaction_date <= asOnDate) THEN (-1 * amount)
+ELSE 0
+END) AS CHAR) AS '', '' AS '' 
+FROM temp_cashier_transactions;
+
+-- Insert cash-in into final temporary table
+INSERT INTO final_temp_cashier_report 
+SELECT 'Total cash disbursed' AS '', 
+SUM(CASE
+WHEN (transaction_type = 'cash_out' AND transaction_date BETWEEN asOnDate AND  asOnDate) THEN amount
+ELSE 0
+END) AS '', '' AS ''
+FROM temp_cashier_transactions;
+
+-- Insert cash-out into final temporary table
+INSERT INTO final_temp_cashier_report 
+SELECT 'Total cash received' AS '', 
+SUM(CASE
+WHEN (transaction_type = 'cash_in' AND transaction_date BETWEEN asOnDate AND  asOnDate) THEN amount
+ELSE 0
+END) AS '', '' AS ''
+FROM temp_cashier_transactions;
+
+-- Insert cash allocated into final temporary table
+INSERT INTO final_temp_cashier_report SELECT 'Cash Allocated' AS '', 
+SUM(CASE
+WHEN (transaction_type = 'cash_allocated' AND transaction_date BETWEEN asOnDate AND  asOnDate) THEN amount
+ELSE 0
+END) AS '', '' AS ''
+FROM temp_cashier_transactions;
+
+-- Insert cash settled into final temporary table
+INSERT INTO final_temp_cashier_report SELECT 'Cash Settled' AS '', 
+SUM(CASE
+WHEN (transaction_type = 'cash_settled' AND transaction_date BETWEEN asOnDate AND  asOnDate) THEN amount
+ELSE 0
+END) AS '', '' AS ''
+FROM temp_cashier_transactions;
+
+-- Insert cash settled into final temporary table
+INSERT INTO final_temp_cashier_report 
+SELECT 'Account Transfers' AS '', 
+SUM(CASE
+WHEN (transaction_type = 'transfers' AND transaction_date BETWEEN asOnDate AND  asOnDate) THEN amount
+ELSE 0
+END) AS '', '' AS ''
+FROM temp_cashier_transactions;
+
+-- Insert other payment type  into final temporary table
+INSERT INTO final_temp_cashier_report 
+SELECT replace(transaction_type, '_', ' ') AS '', 
+SUM(CASE
+WHEN (transaction_type LIKE '%_in') THEN amount
+WHEN (transaction_type LIKE '%_out') THEN amount
+ELSE 0
+END) AS '', '' AS ''
+FROM temp_cashier_transactions
+WHERE transaction_type NOT IN ('cash_allocated', 'cash_settled', 'cash_in', 'cash_out', 'transfers') 
+AND transaction_date BETWEEN asOnDate AND  asOnDate
+GROUP BY transaction_type;
+
+-- SELECT * FROM temp_cashier_transactions;
+SELECT * FROM final_temp_cashier_report;
+
+-- Dropping at the end
+DROP TEMPORARY TABLE IF EXISTS temp_cashier_transactions;
+
+-- Dropping at the end
+DROP TEMPORARY TABLE IF EXISTS final_temp_cashier_report;
+
+END//
+DELIMITER ;
 
 -- Dumping structure for table mifostenant-default.c_account_number_format
 DROP TABLE IF EXISTS `c_account_number_format`;
@@ -932,6 +1220,7 @@ CREATE TABLE IF NOT EXISTS `m_client` (
   `fullname` varchar(100) DEFAULT NULL,
   `display_name` varchar(100) NOT NULL,
   `mobile_no` varchar(50) DEFAULT NULL,
+  `is_staff` tinyint(1) NOT NULL DEFAULT '0',
   `gender_cv_id` int(11) DEFAULT NULL,
   `date_of_birth` date DEFAULT NULL,
   `image_id` bigint(20) DEFAULT NULL,
@@ -1241,6 +1530,60 @@ INSERT INTO `m_code_value` (`id`, `code_id`, `code_value`, `code_description`, `
 	(13, 13, 'Leader', 'Group Leader Role', 1, NULL, 1, 0);
 /*!40000 ALTER TABLE `m_code_value` ENABLE KEYS */;
 
+-- Dumping structure for table mifostenant-default.m_creditbureau
+DROP TABLE IF EXISTS `m_creditbureau`;
+CREATE TABLE IF NOT EXISTS `m_creditbureau` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `product` varchar(100) NOT NULL,
+  `country` varchar(100) NOT NULL,
+  `implementationKey` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique impl` (`name`,`product`,`country`,`implementationKey`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Dumping data for table mifostenant-default.m_creditbureau: ~0 rows (approximately)
+/*!40000 ALTER TABLE `m_creditbureau` DISABLE KEYS */;
+/*!40000 ALTER TABLE `m_creditbureau` ENABLE KEYS */;
+
+-- Dumping structure for table mifostenant-default.m_creditbureau_configuration
+DROP TABLE IF EXISTS `m_creditbureau_configuration`;
+CREATE TABLE IF NOT EXISTS `m_creditbureau_configuration` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `configkey` varchar(50) DEFAULT NULL,
+  `value` varchar(50) DEFAULT NULL,
+  `organisation_creditbureau_id` bigint(20) DEFAULT NULL,
+  `description` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `mcbconfig` (`configkey`,`organisation_creditbureau_id`),
+  KEY `cbConfigfk1` (`organisation_creditbureau_id`),
+  CONSTRAINT `cbConfigfk1` FOREIGN KEY (`organisation_creditbureau_id`) REFERENCES `m_organisation_creditbureau` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Dumping data for table mifostenant-default.m_creditbureau_configuration: ~0 rows (approximately)
+/*!40000 ALTER TABLE `m_creditbureau_configuration` DISABLE KEYS */;
+/*!40000 ALTER TABLE `m_creditbureau_configuration` ENABLE KEYS */;
+
+-- Dumping structure for table mifostenant-default.m_creditbureau_loanproduct_mapping
+DROP TABLE IF EXISTS `m_creditbureau_loanproduct_mapping`;
+CREATE TABLE IF NOT EXISTS `m_creditbureau_loanproduct_mapping` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `organisation_creditbureau_id` bigint(20) NOT NULL,
+  `loan_product_id` bigint(20) NOT NULL,
+  `is_creditcheck_mandatory` tinyint(1) DEFAULT NULL,
+  `skip_creditcheck_in_failure` tinyint(1) DEFAULT NULL,
+  `stale_period` int(11) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cblpunique_key` (`organisation_creditbureau_id`,`loan_product_id`),
+  KEY `fk_cb_lp2` (`loan_product_id`),
+  CONSTRAINT `cblpfk2` FOREIGN KEY (`organisation_creditbureau_id`) REFERENCES `m_organisation_creditbureau` (`id`),
+  CONSTRAINT `fk_cb_lp2` FOREIGN KEY (`loan_product_id`) REFERENCES `m_product_loan` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Dumping data for table mifostenant-default.m_creditbureau_loanproduct_mapping: ~0 rows (approximately)
+/*!40000 ALTER TABLE `m_creditbureau_loanproduct_mapping` DISABLE KEYS */;
+/*!40000 ALTER TABLE `m_creditbureau_loanproduct_mapping` ENABLE KEYS */;
 
 -- Dumping structure for table mifostenant-default.m_currency
 DROP TABLE IF EXISTS `m_currency`;
@@ -1950,6 +2293,7 @@ CREATE TABLE IF NOT EXISTS `m_holiday` (
   `status_enum` int(5) NOT NULL DEFAULT '100',
   `processed` tinyint(1) NOT NULL DEFAULT '0',
   `description` varchar(100) DEFAULT NULL,
+  `rescheduling_type` int(5) NOT NULL DEFAULT '2',
   PRIMARY KEY (`id`),
   UNIQUE KEY `holiday_name` (`name`,`from_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -3000,6 +3344,22 @@ CREATE TABLE IF NOT EXISTS `m_office_transaction` (
 /*!40000 ALTER TABLE `m_office_transaction` DISABLE KEYS */;
 /*!40000 ALTER TABLE `m_office_transaction` ENABLE KEYS */;
 
+-- Dumping structure for table mifostenant-default.m_organisation_creditbureau
+DROP TABLE IF EXISTS `m_organisation_creditbureau`;
+CREATE TABLE IF NOT EXISTS `m_organisation_creditbureau` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `alias` varchar(50) NOT NULL,
+  `creditbureau_id` bigint(20) NOT NULL,
+  `is_active` tinyint(4) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `morgcb` (`alias`,`creditbureau_id`),
+  KEY `orgcb_cbfk` (`creditbureau_id`),
+  CONSTRAINT `orgcb_cbfk` FOREIGN KEY (`creditbureau_id`) REFERENCES `m_creditbureau` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Dumping data for table mifostenant-default.m_organisation_creditbureau: ~0 rows (approximately)
+/*!40000 ALTER TABLE `m_organisation_creditbureau` DISABLE KEYS */;
+/*!40000 ALTER TABLE `m_organisation_creditbureau` ENABLE KEYS */;
 
 -- Dumping structure for table mifostenant-default.m_organisation_currency
 DROP TABLE IF EXISTS `m_organisation_currency`;
@@ -3836,6 +4196,27 @@ INSERT INTO `m_permission` (`id`, `grouping`, `code`, `entity_name`, `action_nam
 	(764, 'datatable', 'READ_ENTITY_DATATABLE_CHECK', 'ENTITY_DATATABLE_CHECK', 'READ', 0),
 	(765, 'datatable', 'CREATE_ENTITY_DATATABLE_CHECK', 'ENTITY_DATATABLE_CHECK', 'CREATE', 0),
 	(766, 'datatable', 'DELETE_ENTITY_DATATABLE_CHECK', 'ENTITY_DATATABLE_CHECK', 'DELETE', 0);
+	(767, 'configuration', 'CREATE_CREDITBUREAU_LOANPRODUCT_MAPPING', 'CREDITBUREAU_LOANPRODUCT_MAPPING', 'CREATE', 0),
+	(768, 'configuration', 'CREATE_ORGANISATIONCREDITBUREAU', 'ORGANISATIONCREDITBUREAU', 'CREATE', 0),
+	(769, 'configuration', 'UPDATE_ORGANISATIONCREDITBUREAU', 'ORGANISATIONCREDITBUREAU', 'UPDATE', 0),
+	(770, 'configuration', 'UPDATE_CREDITBUREAU_LOANPRODUCT_MAPPING', 'CREDITBUREAU_LOANPRODUCT_MAPPING', 'UPDATE', 0),
+	(771, 'transaction_savings', 'HOLDAMOUNT_SAVINGSACCOUNT', 'SAVINGSACCOUNT', 'HOLDAMOUNT', 0),
+	(772, 'transaction_savings', 'HOLDAMOUNT_SAVINGSACCOUNT_CHECKER', 'SAVINGSACCOUNT', 'HOLDAMOUNT_CHECKER', 0),
+	(773, 'transaction_savings', 'BLOCKDEBIT_SAVINGSACCOUNT', 'SAVINGSACCOUNT', 'BLOCKDEBIT', 0),
+	(774, 'transaction_savings', 'BLOCKDEBIT_SAVINGSACCOUNT_CHECKER', 'SAVINGSACCOUNT', 'BLOCKDEBIT_CHECKER', 0),
+	(775, 'transaction_savings', 'UNBLOCKDEBIT_SAVINGSACCOUNT', 'SAVINGSACCOUNT', 'UNBLOCKDEBIT', 0),
+	(776, 'transaction_savings', 'UNBLOCKDEBIT_SAVINGSACCOUNT_CHECKER', 'SAVINGSACCOUNT', 'UNBLOCKDEBIT_CHECKER', 0),
+	(777, 'transaction_savings', 'BLOCKCREDIT_SAVINGSACCOUNT', 'SAVINGSACCOUNT', 'BLOCKCREDIT', 0),
+	(778, 'transaction_savings', 'BLOCKCREDIT_SAVINGSACCOUNT_CHECKER', 'SAVINGSACCOUNT', 'BLOCKCREDIT_CHECKER', 0),
+	(779, 'transaction_savings', 'UNBLOCKCREDIT_SAVINGSACCOUNT', 'SAVINGSACCOUNT', 'UNBLOCKCREDIT', 0),
+	(780, 'transaction_savings', 'UNBLOCKCREDIT_SAVINGSACCOUNT_CHECKER', 'SAVINGSACCOUNT', 'UNBLOCKCREDIT_CHECKER', 0),
+	(781, 'transaction_savings', 'BLOCK_SAVINGSACCOUNT', 'SAVINGSACCOUNT', 'BLOCK', 0),
+	(782, 'transaction_savings', 'BLOCK_SAVINGSACCOUNT_CHECKER', 'SAVINGSACCOUNT', 'BLOCK_CHECKER', 0),
+	(783, 'transaction_savings', 'UNBLOCK_SAVINGSACCOUNT', 'SAVINGSACCOUNT', 'UNBLOCK', 0),
+	(784, 'transaction_savings', 'UNBLOCK_SAVINGSACCOUNT_CHECKER', 'SAVINGSACCOUNT', 'UNBLOCK_CHECKER', 0),
+	(785, 'transaction_savings', 'RELEASEAMOUNT_SAVINGSACCOUNT', 'SAVINGSACCOUNT', 'RELEASEAMOUNT', 0),
+	(786, 'transaction_savings', 'RELEASEAMOUNT_SAVINGSACCOUNT_CHECKER', 'SAVINGSACCOUNT', 'RELEASEAMOUNT_CHECKER', 0),
+	(787, 'report', 'READ_Daily Teller Cash Report (Pentaho)', 'Daily Teller Cash Report (Pentaho)', 'READ', 0);
 /*!40000 ALTER TABLE `m_permission` ENABLE KEYS */;
 
 
@@ -3887,6 +4268,8 @@ CREATE TABLE IF NOT EXISTS `m_portfolio_command_source` (
   `processing_result_enum` smallint(5) NOT NULL,
   `product_id` bigint(20) DEFAULT NULL,
   `transaction_id` varchar(100) DEFAULT NULL,
+  `creditbureau_id` bigint(20) DEFAULT NULL,
+  `organisation_creditbureau_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FK_m_maker_m_appuser` (`maker_id`),
   KEY `FK_m_checker_m_appuser` (`checker_id`),
@@ -4422,6 +4805,7 @@ CREATE TABLE IF NOT EXISTS `m_savings_account` (
   `withhold_tax` tinyint(4) NOT NULL DEFAULT '0',
   `tax_group_id` bigint(20) DEFAULT NULL,
   `last_interest_calculation_date` date DEFAULT NULL,
+  `total_savings_amount_on_hold` decimal(19,6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `sa_account_no_UNIQUE` (`account_no`),
   UNIQUE KEY `sa_externalid_UNIQUE` (`external_id`),
@@ -4557,6 +4941,7 @@ CREATE TABLE IF NOT EXISTS `m_savings_account_transaction` (
   `created_date` datetime NOT NULL,
   `appuser_id` bigint(20) DEFAULT NULL,
   `is_manual` tinyint(1) DEFAULT '0',
+  `release_id_of_hold_amount` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FKSAT0000000001` (`savings_account_id`),
   KEY `FK_m_savings_account_transaction_m_payment_detail` (`payment_detail_id`),
@@ -6012,7 +6397,13 @@ INSERT INTO `schema_version` (`version_rank`, `installed_rank`, `version`, `desc
 	(335, 335, '322', 'sms campaign', 'SQL', 'V322__sms_campaign.sql', -1316831815, 'root', '2017-02-24 14:16:18', 1579, 1),
 	(336, 336, '323', 'spm replace dead fk with exisiting one', 'SQL', 'V323__spm_replace_dead_fk_with_exisiting_one.sql', 656055500, 'root', '2017-02-24 14:16:19', 520, 1),
 	(337, 337, '324', 'datatable checks', 'SQL', 'V324__datatable_checks.sql', -142308095, 'root', '2017-02-24 14:16:19', 491, 1),
+	(338, 338, '325', 'add is staff client data', 'SQL', 'V325__add_is_staff_client_data.sql', 1370025807, 'root', '2017-07-28 11:48:35', 2711, 1),
+	(339, 339, '326', 'data migration for client tr gl entries', 'SQL', 'V326__data_migration_for_client_tr_gl_entries.sql', -1103682583, 'root', '2017-07-28 11:48:35', 2, 1),
+	(340, 340, '327', 'creditbureau configuration', 'SQL', 'V327__creditbureau_configuration.sql', 108463042, 'root', '2017-07-28 11:48:39', 4169, 1),
+	(341, 341, '329', 'sms messages without campaign', 'SQL', 'V329__sms_messages_without_campaign.sql', 1747940025, 'root', '2017-07-28 11:48:41', 954, 1),
 	(33, 33, '33', 'drop unique check on stretchy report parameter', 'SQL', 'V33__drop_unique_check_on_stretchy_report_parameter.sql', -1599579296, 'root', '2015-06-03 15:26:53', 23, 1),
+	(342, 342, '330', 'savings account transaction releaseId', 'SQL', 'V330__savings_account_transaction_releaseId.sql', -825985219, 'root', '2017-07-28 11:48:42', 1782, 1),
+	(343, 343, '331', 'holiday schema changes', 'SQL', 'V331__holiday_schema_changes.sql', -670966696, 'root', '2017-07-28 11:48:43', 754, 1),
 	(34, 34, '34', 'add unique check on stretchy report parameter', 'SQL', 'V34__add_unique_check_on_stretchy_report_parameter.sql', -1286928230, 'root', '2015-06-03 15:26:53', 22, 1),
 	(35, 35, '35', 'add hierarchy column for acc gl account', 'SQL', 'V35__add_hierarchy_column_for_acc_gl_account.sql', -1387013309, 'root', '2015-06-03 15:26:54', 49, 1),
 	(36, 36, '36', 'add tag id column for acc gl account', 'SQL', 'V36__add_tag_id_column_for_acc_gl_account.sql', 414916166, 'root', '2015-06-03 15:26:54', 26, 1),
@@ -6032,6 +6423,7 @@ INSERT INTO `schema_version` (`version_rank`, `installed_rank`, `version`, `desc
 	(49, 49, '49', 'track-loan-charge-payment-transactions', 'SQL', 'V49__track-loan-charge-payment-transactions.sql', -1735511516, 'root', '2015-06-03 15:26:54', 24, 1),
 	(5, 5, '5', 'update-savings-product-and-account-tables', 'SQL', 'V5__update-savings-product-and-account-tables.sql', 1349701479, 'root', '2015-06-03 15:26:51', 122, 1),
 	(50, 50, '50', 'add-grace-settings-to-loan-product', 'SQL', 'V50__add-grace-settings-to-loan-product.sql', -1807166173, 'root', '2015-06-03 15:26:55', 140, 1),
+	(344, 344, '5000', 'Daily Teller Cash Report pentaho', 'SQL', 'V5000__Daily_Teller_Cash_Report_pentaho.sql', -638871297, 'root', '2017-07-28 11:48:43', 74, 1),
 	(51, 51, '51', 'track-additional-details-related-to-installment-performance', 'SQL', 'V51__track-additional-details-related-to-installment-performance.sql', 729891777, 'root', '2015-06-03 15:26:55', 102, 1),
 	(52, 52, '52', 'add boolean support cols to acc accounting rule', 'SQL', 'V52__add_boolean_support_cols_to_acc_accounting_rule.sql', 1853745947, 'root', '2015-06-03 15:26:55', 71, 1),
 	(53, 53, '53', 'track-advance-and-late-payments-on-installment', 'SQL', 'V53__track-advance-and-late-payments-on-installment.sql', 1135041990, 'root', '2015-06-03 15:26:55', 45, 1),
@@ -6207,6 +6599,9 @@ INSERT INTO `stretchy_parameter` (`id`, `parameter_name`, `parameter_variable`, 
 	(1020, 'SelectLoanType', 'loanType', 'Loan Type', 'select', 'number', '-1', NULL, NULL, 'Y', 'select\nenum_id as id,\nenum_value as value\nfrom r_enum_value\nwhere enum_name = \'loan_type_enum\'', NULL),
 	(1021, 'DefaultSavings', 'savingsId', 'Savings', 'none', 'number', '-1', NULL, NULL, 'Y', NULL, 5),
 	(1022, 'DefaultSavingsTransactionId', 'savingsTransactionId', 'Savings Transaction', 'none', 'number', '-1', NULL, NULL, 'Y', NULL, 5);
+	(1023, 'tellerIdSelectOne', 'tellerId', 'Teller', 'select', 'number', '0', NULL, 'Y', 'N', 'select id, name from m_tellers where office_id = ${officeId}', 5),
+	(1024, 'cashierIdSelectOne', 'cashierId', 'Cashier', 'select', 'number', '0', NULL, 'Y', 'N', 'select c.id, s.display_name from m_cashiers as c left join m_staff as s on c.staff_id = s.id where c.teller_id = ${tellerId}', 1023),
+	(1025, 'currencyCodeSelectOne', 'currencyCode', 'Currency', 'select', 'string', '0', NULL, 'Y', 'N', 'select `code`, `name` from m_organisation_currency order by `code`', NULL);
 /*!40000 ALTER TABLE `stretchy_parameter` ENABLE KEYS */;
 
 
@@ -6344,6 +6739,7 @@ INSERT INTO `stretchy_report` (`id`, `report_name`, `report_type`, `report_subty
 	(185, 'Savings Activated', 'SMS', 'Triggered', 'Savings', 'SELECT \r\nc.id AS "id",\r\nc.firstname AS "firstName",\r\nc.middlename AS "middleName",\r\nc.lastname AS "lastName",\r\nc.display_name AS "fullName",\r\nc.mobile_no AS "mobileNo",\r\ns.account_no AS "savingsAccountNo",\r\nounder.id AS "officeNumber",\r\nounder.name AS "officeName"\r\n\r\nFROM m_office o\r\nJOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(o.hierarchy, \'%\')\r\nJOIN m_client c ON c.office_id = ounder.id\r\nJOIN m_savings_account s ON s.client_id = c.id\r\nJOIN m_savings_product sp ON sp.id = s.product_id\r\nLEFT JOIN m_staff st ON st.id = s.field_officer_id\r\nLEFT JOIN m_currency cur ON cur.code = s.currency_code\r\nWHERE o.id = ${officeId} AND (IFNULL(s.field_officer_id, -10) = ${loanOfficerId} OR "-1" = ${loanOfficerId}) AND s.id = ${savingsId}', 'Savings Activation', 0, 1),
 	(186, 'Savings Deposit', 'SMS', 'Triggered', NULL, 'SELECT sc.savingsId AS savingsId, sc.id AS clientId, sc.firstname, IFNULL(sc.middlename,\'\') AS middlename, sc.lastname, sc.display_name AS FullName, sc.mobile_no AS mobileNo,\r\nms.`account_no` AS savingsAccountNo, ROUND(mst.amountPaid, ms.currency_digits) AS depositAmount, ms.account_balance_derived AS balance, \r\nmst.transactionDate AS transactionDate\r\nFROM m_office mo\r\nJOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, \'%\') AND ounder.hierarchy LIKE CONCAT(\'.\', \'%\')\r\nLEFT JOIN (\r\nSELECT \r\n sa.id AS savingsId, mc.id AS id, mc.firstname AS firstname, mc.middlename AS middlename, mc.lastname AS lastname, \r\n mc.display_name AS display_name, mc.status_enum AS status_enum, \r\n mc.mobile_no AS mobile_no, mc.office_id AS office_id, \r\n mc.staff_id AS staff_id\r\nFROM\r\nm_savings_account sa\r\nLEFT JOIN m_client mc ON mc.id = sa.client_id\r\nORDER BY savingsId) sc ON sc.office_id = ounder.id\r\nRIGHT JOIN m_savings_account AS ms ON sc.savingsId = ms.id\r\nRIGHT JOIN(\r\nSELECT st.amount AS amountPaid, st.id, st.savings_account_id, st.id AS savingsTransactionId, st.transaction_date AS transactionDate\r\nFROM m_savings_account_transaction st\r\nWHERE st.is_reversed = 0\r\nGROUP BY st.savings_account_id\r\n) AS mst ON mst.savings_account_id = ms.id\r\nWHERE sc.mobile_no IS NOT NULL AND (mo.id = ${officeId} OR ${officeId} = -1) AND (sc.staff_id = ${loanOfficerId} OR ${loanOfficerId} = -1) AND mst.savingsTransactionId = ${savingsTransactionId}', 'Savings Deposit', 0, 1),
 	(187, 'Savings Withdrawal', 'SMS', 'Triggered', NULL, 'SELECT sc.savingsId AS savingsId, sc.id AS clientId, sc.firstname, IFNULL(sc.middlename,\'\') AS middlename, sc.lastname, sc.display_name AS FullName, sc.mobile_no AS mobileNo,\r\nms.`account_no` AS savingsAccountNo, ROUND(mst.amountPaid, ms.currency_digits) AS withdrawAmount, ms.account_balance_derived AS balance, \r\nmst.transactionDate AS transactionDate\r\nFROM m_office mo\r\nJOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, \'%\') AND ounder.hierarchy LIKE CONCAT(\'.\', \'%\')\r\nLEFT JOIN (\r\nSELECT \r\n sa.id AS savingsId, mc.id AS id, mc.firstname AS firstname, mc.middlename AS middlename, mc.lastname AS lastname, \r\n mc.display_name AS display_name, mc.status_enum AS status_enum, \r\n mc.mobile_no AS mobile_no, mc.office_id AS office_id, \r\n mc.staff_id AS staff_id\r\nFROM\r\nm_savings_account sa\r\nLEFT JOIN m_client mc ON mc.id = sa.client_id\r\nORDER BY savingsId) sc ON sc.office_id = ounder.id\r\nRIGHT JOIN m_savings_account AS ms ON sc.savingsId = ms.id\r\nRIGHT JOIN(\r\nSELECT st.amount AS amountPaid, st.id, st.savings_account_id, st.id AS savingsTransactionId, st.transaction_date AS transactionDate\r\nFROM m_savings_account_transaction st\r\nWHERE st.is_reversed = 0\r\nGROUP BY st.savings_account_id\r\n) AS mst ON mst.savings_account_id = ms.id\r\nWHERE sc.mobile_no IS NOT NULL AND (mo.id = ${officeId} OR ${officeId} = -1) AND (sc.staff_id = ${loanOfficerId} OR ${loanOfficerId} = -1) AND mst.savingsTransactionId = ${savingsTransactionId}', 'Savings Withdrawal', 0, 1);
+	(188, 'Daily Teller Cash Report (Pentaho)', 'Pentaho', NULL, NULL, NULL, 'Daily Teller Cash Report', 1, 1);
 /*!40000 ALTER TABLE `stretchy_report` ENABLE KEYS */;
 
 
@@ -6780,6 +7176,11 @@ INSERT INTO `stretchy_report_parameter` (`id`, `report_id`, `parameter_id`, `rep
 	(519, 187, 5, 'officeId'),
 	(520, 187, 6, 'loanOfficerId'),
 	(521, 187, 1022, 'savingsTransactionId');
+	(522, 188, 5, 'officeId'),
+	(523, 188, 1023, 'tellerId'),
+	(524, 188, 1024, 'cashierId'),
+	(525, 188, 1025, 'currencyCode'),
+	(526, 188, 1009, 'asOnDate');
 /*!40000 ALTER TABLE `stretchy_report_parameter` ENABLE KEYS */;
 
 

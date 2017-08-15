@@ -22,8 +22,11 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
@@ -122,6 +125,9 @@ public class DepositAccountReadPlatformServiceImpl implements DepositAccountRead
     private final CalendarReadPlatformService calendarReadPlatformService;
     private final DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd");
     private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
+    // allowed column names for sorting the query result
+    private final static Set<String> supportedOrderByValues = new HashSet<>(Arrays.asList("id", "accountNumbr",
+            "officeId", "officeName"));
 
     @Autowired
     public DepositAccountReadPlatformServiceImpl(final PlatformSecurityContext context, final RoutingDataSource dataSource,
@@ -178,7 +184,7 @@ public class DepositAccountReadPlatformServiceImpl implements DepositAccountRead
     public Page<DepositAccountData> retrieveAllPaged(final DepositAccountType depositAccountType,
             final PaginationParameters paginationParameters) {
 
-        this.paginationParametersDataValidator.validateParameterValues(paginationParameters, DepositsApiConstants.supportedOrderByValues,
+        this.paginationParametersDataValidator.validateParameterValues(paginationParameters, supportedOrderByValues,
                 depositAccountType.resourceName());
 
         final DepositAccountMapper depositAccountMapper = this.getDepositAccountMapper(depositAccountType);
@@ -970,6 +976,8 @@ public class DepositAccountReadPlatformServiceImpl implements DepositAccountRead
             sqlBuilder.append("sa.id as savingsId, sa.account_no as accountNo,");
             sqlBuilder.append("pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber, ");
             sqlBuilder.append("pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, ");
+            sqlBuilder.append("pd.voucher_number as voucherNumber, pd.payment_description as paymentDescription, ");
+
             sqlBuilder
                     .append("sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");
             sqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ");
@@ -1016,8 +1024,13 @@ public class DepositAccountReadPlatformServiceImpl implements DepositAccountRead
                     final String routingCode = rs.getString("routingCode");
                     final String receiptNumber = rs.getString("receiptNumber");
                     final String bankNumber = rs.getString("bankNumber");
+                    final String voucherNumber = rs.getString("voucherNumber");
+                    final String paymentDescription = rs.getString("paymentDescription");
+
+
+
                     paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                            bankNumber);
+                            bankNumber,voucherNumber,paymentDescription);
                 }
             }
 

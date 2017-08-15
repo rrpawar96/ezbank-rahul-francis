@@ -304,6 +304,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             sqlBuilder.append("sa.withhold_tax as withHoldTax, ");
             sqlBuilder.append("sa.total_withhold_tax_derived as totalWithholdTax, ");
             sqlBuilder.append("sa.last_interest_calculation_date as lastInterestCalculationDate, ");
+            sqlBuilder.append("sa.total_savings_amount_on_hold as onHoldAmount, ");
             sqlBuilder.append("tg.id as taxGroupId, tg.name as taxGroupName, ");
             sqlBuilder.append("(select IFNULL(max(sat.transaction_date),sa.activatedon_date) ");
             sqlBuilder.append("from m_savings_account_transaction as sat ");
@@ -511,10 +512,17 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
                     "minBalanceForInterestCalculation");
             final BigDecimal onHoldFunds = rs.getBigDecimal("onHoldFunds");
             
+            final BigDecimal onHoldAmount = rs.getBigDecimal("onHoldAmount");
+            
             BigDecimal availableBalance = accountBalance;
             if (availableBalance != null && onHoldFunds != null) {
 
                 availableBalance = availableBalance.subtract(onHoldFunds);
+            }
+            
+            if (availableBalance != null && onHoldAmount != null) {
+
+                availableBalance = availableBalance.subtract(onHoldAmount);
             }
             
             BigDecimal interestNotPosted = BigDecimal.ZERO;
@@ -542,7 +550,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
                     interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType, withdrawalFeeForTransfers,
                     summary, allowOverdraft, overdraftLimit, minRequiredBalance, enforceMinRequiredBalance,
                     minBalanceForInterestCalculation, onHoldFunds, nominalAnnualInterestRateOverdraft, minOverdraftForInterestCalculation, withHoldTax, 
-                    taxGroupData, lastActiveTransactionDate, isDormancyTrackingActive, daysToInactive, daysToDormancy, daysToEscheat);
+                    taxGroupData, lastActiveTransactionDate, isDormancyTrackingActive, daysToInactive, daysToDormancy, daysToEscheat, onHoldAmount);
         }
     }
 
@@ -784,6 +792,8 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             sqlBuilder.append("sa.id as savingsId, sa.account_no as accountNo,");
             sqlBuilder.append("pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber, ");
             sqlBuilder.append("pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, ");
+            sqlBuilder.append("pd.voucher_number as voucherNumber, pd.payment_description as paymentDescription, ");
+
             sqlBuilder
                     .append("sa.currency_code as currencyCode, sa.currency_digits as currencyDigits, sa.currency_multiplesof as inMultiplesOf, ");
             sqlBuilder.append("curr.name as currencyName, curr.internationalized_name_code as currencyNameCode, ");
@@ -833,8 +843,13 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
                     final String routingCode = rs.getString("routingCode");
                     final String receiptNumber = rs.getString("receiptNumber");
                     final String bankNumber = rs.getString("bankNumber");
+                    final String voucherNumber = rs.getString("voucherNumber");
+                    final String paymentDescription = rs.getString("paymentDescription");
+
+
+
                     paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                            bankNumber);
+                            bankNumber,voucherNumber,paymentDescription);
                 }
             }
 
@@ -1074,7 +1089,8 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             // final LocalDate annualFeeNextDueDate = null;
             final SavingsAccountSummaryData summary = null;
             final BigDecimal onHoldFunds = null;
-            
+            final BigDecimal savingsAmountOnHold  = null;
+
             final SavingsAccountSubStatusEnumData subStatus = null;
             final LocalDate lastActiveTransactionDate = null;
             final boolean isDormancyTrackingActive = false;
@@ -1090,7 +1106,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
                     interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType, withdrawalFeeForTransfers,
                     summary, allowOverdraft, overdraftLimit, minRequiredBalance, enforceMinRequiredBalance,
                     minBalanceForInterestCalculation, onHoldFunds, nominalAnnualInterestRateOverdraft, minOverdraftForInterestCalculation, withHoldTax, 
-                    taxGroupData, lastActiveTransactionDate, isDormancyTrackingActive, daysToInactive, daysToDormancy, daysToEscheat);
+                    taxGroupData, lastActiveTransactionDate, isDormancyTrackingActive, daysToInactive, daysToDormancy, daysToEscheat, savingsAmountOnHold);
         }
     }
 

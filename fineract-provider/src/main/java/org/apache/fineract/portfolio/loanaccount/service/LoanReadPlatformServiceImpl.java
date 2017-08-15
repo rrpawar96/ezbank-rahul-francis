@@ -62,7 +62,6 @@ import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
-import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -93,8 +92,6 @@ import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
 import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
@@ -1076,7 +1073,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         @Override
         public LoanScheduleData extractData(final ResultSet rs) throws SQLException, DataAccessException {
-
+            BigDecimal waivedChargeAmount = BigDecimal.ZERO;
+            for (DisbursementData disbursementDetail : disbursementData) {
+                waivedChargeAmount = waivedChargeAmount.add(disbursementDetail.getWaivedChargeAmount());
+            }
             final LoanSchedulePeriodData disbursementPeriod = LoanSchedulePeriodData.disbursementOnlyPeriod(
                     this.disbursement.disbursementDate(), this.disbursement.amount(), this.totalFeeChargesDueAtDisbursement,
                     this.disbursement.isDisbursed());
@@ -1115,9 +1115,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             Money totalOutstanding = Money.zero(monCurrency);
 
             // update totals with details of fees charged during disbursement
-            totalFeeChargesCharged = totalFeeChargesCharged.plus(disbursementPeriod.feeChargesDue());
-            totalRepaymentExpected = totalRepaymentExpected.plus(disbursementPeriod.feeChargesDue());
-            totalRepayment = totalRepayment.plus(disbursementPeriod.feeChargesPaid());
+            totalFeeChargesCharged = totalFeeChargesCharged.plus(disbursementPeriod.feeChargesDue().subtract(waivedChargeAmount));
+            totalRepaymentExpected = totalRepaymentExpected.plus(disbursementPeriod.feeChargesDue()).minus(waivedChargeAmount);
+            totalRepayment = totalRepayment.plus(disbursementPeriod.feeChargesPaid()).minus(waivedChargeAmount);
             totalOutstanding = totalOutstanding.plus(disbursementPeriod.feeChargesDue()).minus(disbursementPeriod.feeChargesPaid());
 
             Integer loanTermInDays = Integer.valueOf(0);
@@ -1141,7 +1141,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                             disbursementChargeAmount, data.isDisbursed());
                                 } else {
                                     periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
-                                            disbursementChargeAmount.add(data.getChargeAmount()), data.isDisbursed());
+                                            disbursementChargeAmount.add(data.getChargeAmount()).subtract(waivedChargeAmount), data.isDisbursed());
                                 }
                                 if (periodData != null) {
                                     periods.add(periodData);
@@ -1282,6 +1282,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " tr.manually_adjusted_or_reversed as manuallyReversed, "
                     + " pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber, "
                     + " pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, "
+                    + " pd.voucher_number as voucherNumber, pd.payment_description as paymentDescription, "
                     + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc.`name` as currencyName, "
                     + " rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, "
                     + " pt.value as paymentTypeName, tr.external_id as externalId, tr.office_id as officeId, office.name as officeName, "
@@ -1329,8 +1330,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     final String routingCode = rs.getString("routingCode");
                     final String receiptNumber = rs.getString("receiptNumber");
                     final String bankNumber = rs.getString("bankNumber");
-                    paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                            bankNumber);
+                    final String voucherNumber = rs.getString("voucherNumber");
+                    final String paymentDescription = rs.getString("paymentDescription");
+;                    paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
+                            bankNumber,voucherNumber,paymentDescription);
                 }
             }
             final LocalDate date = JdbcSupport.getLocalDate(rs, "date");
@@ -1564,7 +1567,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal waivedAmount = rs.getBigDecimal("waivedAmount");
             if (chargeAmount != null && waivedAmount != null) chargeAmount = chargeAmount.subtract(waivedAmount);
             final DisbursementData disbursementData = new DisbursementData(id, expectedDisbursementdate, actualDisbursementdate, principal,
-                    loanChargeId, chargeAmount);
+                    loanChargeId, chargeAmount, waivedAmount);
             return disbursementData;
         }
 
