@@ -33,7 +33,10 @@ public class AccountSummaryCollectionData {
     
     private final Collection<LoanAccountSummaryData> memberLoanAccounts;
     private final Collection<SavingsAccountSummaryData> memberSavingsAccounts;
-
+    
+	   /* METHOD SIGNATURE CHANGE NOTICE: Method's signature 
+	    was changed for GLIM & GSIM implementation*/
+    
     public AccountSummaryCollectionData(final Collection<LoanAccountSummaryData> loanAccounts,final Collection<LoanAccountSummaryData> groupLoanIndividualMonitoringAccounts,
             final Collection<SavingsAccountSummaryData> savingsAccounts, final Collection<ShareAccountSummaryData> shareAccounts) {
         this.loanAccounts = defaultLoanAccountsIfEmpty(loanAccounts);
@@ -43,6 +46,8 @@ public class AccountSummaryCollectionData {
         this.memberLoanAccounts = null;
         this.memberSavingsAccounts = null;
     }
+    
+   /* Note to Self: GSIM not passed in*/
     
     public AccountSummaryCollectionData(final Collection<LoanAccountSummaryData> loanAccounts,final Collection<LoanAccountSummaryData> groupLoanIndividualMonitoringAccounts,
             final Collection<SavingsAccountSummaryData> savingsAccounts, final Collection<LoanAccountSummaryData> memberLoanAccounts,

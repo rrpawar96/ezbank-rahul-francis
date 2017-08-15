@@ -75,6 +75,8 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         this.clientReadPlatformService.retrieveOne(clientId);
         final String loanwhereClause = " where l.client_id = ?";
         final String glimLoanClause=" where l.client_id = ? and l.loan_type_enum=4";
+        
+        //note to self: investigate the effect of have loans stored as another type especially given that we want to maintain how the system currently handles loans of exisiting types.
         final String savingswhereClause = " where sa.client_id = ? order by sa.status_enum ASC, sa.account_no ASC";
         final List<LoanAccountSummaryData> glimAccounts = retrieveLoanAccountDetails(glimLoanClause, new Object[] { clientId });
         final List<LoanAccountSummaryData> loanAccounts = retrieveLoanAccountDetails(loanwhereClause, new Object[] { clientId });
