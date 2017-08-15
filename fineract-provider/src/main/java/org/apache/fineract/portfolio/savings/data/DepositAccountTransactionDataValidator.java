@@ -30,6 +30,10 @@ import static org.apache.fineract.portfolio.savings.DepositsApiConstants.toSavin
 import static org.apache.fineract.portfolio.savings.DepositsApiConstants.transactionAccountNumberParamName;
 import static org.apache.fineract.portfolio.savings.DepositsApiConstants.transactionAmountParamName;
 import static org.apache.fineract.portfolio.savings.DepositsApiConstants.transactionDateParamName;
+import static org.apache.fineract.portfolio.savings.DepositsApiConstants.voucherNumberParamName;
+import static org.apache.fineract.portfolio.savings.DepositsApiConstants.paymentDescriptionParamName;
+
+
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -66,7 +70,7 @@ public class DepositAccountTransactionDataValidator {
 	private static final Set<String> DEPOSIT_ACCOUNT_TRANSACTION_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(
 			DepositsApiConstants.localeParamName, DepositsApiConstants.dateFormatParamName, transactionDateParamName,
 			transactionAmountParamName, paymentTypeIdParamName, transactionAccountNumberParamName, checkNumberParamName,
-			routingCodeParamName, receiptNumberParamName, bankNumberParamName));
+			routingCodeParamName, receiptNumberParamName, bankNumberParamName,voucherNumberParamName,paymentDescriptionParamName));
 
 	private static final Set<String> DEPOSIT_ACCOUNT_RECOMMENDED_DEPOSIT_AMOUNT_UPDATE_REQUEST_DATA_PARAMETERS = new HashSet<>(
 			Arrays.asList(DepositsApiConstants.localeParamName, DepositsApiConstants.dateFormatParamName,
@@ -77,7 +81,8 @@ public class DepositAccountTransactionDataValidator {
 			DepositsApiConstants.localeParamName, DepositsApiConstants.dateFormatParamName, closedOnDateParamName,
 			DepositsApiConstants.noteParamName, onAccountClosureIdParamName, paymentTypeIdParamName,
 			transactionAccountNumberParamName, checkNumberParamName, routingCodeParamName, receiptNumberParamName,
-			bankNumberParamName, DepositsApiConstants.transferDescriptionParamName, toSavingsAccountIdParamName));
+			bankNumberParamName, DepositsApiConstants.transferDescriptionParamName, toSavingsAccountIdParamName,
+            voucherNumberParamName,paymentDescriptionParamName));
 
 	private static final Set<String> DEPOSIT_ACCOUNT_PRE_MATURE_CALCULATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
 			Arrays.asList(DepositsApiConstants.localeParamName, DepositsApiConstants.dateFormatParamName,
@@ -115,7 +120,7 @@ public class DepositAccountTransactionDataValidator {
         final Integer paymentTypeId = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(paymentTypeIdParamName, element);
         baseDataValidator.reset().parameter(paymentTypeIdParamName).value(paymentTypeId).ignoreIfNull().integerGreaterThanZero();
         final Set<String> paymentDetailParameters = new HashSet<>(Arrays.asList(transactionAccountNumberParamName, checkNumberParamName,
-                routingCodeParamName, receiptNumberParamName, bankNumberParamName));
+                routingCodeParamName, receiptNumberParamName, bankNumberParamName,voucherNumberParamName,paymentDescriptionParamName));
         for (final String paymentDetailParameterName : paymentDetailParameters) {
             final String paymentDetailParameterValue = this.fromApiJsonHelper.extractStringNamed(paymentDetailParameterName, element);
             baseDataValidator.reset().parameter(paymentDetailParameterName).value(paymentDetailParameterValue).ignoreIfNull()
@@ -234,7 +239,7 @@ public class DepositAccountTransactionDataValidator {
         final Integer paymentTypeId = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(paymentTypeIdParamName, element);
         baseDataValidator.reset().parameter(paymentTypeIdParamName).value(paymentTypeId).ignoreIfNull().integerGreaterThanZero();
         final Set<String> paymentDetailParameters = new HashSet<>(Arrays.asList(transactionAccountNumberParamName, checkNumberParamName,
-                routingCodeParamName, receiptNumberParamName, bankNumberParamName));
+                routingCodeParamName, receiptNumberParamName, bankNumberParamName,voucherNumberParamName,paymentDescriptionParamName));
         for (final String paymentDetailParameterName : paymentDetailParameters) {
             final String paymentDetailParameterValue = this.fromApiJsonHelper.extractStringNamed(paymentDetailParameterName, element);
             baseDataValidator.reset().parameter(paymentDetailParameterName).value(paymentDetailParameterValue).ignoreIfNull()

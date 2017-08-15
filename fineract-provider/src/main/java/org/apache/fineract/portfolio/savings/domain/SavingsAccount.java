@@ -330,6 +330,8 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     @JoinColumn(name = "tax_group_id")
     private TaxGroup taxGroup;
 
+    @Column(name = "total_savings_amount_on_hold", scale = 6, precision = 19, nullable = true)
+    private BigDecimal savingsOnHoldAmount;
     protected SavingsAccount() {
         //
     }
@@ -1056,18 +1058,15 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         Money runningBalance = Money.zero(this.currency);
         Money minRequiredBalance = minRequiredBalanceDerived(getCurrency());
         LocalDate lastSavingsDate = null;
+        final BigDecimal withdrawalFee = null;
         for (final SavingsAccountTransaction transaction : transactionsSortedByDate) {
             if (transaction.isNotReversed() && transaction.isCredit()) {
                 runningBalance = runningBalance.plus(transaction.getAmount(this.currency));
             } else if (transaction.isNotReversed() && transaction.isDebit()) {
                 runningBalance = runningBalance.minus(transaction.getAmount(this.currency));
-            } else if(transaction.isAmountOnHold() && transaction.getReleaseIdOfHoldAmountTransaction() == null){
-                runningBalance = runningBalance.minus(transaction.getAmount(this.currency));
             }else {
                 continue;
             }
-
-            final BigDecimal withdrawalFee = null;
 
             /*
              * Loop through the onHold funds and see if we need to deduct or add
@@ -1098,6 +1097,12 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             lastSavingsDate = transaction.transactionLocalDate();
 
         }
+		if (this.getSavingsHoldAmount().compareTo(BigDecimal.ZERO) == 1) {
+			if (runningBalance.minus(this.getSavingsHoldAmount()).isLessThanZero()) {
+				throw new InsufficientAccountBalanceException("transactionAmount", getAccountBalance(), withdrawalFee,
+						transactionAmount);
+			}
+		}
     }
 
     public void validateAccountBalanceDoesNotBecomeNegative(final String transactionAction,
@@ -2766,7 +2771,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     }
 
     public BigDecimal getWithdrawableBalance() {
-        return getAccountBalance().subtract(minRequiredBalanceDerived(getCurrency()).getAmount()).subtract(this.getOnHoldFunds());
+        return getAccountBalance().subtract(minRequiredBalanceDerived(getCurrency()).getAmount()).subtract(this.getOnHoldFunds()).subtract(this.getSavingsHoldAmount());
     }
 
     public TaxGroup getTaxGroup() {
@@ -2904,14 +2909,17 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             baseDataValidator.reset().parameter(SavingsApiConstants.statusParamName)
                     .failWithCodeNoParameterAddedToErrorCode(SavingsApiConstants.ERROR_MSG_SAVINGS_ACCOUNT_NOT_ACTIVE);
         }
-        if (SavingsAccountSubStatusEnum.BLOCK.hasStateOf(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))
-                || SavingsAccountSubStatusEnum.BLOCK_DEBIT.hasStateOf(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))) {
+        if (SavingsAccountSubStatusEnum.BLOCK.hasStateOf(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))) {
 
             baseDataValidator.reset().parameter(SavingsApiConstants.subStatusParamName).value(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))
                     .failWithCodeNoParameterAddedToErrorCode("currently.set");
         }
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
-        this.sub_status = SavingsAccountSubStatusEnum.BLOCK_CREDIT.getValue();
+		if (SavingsAccountSubStatusEnum.BLOCK_DEBIT.hasStateOf(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))) {
+			this.sub_status = SavingsAccountSubStatusEnum.BLOCK.getValue();
+		} else {
+			this.sub_status = SavingsAccountSubStatusEnum.BLOCK_CREDIT.getValue();
+		}
         actualChanges.put(SavingsApiConstants.subStatusParamName, SavingsEnumerations.subStatus(this.sub_status));
 
         return actualChanges;
@@ -2931,12 +2939,17 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         }
 
         final SavingsAccountSubStatusEnum currentSubStatus = SavingsAccountSubStatusEnum.fromInt(this.sub_status);
-        if (!SavingsAccountSubStatusEnum.BLOCK_CREDIT.hasStateOf(currentSubStatus)) {
-            baseDataValidator.reset().parameter(SavingsApiConstants.statusParamName)
-                    .failWithCodeNoParameterAddedToErrorCode("credits.are.not.blocked");
-        }
+		if (!(SavingsAccountSubStatusEnum.BLOCK_CREDIT.hasStateOf(currentSubStatus)
+				|| SavingsAccountSubStatusEnum.BLOCK.hasStateOf(currentSubStatus))) {
+			baseDataValidator.reset().parameter(SavingsApiConstants.statusParamName)
+					.failWithCodeNoParameterAddedToErrorCode("credits.are.not.blocked");
+		}
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
-        this.sub_status = SavingsAccountSubStatusEnum.NONE.getValue();
+		if (SavingsAccountSubStatusEnum.BLOCK.hasStateOf(currentSubStatus)) {
+			this.sub_status = SavingsAccountSubStatusEnum.BLOCK_DEBIT.getValue();
+		} else {
+			this.sub_status = SavingsAccountSubStatusEnum.NONE.getValue();
+		}
         actualChanges.put(SavingsApiConstants.subStatusParamName, SavingsEnumerations.subStatus(this.sub_status));
         return actualChanges;
     }
@@ -2955,15 +2968,17 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
                     .failWithCodeNoParameterAddedToErrorCode(SavingsApiConstants.ERROR_MSG_SAVINGS_ACCOUNT_NOT_ACTIVE);
 
         }
-        if (SavingsAccountSubStatusEnum.BLOCK.hasStateOf(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))
-                || SavingsAccountSubStatusEnum.BLOCK_CREDIT.hasStateOf(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))) {
+        if (SavingsAccountSubStatusEnum.BLOCK.hasStateOf(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))) {
 
             baseDataValidator.reset().parameter(SavingsApiConstants.subStatusParamName).value(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))
                     .failWithCodeNoParameterAddedToErrorCode("currently.set");
         }
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
-
-        this.sub_status = SavingsAccountSubStatusEnum.BLOCK_DEBIT.getValue();
+		if (SavingsAccountSubStatusEnum.BLOCK_CREDIT.hasStateOf(SavingsAccountSubStatusEnum.fromInt(currentSubstatus))) {
+			this.sub_status = SavingsAccountSubStatusEnum.BLOCK.getValue();
+		} else {
+			this.sub_status = SavingsAccountSubStatusEnum.BLOCK_DEBIT.getValue();
+		}
         actualChanges.put(SavingsApiConstants.subStatusParamName, SavingsEnumerations.subStatus(this.sub_status));
 
         return actualChanges;
@@ -2986,12 +3001,17 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         }
 
         final SavingsAccountSubStatusEnum currentSubStatus = SavingsAccountSubStatusEnum.fromInt(this.sub_status);
-        if (!SavingsAccountSubStatusEnum.BLOCK_DEBIT.hasStateOf(currentSubStatus)) {
-            baseDataValidator.reset().parameter(SavingsApiConstants.subStatusParamName)
-                    .failWithCodeNoParameterAddedToErrorCode("debits.are.not.blocked");
-        }
+		if (!(SavingsAccountSubStatusEnum.BLOCK_DEBIT.hasStateOf(currentSubStatus)
+				|| SavingsAccountSubStatusEnum.BLOCK.hasStateOf(currentSubStatus))) {
+			baseDataValidator.reset().parameter(SavingsApiConstants.subStatusParamName)
+					.failWithCodeNoParameterAddedToErrorCode("debits.are.not.blocked");
+		}
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
-        this.sub_status = SavingsAccountSubStatusEnum.NONE.getValue();
+		if (SavingsAccountSubStatusEnum.BLOCK.hasStateOf(currentSubStatus)) {
+			this.sub_status = SavingsAccountSubStatusEnum.BLOCK_CREDIT.getValue();
+		} else {
+			this.sub_status = SavingsAccountSubStatusEnum.NONE.getValue();
+		}
         actualChanges.put(SavingsApiConstants.subStatusParamName, SavingsEnumerations.subStatus(this.sub_status));
         return actualChanges;
     }
@@ -3019,9 +3039,17 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
     public LocalDate retrieveLastTransactionDate() {
         final List<SavingsAccountTransaction> transactionsSortedByDate = retreiveListOfTransactions();
-        SavingsAccountTransaction lastTransaction = transactionsSortedByDate.get(transactionsSortedByDate.size() - 1);
-        return lastTransaction.transactionLocalDate();
+        SavingsAccountTransaction lastTransaction = null;
+        if (transactionsSortedByDate.size() > 0) {
+            lastTransaction = transactionsSortedByDate.get(transactionsSortedByDate.size() - 1);
+        }
+        LocalDate lastransactionDate = null;
+        if (lastTransaction != null) {
+            lastransactionDate = lastTransaction.transactionLocalDate();
+        }
+        return lastransactionDate;
     }
+
 
 	public Integer getAccountType() {
 		return accountType;
@@ -3031,7 +3059,17 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 		this.accountType = accountType;
 	}
     
-    
-    
-    
+    public BigDecimal getSavingsHoldAmount() {
+        return this.savingsOnHoldAmount == null ? BigDecimal.ZERO : this.savingsOnHoldAmount;
+    }
+
+    public void holdAmount(BigDecimal amount) {
+        this.savingsOnHoldAmount = getSavingsHoldAmount().add(amount);
+    }
+
+    public void releaseAmount(BigDecimal amount) {
+        this.savingsOnHoldAmount = getSavingsHoldAmount().subtract(amount);
+    }
+
+
 }
