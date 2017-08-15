@@ -492,18 +492,24 @@ public class GroupsApiResource {
         @Path("{groupId}/gsimaccounts")
         @Consumes({ MediaType.APPLICATION_JSON })
         @Produces({ MediaType.APPLICATION_JSON })
-        public String retrieveGsimAccounts(@PathParam("groupId") final Long groupId, @QueryParam("parentGSIMAccountNo")final String parentGSIMAccountNo,  @Context final UriInfo uriInfo) 
+        public String retrieveGsimAccounts(@PathParam("groupId") final Long groupId, @QueryParam("parentGSIMAccountNo")final String parentGSIMAccountNo,
+        		 @QueryParam("parentGSIMId")final Long parentGSIMId,@Context final UriInfo uriInfo) 
     	{
     		List<GSIMContainer> gsimContainer;
     	      this.context.authenticatedUser().validateHasReadPermission("GROUP");
     		
-    		if(parentGSIMAccountNo==null)
+    		if(parentGSIMAccountNo==null && parentGSIMId!=null)
     		{
-    			gsimContainer= (List)this.gsimReadPlatformService.findGSIMAccountContainerByGroupId(groupId);	
+    			gsimContainer= (List<GSIMContainer>)this.gsimReadPlatformService.findGsimAccountContainerbyGsimAccountId(parentGSIMId);
+    		}
+    		else if(parentGSIMAccountNo !=null && parentGSIMId==null )
+    		{
+    			gsimContainer= (List)this.gsimReadPlatformService.findGsimAccountContainerbyGsimAccountNumber(parentGSIMAccountNo);		
     		}
     		else
     		{
-    			gsimContainer= (List)this.gsimReadPlatformService.findGsimAccountContainerbyGsimAccountNumber(parentGSIMAccountNo);		
+    			gsimContainer= (List)this.gsimReadPlatformService.findGSIMAccountContainerByGroupId(groupId);	
+    			
     		}
     			
 

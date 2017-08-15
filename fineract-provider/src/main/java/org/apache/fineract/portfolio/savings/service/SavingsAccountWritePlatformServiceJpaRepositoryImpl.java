@@ -18,11 +18,25 @@
  */
 package org.apache.fineract.portfolio.savings.service;
 
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.*;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_CHARGE_RESOURCE_NAME;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.amountParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.chargeIdParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.dueAsOfDateParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withHoldTaxParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withdrawBalanceParamName;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
@@ -40,7 +54,11 @@ import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
-import org.apache.fineract.organisation.monetary.domain.*;
+import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
+import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
@@ -72,9 +90,27 @@ import org.apache.fineract.portfolio.savings.data.SavingsAccountChargeDataValida
 import org.apache.fineract.portfolio.savings.data.SavingsAccountDataValidator;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountTransactionDTO;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountTransactionDataValidator;
-import org.apache.fineract.portfolio.savings.domain.*;
-import org.apache.fineract.portfolio.savings.exception.*;
+import org.apache.fineract.portfolio.savings.domain.DepositAccountOnHoldTransaction;
+import org.apache.fineract.portfolio.savings.domain.DepositAccountOnHoldTransactionRepository;
+import org.apache.fineract.portfolio.savings.domain.GSIMRepositoy;
+import org.apache.fineract.portfolio.savings.domain.GroupSavingsIndividualMonitoring;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountChargeRepositoryWrapper;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
+import org.apache.fineract.portfolio.savings.exception.PostInterestAsOnDateException;
 import org.apache.fineract.portfolio.savings.exception.PostInterestAsOnDateException.PostInterestAsOnException_TYPE;
+import org.apache.fineract.portfolio.savings.exception.PostInterestClosingDateException;
+import org.apache.fineract.portfolio.savings.exception.SavingsAccountClosingNotAllowedException;
+import org.apache.fineract.portfolio.savings.exception.SavingsAccountTransactionNotFoundException;
+import org.apache.fineract.portfolio.savings.exception.SavingsOfficerAssignmentException;
+import org.apache.fineract.portfolio.savings.exception.SavingsOfficerUnassignmentException;
+import org.apache.fineract.portfolio.savings.exception.TransactionUpdateNotAllowedException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepositoryWrapper;
 import org.joda.time.LocalDate;
@@ -84,6 +120,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 
 @Service
 public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements SavingsAccountWritePlatformService {
@@ -267,6 +306,51 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         account.validateAccountBalanceDoesNotBecomeNegative(SavingsAccountTransactionType.PAY_CHARGE.name(),
                 depositAccountOnHoldTransactions);
     }
+    
+    @Transactional
+    @Override
+    public CommandProcessingResult gsimDeposit(final Long gsimId, final JsonCommand command) {
+    	
+    	Long parentSavingId=gsimId;
+     	GroupSavingsIndividualMonitoring parentSavings=gsimRepository.findOne(parentSavingId);
+     	List<SavingsAccount> childSavings=this.savingAccountRepositoryWrapper.findByGsimId(gsimId);
+     	
+     	JsonArray savingsArray=command.arrayOfParameterNamed("savingsArray");
+     	
+     	JsonArray childAccounts=command.arrayOfParameterNamed("childAccounts");
+     	
+     	int count=0;
+     	CommandProcessingResult result=null;
+     	for(JsonElement element:savingsArray)
+     	{
+     		
+     		result=deposit(childAccounts.get(count++).getAsLong(), JsonCommand.fromExistingCommand(command, element));
+     	}
+     	
+     	
+     	
+     	/*for(SavingsAccount account:childSavings)
+     	{
+     		
+     		result=deposit(account.getId(), command);
+     		
+     		if(result!=null)
+     		{
+     			count++;
+     			if(count==parentSavings.getChildAccountsCount())
+     			{
+     				parentSavings.setSavingsStatus(SavingsAccountStatusType.ACTIVE.getValue());
+     				gsimRepository.save(parentSavings);
+     			}
+     		}
+     		
+     		
+     	}*/
+     	
+     	return result;
+    	
+    }
+    
 
     @Transactional
     @Override
@@ -280,6 +364,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
        if( this.savingAccountRepositoryWrapper.findOneWithNotFoundDetection(savingsId).getGsim()!=null)
        {
     	   isGsim=true;
+    	   System.out.println("is gsim");
        }
 
         final SavingsAccount account = this.savingAccountAssembler.assembleFrom(savingsId);
@@ -299,9 +384,13 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         	if(isGsim && (deposit.getId()!=null))
         	{
         		GroupSavingsIndividualMonitoring gsim=gsimRepository.findOne(account.getGsim().getId());
-        		BigDecimal currentBalance=gsim.getParentDeposit().add(transactionAmount);
-        		gsim.setParentDeposit(currentBalance);
+        		System.out.println("parent deposit "+gsim.getParentDeposit());
+        		System.out.println("child account "+savingsId);
+        		BigDecimal currentBalance=gsim.getParentDeposit();
+        		BigDecimal newBalance=currentBalance.add(transactionAmount);
+        		gsim.setParentDeposit(newBalance);
         		gsimRepository.save(gsim);
+        		System.out.println("balance after making deposit "+gsimRepository.findOne(account.getGsim().getId()).getParentDeposit());
         		
         	}
 
@@ -673,6 +762,36 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         if (group != null) {
             if (group.isNotActive()) { throw new GroupNotActiveException(group.getId()); }
         }
+    }
+    
+    @Override
+    public CommandProcessingResult bulkGSIMClose(final Long gsimId, final JsonCommand command) {
+    	
+    	final Long parentSavingId=gsimId;
+    	GroupSavingsIndividualMonitoring parentSavings=gsimRepository.findOne(parentSavingId);
+    	List<SavingsAccount> childSavings=this.savingAccountRepositoryWrapper.findByGsimId(gsimId);
+    	
+    	CommandProcessingResult result=null;
+    	int count=0;
+    	for(SavingsAccount account:childSavings)
+    	{
+    		result=close(account.getId(), command);
+    		
+    		if(result!=null)
+    		{
+    			count++;
+    			if(count==parentSavings.getChildAccountsCount())
+    			{
+    				parentSavings.setSavingsStatus(SavingsAccountStatusType.CLOSED.getValue());
+    				gsimRepository.save(parentSavings);
+    			}
+    		}
+    		
+    		
+    	}
+    	
+    	return result;	
+    	
     }
 
     @Override

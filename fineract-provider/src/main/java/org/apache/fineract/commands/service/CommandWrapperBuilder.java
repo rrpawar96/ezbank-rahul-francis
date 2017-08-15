@@ -856,6 +856,15 @@ public class CommandWrapperBuilder {
         this.href = "/loans/" + loanId;
         return this;
     }
+    
+    public CommandWrapperBuilder rejectGLIMApplication(final Long glimId) {
+        this.actionName = "REJECT";
+        this.entityName = "GLIMLOAN";
+        this.entityId = glimId;
+        this.loanId = glimId;
+        this.href = "/loans/" + glimId;
+        return this;
+    }
 
     public CommandWrapperBuilder withdrawLoanApplication(final Long loanId) {
         this.actionName = "WITHDRAW";
@@ -1266,6 +1275,15 @@ public class CommandWrapperBuilder {
         this.href = "/savingsaccounts/" + accountId + "?command=close";
         return this;
     }
+    
+    public CommandWrapperBuilder closeGSIMApplication(final Long accountId) {
+        this.actionName = "CLOSE";
+        this.entityName = "GSIMACCOUNT";
+        this.entityId = accountId;
+        this.savingsId = accountId;
+        this.href = "/savingsaccounts/" + accountId + "?command=close";
+        return this;
+    }
 
     public CommandWrapperBuilder createAccountTransfer() {
         this.actionName = "CREATE";
@@ -1302,6 +1320,15 @@ public class CommandWrapperBuilder {
     public CommandWrapperBuilder savingsAccountDeposit(final Long accountId) {
         this.actionName = "DEPOSIT";
         this.entityName = "SAVINGSACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = null;
+        this.href = "/savingsaccounts/" + accountId + "/transactions";
+        return this;
+    }
+    
+    public CommandWrapperBuilder gsimSavingsAccountDeposit(final Long accountId) {
+        this.actionName = "DEPOSIT";
+        this.entityName = "GSIMACCOUNT";
         this.savingsId = accountId;
         this.entityId = null;
         this.href = "/savingsaccounts/" + accountId + "/transactions";

@@ -203,7 +203,8 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
     	
     	for(JsonElement gsimApplication:gsimApplications)
     	{
-    		result=submitApplication(JsonCommand.fromExistingCommand(command, gsimApplication));
+    		//result=submitApplication(JsonCommand.fromExistingCommand(command, gsimApplication));
+    		result=submitApplication(JsonCommand.fromExistingCommand(command, gsimApplication,gsimApplication.getAsJsonObject().get("clientId").getAsLong()));
     	}
     	
     	return result;

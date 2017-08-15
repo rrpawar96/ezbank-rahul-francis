@@ -306,7 +306,7 @@ public class SavingsAccountsApiResource {
             final CommandWrapper commandRequest = builder.savingsAccountApplyAnnualFees(parentAccountId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         } else if (is(commandParam, "close")) {
-            final CommandWrapper commandRequest = builder.closeSavingsAccountApplication(parentAccountId).build();
+            final CommandWrapper commandRequest = builder.closeGSIMApplication(parentAccountId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         } 
 

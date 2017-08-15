@@ -33,6 +33,10 @@ INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `c
 
 INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'REJECT_GSIMACCOUNT', 'GSIMACCOUNT', 'REJECT', 0);
 
+INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'DEPOSIT_GSIMACCOUNT', 'GSIMACCOUNT', 'DEPOSIT', 0);
+
+INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'CLOSE_GSIMACCOUNT', 'GSIMACCOUNT', 'CLOSE', 0);
+
 
 -- new gsim table
  CREATE TABLE `gsim_accounts` (

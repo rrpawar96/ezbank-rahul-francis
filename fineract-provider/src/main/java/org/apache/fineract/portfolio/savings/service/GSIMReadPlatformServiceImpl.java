@@ -176,7 +176,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 	
 	
 	@Override
-	public  GSIMContainer findGsimAccountContainerbyGsimAccountId(Long parentAccountId) {
+	public  List<GSIMContainer> findGsimAccountContainerbyGsimAccountId(Long parentAccountId) {
 		this.context.authenticatedUser();
 		GroupSavingsIndividualMonitoringAccountData gsimAccount=findGSIMAccountByGSIMId(parentAccountId);
 		
@@ -185,8 +185,12 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 		
 			List<SavingsAccountSummaryData> childSavings=retrieveAccountDetails(savingswhereClauseForGroup,new Object[] { parentAccountId });
 			
-			return new GSIMContainer(gsimAccount.getGsimId(),gsimAccount.getGroupId(), gsimAccount.getAccountNumber(),
-				childSavings, gsimAccount.getParentDeposit(),gsimAccount.getSavingsStatus());
+			List<GSIMContainer> parentGsim=new ArrayList<GSIMContainer>();
+			
+			parentGsim.add(new GSIMContainer(gsimAccount.getGsimId(),gsimAccount.getGroupId(), gsimAccount.getAccountNumber(),
+					childSavings, gsimAccount.getParentDeposit(),gsimAccount.getSavingsStatus()));
+			
+			return parentGsim ;
 	
 	}
 
@@ -207,7 +211,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 		this.context.authenticatedUser();
 
 		final GSIMMapper rm = new GSIMMapper();
-		final String sql = "select " + rm.schema() + " and gsim.id=?";
+		final String sql = "select " + rm.schema() + " where gsim.id=?";
 
 		return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { gsimId });
 	}

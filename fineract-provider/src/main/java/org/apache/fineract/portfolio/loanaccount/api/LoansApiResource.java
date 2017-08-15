@@ -745,7 +745,10 @@ public class LoansApiResource {
 
         CommandProcessingResult result = null;
         
-        if (is(commandParam, "approve")) {
+        if (is(commandParam, "reject")) {
+            final CommandWrapper commandRequest = builder.rejectGLIMApplication(glimId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        }else if (is(commandParam, "approve")) {
             final CommandWrapper commandRequest = builder.approveGLIMLoanApplication(glimId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
