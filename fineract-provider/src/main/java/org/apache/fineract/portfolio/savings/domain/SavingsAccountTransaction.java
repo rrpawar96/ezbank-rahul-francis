@@ -118,7 +118,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
     @Column(name = "is_manual", length = 1, nullable = true)
     private boolean isManualTransaction;
     
-    @Column(name = "isLoanDisbursement", length = 1, nullable = true)
+    @Column(name = "is_loan_disbursement", length = 1, nullable = true)
     private boolean isLoanDisbursement;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch=FetchType.EAGER)

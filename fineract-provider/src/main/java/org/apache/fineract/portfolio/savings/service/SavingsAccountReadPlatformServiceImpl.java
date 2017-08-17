@@ -774,7 +774,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             sqlBuilder.append("tr.id as transactionId, tr.transaction_type_enum as transactionType, ");
             sqlBuilder.append("tr.transaction_date as transactionDate, tr.amount as transactionAmount,");
             sqlBuilder.append("tr.created_date as submittedOnDate,");
-            sqlBuilder.append("tr.running_balance_derived as runningBalance, tr.is_reversed as reversed,tr.isLoanDisbursement as isLoanDisbursement,");
+            sqlBuilder.append("tr.running_balance_derived as runningBalance, tr.is_reversed as reversed,tr.is_loan_disbursement as isLoanDisbursement,");
             sqlBuilder.append("fromtran.id as fromTransferId, fromtran.is_reversed as fromTransferReversed,");
             sqlBuilder.append("fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount,");
             sqlBuilder.append("fromtran.description as fromTransferDescription,");

@@ -145,7 +145,10 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         return handleDeposit(account, fmt, transactionDate, transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
                 savingsAccountTransactionType,isLoanDisbursement);
     }
-
+    
+    
+  /*  handleDeposit was overloaded to handle new transaction type loandisbursement*/
+    
     @Transactional
     @Override
     public SavingsAccountTransaction handleDeposit(final SavingsAccount account, final DateTimeFormatter fmt,

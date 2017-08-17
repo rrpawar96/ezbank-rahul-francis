@@ -202,8 +202,8 @@ public class SavingsEnumerations {
                         SavingsAccountTransactionType.AMOUNT_RELEASE.getCode(), "Release Amount");
                 break; 
             case LOAN_DISBURSEMENT:
-            	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.LOAN_DISBURSEMENT.getValue().longValue(),
-					SavingsAccountTransactionType.LOAN_DISBURSEMENT.getCode(), "Loan Disbursement");
+            	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.DEPOSIT.getValue().longValue(),
+					SavingsAccountTransactionType.DEPOSIT.getCode(), "Loan Disbursement");
 				break;
         }
         return optionData;
