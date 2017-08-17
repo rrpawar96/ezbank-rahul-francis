@@ -404,7 +404,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
                         accountTransferDTO.getTxnExternalId());
             }
 
-            final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(toSavingsAccount,
+            final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleLoanDeposit(toSavingsAccount,
                     accountTransferDTO.getFmt(), accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
                     accountTransferDTO.getPaymentDetail(), isAccountTransfer, isRegularTransaction);
             accountTransferDetails = this.accountTransferAssembler.assembleLoanToSavingsTransfer(accountTransferDTO, fromLoanAccount,

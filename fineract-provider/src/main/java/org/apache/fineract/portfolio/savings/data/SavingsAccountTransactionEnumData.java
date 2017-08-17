@@ -51,7 +51,8 @@ public class SavingsAccountTransactionEnumData {
         this.id = id;
         this.code = code;
         this.value = value;
-        this.deposit = Long.valueOf(SavingsAccountTransactionType.DEPOSIT.getValue()).equals(this.id);
+        this.deposit = Long.valueOf(SavingsAccountTransactionType.DEPOSIT.getValue()).equals(this.id)||
+        		Long.valueOf(SavingsAccountTransactionType.LOAN_DISBURSEMENT.getValue()).equals(this.id) ;
         this.dividendPayout = Long.valueOf(SavingsAccountTransactionType.DIVIDEND_PAYOUT.getValue()).equals(this.id);
         this.withdrawal = Long.valueOf(SavingsAccountTransactionType.WITHDRAWAL.getValue()).equals(this.id);
         this.interestPosting = Long.valueOf(SavingsAccountTransactionType.INTEREST_POSTING.getValue()).equals(this.id);
