@@ -349,6 +349,9 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                     EntityTables.SAVING.getName(), StatusEnum.CREATE.getCode().longValue(),
                     EntityTables.SAVING.getForeignKeyColumnNameOnDatatable(), account.productId());
 
+            this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.SAVINGS_CREATE,
+                    constructEntityMap(BUSINESS_ENTITY.SAVING, account));
+
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withEntityId(savingsId) //
@@ -599,6 +602,9 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                 this.noteRepository.save(note);
             }
         }
+
+        this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.SAVINGS_APPROVE,
+                constructEntityMap(BUSINESS_ENTITY.SAVING, savingsAccount));
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //

@@ -52,6 +52,7 @@
 										  org.apache.fineract.portfolio.*,
 										  org.apache.fineract.useradministration.*,
 										  org.apache.fineract.mix.*,
+										  org.apache.fineract.notification.*,
 										  org.apache.fineract.template.*,
 										  org.apache.fineract.template.service.*,
 										  org.apache.fineract.useradministration.*,
@@ -83,6 +84,7 @@
 	<jpa:repositories base-package="org.apache.fineract.template.domain" />
 	<jpa:repositories base-package="org.apache.fineract.infrastructure.campaigns.sms.domain" />
 	<jpa:repositories base-package="org.apache.fineract.adhocquery.domain" />
+	<jpa:repositories base-package="org.apache.fineract.notification.domain"/>
 	
 	<import resource="infrastructure.xml" />
 
@@ -97,4 +99,6 @@
 	</bean>
 
 	<import resource="spmContext.xml"/>
+
+	<import resource="notificationContext.xml"/>
 </beans>

@@ -8,3 +8,6 @@ repos
 .gradle
 *.log
 !/gradle/wrapper
+.idea
+!gradle/wrapper/gradle-wrapper.jar
+/gradle
