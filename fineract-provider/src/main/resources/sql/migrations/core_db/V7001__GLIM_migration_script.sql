@@ -34,7 +34,7 @@
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `group_id` bigint(20) NOT NULL DEFAULT '0',
   `account_number` varchar(50) NOT NULL,
-  `principal_amount` bigint(20) NOT NULL DEFAULT '0',
+  `principal_amount` DECIMAL(19,6) NOT NULL DEFAULT '0',
   `child_accounts_count` int(11) NOT NULL,
   `accepting_child` tinyint(4) NOT NULL DEFAULT '0',
   `loan_status_id` smallint(5) NOT NULL DEFAULT '0',
