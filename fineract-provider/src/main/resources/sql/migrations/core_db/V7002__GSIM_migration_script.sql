@@ -43,7 +43,7 @@ INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `c
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `group_id` bigint(20) NOT NULL DEFAULT '0',
   `account_number` varchar(50) NOT NULL,
-  `parent_deposit` bigint(20) NOT NULL DEFAULT '0',
+  `parent_deposit` DECIMAL(19,6) NOT NULL DEFAULT '0',
   `child_accounts_count` int(11) NOT NULL,
   `accepting_child` tinyint(4) NOT NULL DEFAULT '0',
   `savings_status_id` smallint(5) NOT NULL DEFAULT '0',

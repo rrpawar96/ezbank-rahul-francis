@@ -34,6 +34,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.accountdetails.data.SavingsAccountSummaryData;
+import org.apache.fineract.portfolio.accountdetails.data.SavingsSummaryCustom;
 import org.apache.fineract.portfolio.accountdetails.service.AccountEnumerations;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.apache.fineract.portfolio.savings.data.GSIMContainer;
@@ -139,7 +140,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 		 final String savingswhereClauseForGroup = " where sa.group_id = ? and sa.gsim_id is not null order by sa.status_enum ASC, sa.account_no ASC";
 		
 		List<GSIMContainer> gsimAccounts=new ArrayList<GSIMContainer>();
-		List<SavingsAccountSummaryData> childSavings;
+		List<SavingsSummaryCustom> childSavings;
 		for(GroupSavingsIndividualMonitoringAccountData gsimAccount:gsimInfo)
 		{
 			
@@ -165,7 +166,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 		for(GroupSavingsIndividualMonitoringAccountData gsimAccount:gsimInfo)
 		{
 			
-			List<SavingsAccountSummaryData> childSavings=retrieveAccountDetails(savingswhereClauseForGroup,new Object[] { accountNumber });
+			List<SavingsSummaryCustom> childSavings=retrieveAccountDetails(savingswhereClauseForGroup,new Object[] { accountNumber });
 			
 			gsimAccounts.add(new GSIMContainer(gsimAccount.getGsimId(),gsimAccount.getGroupId(), gsimAccount.getAccountNumber(),
 				childSavings, gsimAccount.getParentDeposit(),gsimAccount.getSavingsStatus()));
@@ -183,7 +184,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 		//List<LoanAccountSummaryData> glimAccounts = retrieveLoanAccountDetails(loanWhereClauseForGroupAndLoanType, new Object[] { groupId });
 		 final String savingswhereClauseForGroup = " where sa.gsim_id = ? order by sa.status_enum ASC, sa.account_no ASC";
 		
-			List<SavingsAccountSummaryData> childSavings=retrieveAccountDetails(savingswhereClauseForGroup,new Object[] { parentAccountId });
+			List<SavingsSummaryCustom> childSavings=retrieveAccountDetails(savingswhereClauseForGroup,new Object[] { parentAccountId });
 			
 			List<GSIMContainer> parentGsim=new ArrayList<GSIMContainer>();
 			
@@ -252,7 +253,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 	
 	
 	
-	 private List<SavingsAccountSummaryData> retrieveAccountDetails(final String savingswhereClause, final Object[] inputs) {
+	 private List<SavingsSummaryCustom> retrieveAccountDetails(final String savingswhereClause, final Object[] inputs) {
 	        final SavingsAccountSummaryDataMapper savingsAccountSummaryDataMapper = new SavingsAccountSummaryDataMapper();
 	        final String savingsSql = "select " + savingsAccountSummaryDataMapper.schema() + savingswhereClause;
 	        this.columnValidator.validateSqlInjection(savingsAccountSummaryDataMapper.schema() , savingswhereClause);
@@ -260,13 +261,13 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 	    }
 	
 	
-	 private static final class SavingsAccountSummaryDataMapper implements RowMapper<SavingsAccountSummaryData> {
+	 private static final class SavingsAccountSummaryDataMapper implements RowMapper<SavingsSummaryCustom> {
 
 	        final String schemaSql;
 
 	        public SavingsAccountSummaryDataMapper() {
 	            final StringBuilder accountsSummary = new StringBuilder();
-	            accountsSummary.append("sa.id as id, sa.account_no as accountNo, sa.external_id as externalId, sa.gsim_id as gsimId,gsim.account_number as parentAccountNo,sa.status_enum as statusEnum, ");
+	            accountsSummary.append("sa.id as id, CONCAT('(',clnt.id,') ',clnt.display_name) as displayName,sa.account_no as accountNo, sa.external_id as externalId, sa.gsim_id as gsimId,gsim.account_number as parentAccountNo,sa.status_enum as statusEnum, ");
 	            accountsSummary.append("sa.account_type_enum as accountType, ");
 	            accountsSummary.append("sa.account_balance_derived as accountBalance, ");
 
@@ -317,6 +318,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 	            accountsSummary.append("left join m_appuser avbu on rbu.id = sa.activatedon_userid ");
 	            accountsSummary.append("left join m_appuser cbu on cbu.id = sa.closedon_userid ");
 	            accountsSummary.append("left join gsim_accounts gsim on gsim.id=sa.gsim_id ");
+	            accountsSummary.append("left join m_client clnt on clnt.id=sa.client_id ");
 
 
 	            this.schemaSql = accountsSummary.toString();
@@ -327,10 +329,11 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 	        }
 
 	        @Override
-	        public SavingsAccountSummaryData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+	        public SavingsSummaryCustom mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
 
 	            final Long id = JdbcSupport.getLong(rs, "id");
 	            final String accountNo = rs.getString("accountNo");
+	            final String displayName=rs.getString("displayName");
 	            final String externalId = rs.getString("externalId");
 	            final Long productId = JdbcSupport.getLong(rs, "productId");
 	            final String productName = rs.getString("productName");
@@ -393,7 +396,7 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 	                    activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate, closedByUsername, closedByFirstname,
 	                    closedByLastname);
 
-	            return new SavingsAccountSummaryData(id, accountNo, externalId, productId, productName, shortProductName, status, currency, accountBalance,
+	            return new SavingsSummaryCustom(id,displayName, accountNo, externalId, productId, productName, shortProductName, status, currency, accountBalance,
 	                    accountTypeData, timeline, depositTypeData, subStatus, lastActiveTransactionDate);
 	        }
 	    }
