@@ -19,6 +19,8 @@
 package org.apache.fineract.portfolio.savings.service;
 
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transactionLowerLimitParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transactionUpperLimitParamName;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -58,6 +60,7 @@ import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
+import org.apache.fineract.portfolio.client.exception.EntryFieldException;
 import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_ENTITY;
 import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_EVENTS;
 import org.apache.fineract.portfolio.common.service.BusinessEventNotifierService;
@@ -67,9 +70,6 @@ import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.exception.CenterNotActiveException;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.savings.SavingsApiConstants;
@@ -77,6 +77,10 @@ import org.apache.fineract.portfolio.savings.data.SavingsAccountDataDTO;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountDataValidator;
 import org.apache.fineract.portfolio.savings.domain.GSIMRepositoy;
 import org.apache.fineract.portfolio.savings.domain.GroupSavingsIndividualMonitoring;
+import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryType;
+import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryTypeRepository;
+import org.apache.fineract.portfolio.savings.domain.RetailTransactionRange;
+import org.apache.fineract.portfolio.savings.domain.RetailTransactionRangeRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
@@ -87,6 +91,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
 import org.apache.fineract.portfolio.savings.domain.SavingsProduct;
 import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
+import org.apache.fineract.portfolio.savings.exception.TransactionIdExceededLowerLimitException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +102,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 @Service
 public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl implements SavingsApplicationProcessWritePlatformService {
@@ -125,6 +129,8 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
     private final GSIMRepositoy gsimRepository;
     private final GroupRepositoryWrapper groupRepositoryWrapper;
     private final GroupSavingsIndividualMonitoringWritePlatformService gsimWritePlatformService;
+    private final RetailTransactionRangeRepository retailTransactionRangeRepository;
+    private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
    
 	
     @Autowired
@@ -142,7 +148,9 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             final BusinessEventNotifierService businessEventNotifierService,
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GSIMRepositoy gsimRepository,final GroupRepositoryWrapper groupRepositoryWrapper,
-            final GroupSavingsIndividualMonitoringWritePlatformService gsimWritePlatformService) {
+            final GroupSavingsIndividualMonitoringWritePlatformService gsimWritePlatformService,
+            final RetailTransactionRangeRepository retailTransactionRangeRepository,
+            final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository) {
         this.context = context;
         this.savingAccountRepository = savingAccountRepository;
         this.savingAccountAssembler = savingAccountAssembler;
@@ -164,6 +172,8 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         this.gsimRepository=gsimRepository;
         this.groupRepositoryWrapper=groupRepositoryWrapper;
         this.gsimWritePlatformService=gsimWritePlatformService;
+        this.retailTransactionRangeRepository=retailTransactionRangeRepository;
+        this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
     }
 
     /*
@@ -218,10 +228,8 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         try {
             this.savingsAccountDataValidator.validateForSubmit(command.json());
             final AppUser submittedBy = this.context.authenticatedUser();
-            
-            
-           
-
+            BigDecimal transactionUpperLimit;
+            BigDecimal transactionLowerLimit;
             final SavingsAccount account = this.savingAccountAssembler.assembleFrom(command, submittedBy);
             this.savingAccountRepository.save(account);
             
@@ -339,6 +347,71 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             
             
             // end of gsim
+            
+            
+            
+            //retail account
+           
+            
+            
+            
+           if(account.isRetail())
+           {
+        	  JsonArray entries= command.arrayOfParameterNamed("retailEntries");
+        	  
+        	  boolean isConstant=false;
+        	  String constantValue=null;
+        	  
+        	  for(JsonElement entry:entries)
+        	  {
+        		  
+        		  if(entry.getAsJsonObject().get("entryName")==null)
+        		  {
+        			  throw new EntryFieldException("entryName");
+        		  }
+        		  
+        		  if(entry.getAsJsonObject().get("dataType")==null)
+        		  {
+        			  throw new EntryFieldException("dataType");
+        		  }
+        		  
+        		  if(entry.getAsJsonObject().get("isConstant")==null)
+        		  {
+        			  isConstant=false;
+        		  }
+        		  
+        		  if(entry.getAsJsonObject().get("constantValue")==null)
+        		  {
+        			  constantValue=null;
+        		  }
+        		  
+        		  RetailAccountEntryType retailEntry= RetailAccountEntryType.getInstance(entry.getAsJsonObject().get("entryName").getAsString(),
+        				  entry.getAsJsonObject().get("dataType").getAsString(), account,
+        				 entry.getAsJsonObject().get("isConstant").getAsBoolean(), entry.getAsJsonObject().get("constantValue").getAsString());
+        		 
+        		  this.retailAccountEntryTypeRepository.save(retailEntry);
+        	  }
+           }
+            
+            if(account.isAutogenerate_transaction_id())
+            {
+         	   transactionUpperLimit=command.bigDecimalValueOfParameterNamed(transactionUpperLimitParamName);
+         	   
+         	   transactionLowerLimit=command.bigDecimalValueOfParameterNamed(transactionLowerLimitParamName);
+         	   
+         	   if(transactionLowerLimit.compareTo(transactionUpperLimit)>0)
+         	   {
+         		   throw new TransactionIdExceededLowerLimitException();
+         	   }
+         	   
+         	   retailTransactionRangeRepository.save(RetailTransactionRange.getInstance(account, transactionUpperLimit, transactionLowerLimit, transactionLowerLimit));
+         	   
+            }
+            
+            
+            // end of retail account
+            
+            
             final Long savingsId = account.getId();
             if(command.parameterExists(SavingsApiConstants.datatables)){
                 this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),

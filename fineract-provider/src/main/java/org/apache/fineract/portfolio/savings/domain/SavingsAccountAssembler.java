@@ -42,6 +42,8 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.productI
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.submittedOnDateParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withHoldTaxParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withdrawalFeeForTransfersParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.isRetailAccountParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.autogenerateTransactionIdParamName;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -88,6 +90,7 @@ public class SavingsAccountAssembler {
     private final SavingsAccountRepositoryWrapper savingsAccountRepository;
     private final SavingsAccountChargeAssembler savingsAccountChargeAssembler;
     private final FromJsonHelper fromApiJsonHelper;
+    private final RetailTransactionRangeRepository retailTransactionRangeRepository;
 
     @Autowired
     public SavingsAccountAssembler(final SavingsAccountTransactionSummaryWrapper savingsAccountTransactionSummaryWrapper,
@@ -95,7 +98,8 @@ public class SavingsAccountAssembler {
             final StaffRepositoryWrapper staffRepository, final SavingsProductRepository savingProductRepository,
             final SavingsAccountRepositoryWrapper savingsAccountRepository,
             final SavingsAccountChargeAssembler savingsAccountChargeAssembler, final FromJsonHelper fromApiJsonHelper,
-            final AccountTransfersReadPlatformService accountTransfersReadPlatformService) {
+            final AccountTransfersReadPlatformService accountTransfersReadPlatformService,
+            final RetailTransactionRangeRepository retailTransactionRangeRepository) {
         this.savingsAccountTransactionSummaryWrapper = savingsAccountTransactionSummaryWrapper;
         this.clientRepository = clientRepository;
         this.groupRepository = groupRepository;
@@ -105,6 +109,7 @@ public class SavingsAccountAssembler {
         this.savingsAccountChargeAssembler = savingsAccountChargeAssembler;
         this.fromApiJsonHelper = fromApiJsonHelper;
         savingsHelper = new SavingsHelper(accountTransfersReadPlatformService);
+        this.retailTransactionRangeRepository=retailTransactionRangeRepository;
     }
 
     /**
@@ -126,8 +131,30 @@ public class SavingsAccountAssembler {
         Client client = null;
         Group group = null;
         Staff fieldOfficer = null;
+        
         AccountType accountType = AccountType.INVALID;
         
+        Boolean isRetail=this.fromApiJsonHelper.extractBooleanNamed(isRetailAccountParamName, element);
+       if(isRetail!=null)
+       {
+    	   isRetail=this.fromApiJsonHelper.extractBooleanNamed(isRetailAccountParamName, element);
+       }
+       else
+       {
+    	   isRetail=false;
+       }
+       
+       Boolean autogenerateTransactionId=this.fromApiJsonHelper.extractBooleanNamed(autogenerateTransactionIdParamName, element);
+       if(autogenerateTransactionId!=null)
+       {
+    	   autogenerateTransactionId=this.fromApiJsonHelper.extractBooleanNamed(autogenerateTransactionIdParamName, element);
+       }
+       else
+       {
+    	   autogenerateTransactionId=false;
+       }
+       
+     
        
         final Long clientId = this.fromApiJsonHelper.extractLongNamed(clientIdParamName, element);
         if (clientId != null) {
@@ -241,6 +268,7 @@ public class SavingsAccountAssembler {
         } else {
             allowOverdraft = product.isAllowOverdraft();
         }
+        
 
         BigDecimal overdraftLimit = BigDecimal.ZERO;
         if (command.parameterExists(overdraftLimitParamName)) {
@@ -287,7 +315,7 @@ public class SavingsAccountAssembler {
             }
         }
 
-        final SavingsAccount account = SavingsAccount.createNewApplicationForSubmittal(client, group, product, fieldOfficer, accountNo,
+        final SavingsAccount account = SavingsAccount.createNewRetailApplicationForSubmittal(client, group, product,isRetail,autogenerateTransactionId, fieldOfficer, accountNo,
                 externalId, accountType, submittedOnDate, submittedBy, interestRate, interestCompoundingPeriodType,
                 interestPostingPeriodType, interestCalculationType, interestCalculationDaysInYearType, minRequiredOpeningBalance,
                 lockinPeriodFrequency, lockinPeriodFrequencyType, iswithdrawalFeeApplicableForTransfer, charges, allowOverdraft,

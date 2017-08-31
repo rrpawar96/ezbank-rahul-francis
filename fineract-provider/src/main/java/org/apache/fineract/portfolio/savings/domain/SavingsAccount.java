@@ -60,6 +60,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -73,10 +74,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -157,6 +158,12 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "field_officer_id", nullable = true)
     protected Staff savingsOfficer;
+  
+    @Column(name="is_retail")
+    private boolean isRetail;
+    
+    @Column(name="autogenerate_transaction_id")
+    private boolean autogenerateTransactionId;
 
     @Column(name = "status_enum", nullable = false)
     protected Integer status;
@@ -335,6 +342,32 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     protected SavingsAccount() {
         //
     }
+    
+    @OneToOne(mappedBy = "retailSavings")
+    private RetailTransactionRange retailSavings;
+    
+    @OneToMany(mappedBy = "retailAccount")
+    private List<RetailAccountEntryType> retailAccountEntryType;
+  
+    public static SavingsAccount createNewRetailApplicationForSubmittal(final Client client, final Group group, final SavingsProduct product,
+    		final boolean isRetail,final boolean autogenerateTransactionId,final Staff fieldOfficer, final String accountNo, final String externalId, final AccountType accountType,
+            final LocalDate submittedOnDate, final AppUser submittedBy, final BigDecimal interestRate,
+            final SavingsCompoundingInterestPeriodType interestCompoundingPeriodType,
+            final SavingsPostingInterestPeriodType interestPostingPeriodType, final SavingsInterestCalculationType interestCalculationType,
+            final SavingsInterestCalculationDaysInYearType interestCalculationDaysInYearType, final BigDecimal minRequiredOpeningBalance,
+            final Integer lockinPeriodFrequency, final SavingsPeriodFrequencyType lockinPeriodFrequencyType,
+            final boolean withdrawalFeeApplicableForTransfer, final Set<SavingsAccountCharge> savingsAccountCharges,
+            final boolean allowOverdraft, final BigDecimal overdraftLimit, final boolean enforceMinRequiredBalance,
+            final BigDecimal minRequiredBalance, final BigDecimal nominalAnnualInterestRateOverdraft,
+            final BigDecimal minOverdraftForInterestCalculation, final boolean withHoldTax) {
+
+        final SavingsAccountStatusType status = SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL;
+        return new SavingsAccount(client, group, product,isRetail,autogenerateTransactionId, fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate,
+                submittedBy, interestRate, interestCompoundingPeriodType, interestPostingPeriodType, interestCalculationType,
+                interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType,
+                withdrawalFeeApplicableForTransfer, savingsAccountCharges, allowOverdraft, overdraftLimit, enforceMinRequiredBalance,
+                minRequiredBalance, nominalAnnualInterestRateOverdraft, minOverdraftForInterestCalculation, withHoldTax);
+    }
 
     public static SavingsAccount createNewApplicationForSubmittal(final Client client, final Group group, final SavingsProduct product,
             final Staff fieldOfficer, final String accountNo, final String externalId, final AccountType accountType,
@@ -349,7 +382,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             final BigDecimal minOverdraftForInterestCalculation, final boolean withHoldTax) {
 
         final SavingsAccountStatusType status = SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL;
-        return new SavingsAccount(client, group, product, fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate,
+        return new SavingsAccount(client, group, product, false,false,fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate,
                 submittedBy, interestRate, interestCompoundingPeriodType, interestPostingPeriodType, interestCalculationType,
                 interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType,
                 withdrawalFeeApplicableForTransfer, savingsAccountCharges, allowOverdraft, overdraftLimit, enforceMinRequiredBalance,
@@ -365,14 +398,14 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             final Integer lockinPeriodFrequency, final SavingsPeriodFrequencyType lockinPeriodFrequencyType,
             final boolean withdrawalFeeApplicableForTransfer, final Set<SavingsAccountCharge> savingsAccountCharges,
             final boolean allowOverdraft, final BigDecimal overdraftLimit, boolean withHoldTax) {
-        this(client, group, product, fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate, submittedBy,
+        this(client, group, product, false,false,fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate, submittedBy,
                 nominalAnnualInterestRate, interestCompoundingPeriodType, interestPostingPeriodType, interestCalculationType,
                 interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType,
                 withdrawalFeeApplicableForTransfer, savingsAccountCharges, allowOverdraft, overdraftLimit, false, null, null, null,
                 withHoldTax);
     }
 
-    protected SavingsAccount(final Client client, final Group group, final SavingsProduct product, final Staff savingsOfficer,
+    protected SavingsAccount(final Client client, final Group group, final SavingsProduct product,final boolean isRetail,final boolean autogenerateTransactionId, final Staff savingsOfficer,
             final String accountNo, final String externalId, final SavingsAccountStatusType status, final AccountType accountType,
             final LocalDate submittedOnDate, final AppUser submittedBy, final BigDecimal nominalAnnualInterestRate,
             final SavingsCompoundingInterestPeriodType interestCompoundingPeriodType,
@@ -386,6 +419,8 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         this.client = client;
         this.group = group;
         this.product = product;
+        this.isRetail=isRetail;
+        this.autogenerateTransactionId=autogenerateTransactionId;
         this.savingsOfficer = savingsOfficer;
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -445,8 +480,24 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     public boolean isNotActive() {
         return !isActive();
     }
+  
+    public boolean isRetail() {
+		return isRetail;
+	}
 
-    public boolean isActive() {
+	public void setRetail(boolean isRetail) {
+		this.isRetail = isRetail;
+	}
+	
+	public boolean isAutogenerate_transaction_id() {
+		return autogenerateTransactionId;
+	}
+
+	public void setAutogenerate_transaction_id(boolean autogenerate_transaction_id) {
+		this.autogenerateTransactionId = autogenerate_transaction_id;
+	}
+
+	public boolean isActive() {
         return SavingsAccountStatusType.fromInt(this.status).isActive();
     }
 
@@ -883,8 +934,18 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         return deposit(transactionDTO, SavingsAccountTransactionType.DIVIDEND_PAYOUT);
     }
 
+    /*
+     * In order to accommodate  retail account's transaction external id, deposit function was overloaded 
+     	
+     	*/    
     public SavingsAccountTransaction deposit(final SavingsAccountTransactionDTO transactionDTO,
             final SavingsAccountTransactionType savingsAccountTransactionType) {
+    	
+    	return deposit(transactionDTO, savingsAccountTransactionType,null);
+    }
+    
+    public SavingsAccountTransaction deposit(final SavingsAccountTransactionDTO transactionDTO,
+            final SavingsAccountTransactionType savingsAccountTransactionType,final String transactionExternalId) {
         final String resourceTypeName = depositAccountType().resourceName();
         if (isNotActive()) {
             final String defaultUserMessage = "Transaction is not allowed. Account is not active.";
@@ -928,7 +989,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
         final SavingsAccountTransaction transaction = SavingsAccountTransaction.deposit(this, office(), transactionDTO.getPaymentDetail(),
                 transactionDTO.getTransactionDate(), amount, transactionDTO.getCreatedDate(), transactionDTO.getAppUser(),
-                savingsAccountTransactionType);
+                savingsAccountTransactionType,transactionExternalId);
         addTransaction(transaction);
         this.summary.updateSummary(this.currency, this.savingsAccountTransactionSummaryWrapper, this.transactions);
         

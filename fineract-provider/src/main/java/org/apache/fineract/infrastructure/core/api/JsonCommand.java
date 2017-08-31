@@ -478,6 +478,10 @@ public final class JsonCommand {
     public BigDecimal bigDecimalValueOfParameterNamed(final String parameterName) {
         return this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(parameterName, this.parsedCommand);
     }
+    
+    public BigDecimal bigIntegerValueOfParameterNamed(final String parameterName) {
+        return this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(parameterName, this.parsedCommand);
+    }
 
     public BigDecimal bigDecimalValueOfParameterNamed(final String parameterName, final Locale locale) {
         return this.fromApiJsonHelper.extractBigDecimalNamed(parameterName, this.parsedCommand, locale);

@@ -24,6 +24,8 @@ import java.util.List;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
+import org.apache.fineract.portfolio.savings.data.RetailAccountEntryTypeData;
+import org.apache.fineract.portfolio.savings.data.RetailAccountKeyValuePairData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountTransactionData;
 import org.joda.time.LocalDate;
@@ -59,5 +61,9 @@ public interface SavingsAccountReadPlatformService {
 
     List<Long> retrieveSavingsIdsPendingEscheat(LocalDate tenantLocalDate);
     boolean isAccountBelongsToClient(final Long clientId, final Long accountId, final DepositAccountType depositAccountType, final String currencyCode) ;
+
+	Collection<RetailAccountKeyValuePairData> getEntriesBySavingsId(long savingsId);
+
+	Collection<RetailAccountEntryTypeData> findEntriesByRetailAccountId(long accountId);
     
 }

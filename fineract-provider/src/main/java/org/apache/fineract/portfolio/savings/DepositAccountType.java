@@ -31,7 +31,8 @@ public enum DepositAccountType {
     SAVINGS_DEPOSIT(100, "depositAccountType.savingsDeposit"), //
     FIXED_DEPOSIT(200, "depositAccountType.fixedDeposit"), //
     RECURRING_DEPOSIT(300, "depositAccountType.recurringDeposit"), //
-    CURRENT_DEPOSIT(400, "depositAccountType.currentDeposit");
+    CURRENT_DEPOSIT(400, "depositAccountType.currentDeposit"),
+	RETAIL_DEPOSIT(500,"depositAccountType.retailDeposit");
 
     private final Integer value;
     private final String code;
@@ -68,6 +69,9 @@ public enum DepositAccountType {
             case 400:
                 depositAccountType = DepositAccountType.CURRENT_DEPOSIT;
             break;
+            case 500:
+                depositAccountType = DepositAccountType.RETAIL_DEPOSIT;
+            break;
         }
         return depositAccountType;
     }
@@ -86,6 +90,10 @@ public enum DepositAccountType {
 
     public boolean isCurrentDeposit() {
         return this.value.equals(DepositAccountType.CURRENT_DEPOSIT.getValue());
+    }
+    
+    public boolean isRetailDeposit() {
+        return this.value.equals(DepositAccountType.RETAIL_DEPOSIT.getValue());
     }
 
     @Override
@@ -106,6 +114,9 @@ public enum DepositAccountType {
             break;
             case SAVINGS_DEPOSIT:
                 resourceName = DepositsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
+            break;
+            case RETAIL_DEPOSIT:
+                resourceName = DepositsApiConstants.RETAIL_DEPOSIT_ACCOUNT_RESOURCE_NAME;
             break;
             default:
                 resourceName = "INVALID";

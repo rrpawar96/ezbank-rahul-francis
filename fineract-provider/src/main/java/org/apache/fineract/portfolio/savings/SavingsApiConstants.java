@@ -87,6 +87,12 @@ public class    SavingsApiConstants {
     public static final String statusParamName = "status";
     public static final String subStatusParamName = "subStatus";
     public static final String clientIdParamName = "clientId";
+    public static final String isRetailAccountParamName = "isRetailAccount";
+    public static final String autogenerateTransactionIdParamName="autogenerateTransactionId";
+    public static final String transactionUpperLimitParamName="transactionUpperLimit";
+    public static final String transactionLowerLimitParamName="transactionLowerLimit";
+    public static final String retailEntriesParamName="retailEntries";
+    
     public static final String groupIdParamName = "groupId";
     public static final String productIdParamName = "productId";
     public static final String fieldOfficerIdParamName = "fieldOfficerId";
@@ -140,6 +146,7 @@ public class    SavingsApiConstants {
     public static final String taxGroupIdParamName = "taxGroupId"; 
     public static final String voucherNumberParamName = "voucherNumber";
     public static final String paymentDescriptionParamName = "paymentDescription";
+    public static final String transactionExternalIdParamName="transactionExternalId";
 
 
     // transaction parameters
