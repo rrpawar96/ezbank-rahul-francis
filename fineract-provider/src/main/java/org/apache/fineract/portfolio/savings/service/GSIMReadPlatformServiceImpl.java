@@ -137,12 +137,13 @@ public class GSIMReadPlatformServiceImpl implements GSIMReadPlatformService
 		Collection<GroupSavingsIndividualMonitoringAccountData> gsimInfo=findGSIMAccountsByGroupId(groupId+"");
 		
 		//List<LoanAccountSummaryData> glimAccounts = retrieveLoanAccountDetails(loanWhereClauseForGroupAndLoanType, new Object[] { groupId });
-		 final String savingswhereClauseForGroup = " where sa.group_id = ? and sa.gsim_id is not null order by sa.status_enum ASC, sa.account_no ASC";
+		  String savingswhereClauseForGroup;
 		
 		List<GSIMContainer> gsimAccounts=new ArrayList<GSIMContainer>();
 		List<SavingsSummaryCustom> childSavings;
 		for(GroupSavingsIndividualMonitoringAccountData gsimAccount:gsimInfo)
 		{
+			savingswhereClauseForGroup = " where sa.group_id = ? and sa.gsim_id="+gsimAccount.getGsimId()+" order by sa.status_enum ASC, sa.account_no ASC";
 			
 			childSavings=retrieveAccountDetails(savingswhereClauseForGroup,new Object[] { groupId});
 			
