@@ -429,14 +429,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         if(isRetail)
         {	
         	
-        	if(!autogenerateExternalTransactionId)
-        	{
-        		 if(command.stringValueOfParameterNamed(transactionExternalIdParamName)!=null)
-           	   {
-           		   transactionExternalId=command.stringValueOfParameterNamed(transactionExternalIdParamName);
-           	   }
-        	}
-        	else
+        	if(autogenerateExternalTransactionId)
         	{
         		
         		RetailTransactionRange range=this.retailTransactionRangeRepository.findOneByRetailSavings(account);
@@ -448,6 +441,21 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         		range.setCurrentTransactionId(currentTransactionId.add(BigDecimal.ONE));
         		
         		this.retailTransactionRangeRepository.save(range);
+        		
+        	}
+        	else
+        	{
+        		
+        		 if(command.stringValueOfParameterNamed(transactionExternalIdParamName)==null
+        				 || command.stringValueOfParameterNamed(transactionExternalIdParamName).length()==0)
+             	   {
+        			 throw new EntryFieldException("transactionExternalId");
+             		  
+             	   }
+          		 else
+          		 {
+          			 transactionExternalId=command.stringValueOfParameterNamed(transactionExternalIdParamName);
+          		 }
         		
         		
         	}

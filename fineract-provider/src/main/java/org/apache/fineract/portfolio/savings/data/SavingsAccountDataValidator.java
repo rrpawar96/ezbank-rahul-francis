@@ -134,7 +134,7 @@ public class SavingsAccountDataValidator {
         if(isRetail)
         {
         	 JsonArray retailEntries=this.fromApiJsonHelper.extractJsonArrayNamed("retailEntries", element);
-        	 baseDataValidator.reset().parameter("retailEntries").arrayNotEmpty();
+        	 baseDataValidator.reset().parameter("retailEntries").value(retailEntries).notNull().jsonArrayNotEmpty();
         	
         }
         

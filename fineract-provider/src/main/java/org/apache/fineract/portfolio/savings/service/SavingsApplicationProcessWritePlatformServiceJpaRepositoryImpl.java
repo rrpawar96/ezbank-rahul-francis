@@ -385,9 +385,22 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         			  constantValue=null;
         		  }
         		  
-        		  RetailAccountEntryType retailEntry= RetailAccountEntryType.getInstance(entry.getAsJsonObject().get("entryName").getAsString(),
-        				  entry.getAsJsonObject().get("dataType").getAsString(), account,
-        				 entry.getAsJsonObject().get("isConstant").getAsBoolean(), entry.getAsJsonObject().get("constantValue").getAsString());
+        		  
+        		  RetailAccountEntryType retailEntry;
+        		  if(isConstant)
+        		  {
+        			  	retailEntry= RetailAccountEntryType.getInstance(entry.getAsJsonObject().get("entryName").getAsString(),
+              				  entry.getAsJsonObject().get("dataType").getAsString(), account,
+              				 entry.getAsJsonObject().get("isConstant").getAsBoolean(), entry.getAsJsonObject().get("constantValue").getAsString());	  
+        		  }
+        		  else
+        		  {
+        			  retailEntry= RetailAccountEntryType.getInstance(entry.getAsJsonObject().get("entryName").getAsString(),
+              				  entry.getAsJsonObject().get("dataType").getAsString(), account,
+              				 false,null);	
+        		  }
+
+        	
         		 
         		  this.retailAccountEntryTypeRepository.save(retailEntry);
         	  }
