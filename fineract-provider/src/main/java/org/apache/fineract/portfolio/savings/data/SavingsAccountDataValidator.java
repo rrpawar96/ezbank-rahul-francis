@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.savings.data;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.accountNoParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.allowOverdraftParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.amountParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.autogenerateTransactionIdParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.chargeIdParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.chargesParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.clientIdParamName;
@@ -33,6 +34,7 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.interest
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.interestCalculationTypeParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.interestCompoundingPeriodTypeParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.interestPostingPeriodTypeParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.isRetailAccountParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.lockinPeriodFrequencyParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.lockinPeriodFrequencyTypeParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.minOverdraftForInterestCalculationParamName;
@@ -66,7 +68,6 @@ import org.apache.fineract.portfolio.savings.SavingsCompoundingInterestPeriodTyp
 import org.apache.fineract.portfolio.savings.SavingsInterestCalculationDaysInYearType;
 import org.apache.fineract.portfolio.savings.SavingsInterestCalculationType;
 import org.apache.fineract.portfolio.savings.SavingsPostingInterestPeriodType;
-import org.apache.fineract.portfolio.savings.api.SavingsApiSetConstants;
 import org.joda.time.LocalDate;
 import org.joda.time.MonthDay;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,7 +104,7 @@ public class SavingsAccountDataValidator {
         final Long clientId = this.fromApiJsonHelper.extractLongNamed(clientIdParamName, element);
         if (clientId != null) {
             baseDataValidator.reset().parameter(clientIdParamName).value(clientId).longGreaterThanZero();
-        }
+        }   
 
         final Long groupId = this.fromApiJsonHelper.extractLongNamed(groupIdParamName, element);
         if (groupId != null) {
@@ -116,6 +117,39 @@ public class SavingsAccountDataValidator {
 
         final Long productId = this.fromApiJsonHelper.extractLongNamed(productIdParamName, element);
         baseDataValidator.reset().parameter(productIdParamName).value(productId).notNull().integerGreaterThanZero();
+        
+       boolean isRetail;
+        if(this.fromApiJsonHelper.extractBooleanNamed(isRetailAccountParamName, element) !=null)
+        {
+        	isRetail=this.fromApiJsonHelper.extractBooleanNamed(isRetailAccountParamName, element);
+            baseDataValidator.reset().parameter(isRetailAccountParamName).value(isRetail).isOneOfTheseValues(true, false);
+        }
+        else
+        {
+        	isRetail=false;
+        	
+        }
+        
+        
+        if(isRetail)
+        {
+        	 JsonArray retailEntries=this.fromApiJsonHelper.extractJsonArrayNamed("retailEntries", element);
+        	 baseDataValidator.reset().parameter("retailEntries").value(retailEntries).notNull().jsonArrayNotEmpty();
+        	
+        }
+        
+         boolean autogenerateTransactionId;
+         if(this.fromApiJsonHelper.extractBooleanNamed(autogenerateTransactionIdParamName, element) !=null)
+         {
+        	 autogenerateTransactionId=this.fromApiJsonHelper.extractBooleanNamed(autogenerateTransactionIdParamName, element);
+        	 baseDataValidator.reset().parameter(autogenerateTransactionIdParamName).value(autogenerateTransactionId).isOneOfTheseValues(true, false);
+         }
+         else
+         {
+        	 autogenerateTransactionId=false;
+         }
+        
+        
 
         if (this.fromApiJsonHelper.parameterExists(fieldOfficerIdParamName, element)) {
             final Long fieldOfficerId = this.fromApiJsonHelper.extractLongNamed(fieldOfficerIdParamName, element);

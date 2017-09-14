@@ -52,6 +52,8 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.SavingsApiConstants;
+import org.apache.fineract.portfolio.savings.data.RetailAccountEntryTypeData;
+import org.apache.fineract.portfolio.savings.data.RetailAccountKeyValuePairData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountChargeData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountTransactionData;
@@ -182,7 +184,9 @@ public class SavingsAccountsApiResource {
             final Set<String> mandatoryResponseParameters) {
 
         Collection<SavingsAccountTransactionData> transactions = null;
+        Collection<RetailAccountEntryTypeData> retailAccountKeys=null;
         Collection<SavingsAccountChargeData> charges = null;
+        SavingsAccountData savingsAccountData=null;
 
         final Set<String> associationParameters = ApiParameterHelper.extractAssociationsForResponseIfProvided(uriInfo.getQueryParameters());
         if (!associationParameters.isEmpty()) {
@@ -195,6 +199,14 @@ public class SavingsAccountsApiResource {
                 mandatoryResponseParameters.add(SavingsApiConstants.transactions);
                 final Collection<SavingsAccountTransactionData> currentTransactions = this.savingsAccountReadPlatformService
                         .retrieveAllTransactions(accountId, DepositAccountType.SAVINGS_DEPOSIT);
+              /*  if(savingsAccount.isRetail())
+                {
+              final Collection<RetailAccountKeyValuePairData>	retailEntries=this.savingsAccountReadPlatformService.getEntriesBySavingsId(accountId);
+              	
+              
+                }*/
+             
+                	
                 if (!CollectionUtils.isEmpty(currentTransactions)) {
                     transactions = currentTransactions;
                 }
@@ -216,8 +228,20 @@ public class SavingsAccountsApiResource {
             templateData = this.savingsAccountReadPlatformService.retrieveTemplate(savingsAccount.clientId(), savingsAccount.groupId(),
                     savingsAccount.productId(), staffInSelectedOfficeOnly);
         }
-
-        return SavingsAccountData.withTemplateOptions(savingsAccount, templateData, transactions, charges);
+        
+        if(savingsAccount.isRetail())
+        {
+        	
+        	retailAccountKeys=this.savingsAccountReadPlatformService.findEntriesByRetailAccountId(savingsAccount.id());
+        	savingsAccountData=SavingsAccountData.withTemplateOptions(savingsAccount, templateData, transactions, charges,retailAccountKeys);
+        }
+        else
+        {
+        	savingsAccountData= SavingsAccountData.withTemplateOptions(savingsAccount, templateData, transactions, charges);
+        }
+        	
+        return savingsAccountData;
+        
     }
 
     @PUT

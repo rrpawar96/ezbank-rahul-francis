@@ -58,6 +58,8 @@ import org.apache.fineract.portfolio.savings.SavingsInterestCalculationDaysInYea
 import org.apache.fineract.portfolio.savings.SavingsInterestCalculationType;
 import org.apache.fineract.portfolio.savings.SavingsPeriodFrequencyType;
 import org.apache.fineract.portfolio.savings.SavingsPostingInterestPeriodType;
+import org.apache.fineract.portfolio.savings.data.RetailAccountEntryTypeData;
+import org.apache.fineract.portfolio.savings.data.RetailAccountKeyValuePairData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountApplicationTimelineData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountChargeData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
@@ -102,6 +104,8 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
     private final SavingsAccountTransactionsMapper transactionsMapper;
     private final SavingAccountMapper savingAccountMapper;
     // private final SavingsAccountAnnualFeeMapper annualFeeMapper;
+    private final RetailEntryMapper retailEntryMapper;
+    private final RetailEntryTypeMapper retailEntryTypeMapper;
 
     // pagination
     private final PaginationHelper<SavingsAccountData> paginationHelper = new PaginationHelper<>();
@@ -115,7 +119,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             final SavingsProductReadPlatformService savingProductReadPlatformService,
             final StaffReadPlatformService staffReadPlatformService, final SavingsDropdownReadPlatformService dropdownReadPlatformService,
             final ChargeReadPlatformService chargeReadPlatformService,
-            final EntityDatatableChecksReadService entityDatatableChecksReadService, final ColumnValidator columnValidator) {
+            final EntityDatatableChecksReadService entityDatatableChecksReadService, final ColumnValidator columnValidator ) {
         this.context = context;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.clientReadPlatformService = clientReadPlatformService;
@@ -130,6 +134,8 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
         this.chargeReadPlatformService = chargeReadPlatformService;
         this.entityDatatableChecksReadService = entityDatatableChecksReadService;
         this.columnValidator = columnValidator;
+        this.retailEntryMapper=new RetailEntryMapper();
+        this.retailEntryTypeMapper=new RetailEntryTypeMapper();
     }
 
     @Override
@@ -233,6 +239,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             final StringBuilder sqlBuilder = new StringBuilder(400);
             sqlBuilder.append("sa.id as id, sa.account_no as accountNo, sa.external_id as externalId, ");
             sqlBuilder.append("sa.deposit_type_enum as depositType, ");
+            sqlBuilder.append("sa.is_retail as isRetail, sa.autogenerate_transaction_id as autogenerateExternalTransactionId, ");
             sqlBuilder.append("c.id as clientId, c.display_name as clientName, ");
             sqlBuilder.append("g.id as groupId, g.display_name as groupName, ");
             sqlBuilder.append("sp.id as productId, sp.name as productName, ");
@@ -344,6 +351,10 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
             final String externalId = rs.getString("externalId");
             final Integer depositTypeId = rs.getInt("depositType");
             final EnumOptionData depositType = SavingsEnumerations.depositType(depositTypeId);
+            
+          //sa.isRetail as isRetail,sa.autogenerate_transaction_id as autogenerateExternalTransactionId 
+            final boolean isRetail=rs.getBoolean("isRetail");
+            final boolean autogenerateExternalTransactionId=rs.getBoolean("autogenerateExternalTransactionId");
 
             final Long groupId = JdbcSupport.getLong(rs, "groupId");
             final String groupName = rs.getString("groupName");
@@ -544,7 +555,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
                 taxGroupData = TaxGroupData.lookup(taxGroupId, taxGroupName);
             }
 
-            return SavingsAccountData.instance(id, accountNo, depositType, externalId, groupId, groupName, clientId, clientName, productId,
+            return SavingsAccountData.instanceOfRetailAccount(id, accountNo, depositType, externalId, groupId, groupName,isRetail,autogenerateExternalTransactionId, clientId, clientName, productId,
                     productName, fieldOfficerId, fieldOfficerName, status, subStatus, timeline, currency,
                     nominalAnnualInterestRate, interestCompoundingPeriodType, interestPostingPeriodType, interestCalculationType,
                     interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType, withdrawalFeeForTransfers,
@@ -1250,4 +1261,117 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
      * return SavingsAccountAnnualFeeData.instance(id, accountNo,
      * annualFeeNextDueDate); } }
      */
+    
+    
+    public static final class RetailEntryMapper implements RowMapper<RetailAccountKeyValuePairData>
+    {
+    	private final String schemaSql;
+    	
+    	public RetailEntryMapper()
+    	{
+    		final StringBuilder sqlBuilder = new StringBuilder(400);
+    		sqlBuilder.append("rt.id as id, rd.retail_account_transaction_id as transactionId, ");
+    		sqlBuilder.append("rt.data_type as dataType, rt.name as entryKey, rd.retail_account_entry_value as entryValue, ");
+    		sqlBuilder.append("rt.retail_account_id as retailAccountId, rt.is_constant as isConstant, ");
+    		sqlBuilder.append("rt.constant_value as constantValue ");
+    		sqlBuilder.append("from retail_account_entry_types rt ");
+    		sqlBuilder.append("left join retail_account_entry_data rd on rd.retail_account_entry_type_id=rt.id");
+    		
+    		this.schemaSql=sqlBuilder.toString();
+    	}
+    	
+    	 public String schema() {
+             return this.schemaSql;
+         }
+
+		@Override
+		public RetailAccountKeyValuePairData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException
+		{
+			
+			final long id=rs.getLong("id");
+			
+			final long transactionId=rs.getLong("transactionId");
+			
+			final String dataType=rs.getString("dataType");
+			
+			final String entryKey=rs.getString("entryKey");
+			
+			final String entryValue=rs.getString("entryValue");
+			
+			final long retailAccountId=rs.getLong("retailAccountId");
+			
+			final boolean isConstant=rs.getBoolean("isConstant");
+			
+			final String constantValue=rs.getString("constantValue"); 
+			
+			return RetailAccountKeyValuePairData.getInstance(id, transactionId, dataType, entryKey,
+					entryValue, retailAccountId, isConstant, constantValue);
+		}
+
+    }
+    
+    @Override
+    public Collection<RetailAccountKeyValuePairData> getEntriesBySavingsId(long savingsId)
+    {
+    	final String sql="select "+this.retailEntryMapper.schema()+"  where rt.retail_account_id=? ";
+    	
+    	return this.jdbcTemplate.query(sql,this.retailEntryMapper,new Object[] {savingsId} );
+    }
+    
+    
+    public static final class RetailEntryTypeMapper implements RowMapper<RetailAccountEntryTypeData>
+    {
+    	private final String schemaSql;
+    	
+    	public RetailEntryTypeMapper()
+    	{
+    		final StringBuilder sqlBuilder = new StringBuilder(400);
+    		sqlBuilder.append("rt.id as id, rt.name as entryKey, rt.data_type as dataType, ");
+    		sqlBuilder.append("rt.retail_account_id as retailAccountId, rt.is_constant as isConstant, ");
+    		sqlBuilder.append("rt.constant_value as constantValue ");
+    		sqlBuilder.append("from  retail_account_entry_types  rt ");
+    	
+    		
+    		this.schemaSql=sqlBuilder.toString();
+    	}
+    	
+    	 public String schema() {
+             return this.schemaSql;
+         }
+
+		@Override
+		public RetailAccountEntryTypeData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException
+		{
+			
+			final long id=rs.getLong("id");
+			
+			final String dataType=rs.getString("dataType");
+			
+			final String entryKey=rs.getString("entryKey");
+			
+			final long retailAccountId=rs.getLong("retailAccountId");
+			
+			final boolean isConstant=rs.getBoolean("isConstant");
+			
+			final String constantValue=rs.getString("constantValue"); 
+			
+			return RetailAccountEntryTypeData.getInstance(id, dataType, entryKey,
+					 retailAccountId, isConstant, constantValue);
+		}
+
+    }
+    
+    @Override
+    public Collection<RetailAccountEntryTypeData> findEntriesByRetailAccountId(long accountId)
+    {
+    	
+    	final String sql="select "+this.retailEntryTypeMapper.schema()+"  where rt.retail_account_id=? ";
+    	
+    	return this.jdbcTemplate.query(sql,this.retailEntryTypeMapper,new Object[] {accountId	} );
+    }
+    
+    
+    
+    
+    
 }

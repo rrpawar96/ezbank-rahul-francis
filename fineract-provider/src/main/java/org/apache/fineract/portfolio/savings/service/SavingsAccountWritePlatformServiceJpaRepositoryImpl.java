@@ -23,6 +23,7 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.amountParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.chargeIdParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.dueAsOfDateParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transactionExternalIdParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withHoldTaxParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withdrawBalanceParamName;
 
@@ -74,6 +75,7 @@ import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
+import org.apache.fineract.portfolio.client.exception.EntryFieldException;
 import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_ENTITY;
 import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_EVENTS;
 import org.apache.fineract.portfolio.common.service.BusinessEventNotifierService;
@@ -94,6 +96,12 @@ import org.apache.fineract.portfolio.savings.domain.DepositAccountOnHoldTransact
 import org.apache.fineract.portfolio.savings.domain.DepositAccountOnHoldTransactionRepository;
 import org.apache.fineract.portfolio.savings.domain.GSIMRepositoy;
 import org.apache.fineract.portfolio.savings.domain.GroupSavingsIndividualMonitoring;
+import org.apache.fineract.portfolio.savings.domain.RetailAccountEntry;
+import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryRepository;
+import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryType;
+import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryTypeRepository;
+import org.apache.fineract.portfolio.savings.domain.RetailTransactionRange;
+import org.apache.fineract.portfolio.savings.domain.RetailTransactionRangeRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
@@ -123,6 +131,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 @Service
 public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements SavingsAccountWritePlatformService {
@@ -153,6 +162,9 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final StandingInstructionRepository standingInstructionRepository;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final GSIMRepositoy gsimRepository;
+    private final RetailTransactionRangeRepository retailTransactionRangeRepository;
+    private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
+    private final RetailAccountEntryRepository retailAccountEntryRepository;
 
     @Autowired
     public SavingsAccountWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -176,7 +188,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final AppUserRepositoryWrapper appuserRepository, 
             final StandingInstructionRepository standingInstructionRepository, 
             final BusinessEventNotifierService businessEventNotifierService,
-            final GSIMRepositoy gsimRepository) {
+            final GSIMRepositoy gsimRepository,final RetailTransactionRangeRepository retailTransactionRangeRepository,
+            final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository,
+            final RetailAccountEntryRepository retailAccountEntryRepository
+            ) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
         this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
@@ -203,6 +218,9 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.standingInstructionRepository = standingInstructionRepository;
         this.businessEventNotifierService = businessEventNotifierService;
         this.gsimRepository=gsimRepository;
+        this.retailTransactionRangeRepository=retailTransactionRangeRepository;
+        this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
+        this.retailAccountEntryRepository=retailAccountEntryRepository;
     }
     
     
@@ -360,14 +378,38 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
         this.savingsAccountTransactionDataValidator.validate(command);
         boolean isGsim=false;
-        
-       if( this.savingAccountRepositoryWrapper.findOneWithNotFoundDetection(savingsId).getGsim()!=null)
-       {
-    	   isGsim=true;
-    	   System.out.println("is gsim");
-       }
-
+        boolean isRetail=false;
+        boolean autogenerateExternalTransactionId=false;
+        String transactionExternalId="";
+       
         final SavingsAccount account = this.savingAccountAssembler.assembleFrom(savingsId);
+        
+        if( account.getGsim()!=null)
+        {
+     	   isGsim=true;
+     	  
+        }
+        
+        if((Boolean) account.isRetail() != null)
+        {
+     	   if(account.isRetail())
+     	   {
+     		   isRetail=true;   
+     	   }
+     	
+     	  
+        }
+        
+        if((Boolean) account.isAutogenerate_transaction_id() != null)
+        {
+     	   if(account.isAutogenerate_transaction_id())
+     	   {
+     		   autogenerateExternalTransactionId=true;   
+     	   }
+     	
+     	  
+        }
+        
         checkClientOrGroupActive(account);
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormat.forPattern(command.dateFormat()).withLocale(locale);
@@ -379,8 +421,116 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
         boolean isAccountTransfer = false;
         boolean isRegularTransaction = true;
-        final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account, fmt, transactionDate,
-                transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction);
+        
+        
+         SavingsAccountTransaction deposit;
+         
+        
+        if(isRetail)
+        {	
+        	
+        	if(autogenerateExternalTransactionId)
+        	{
+        		
+        		RetailTransactionRange range=this.retailTransactionRangeRepository.findOneByRetailSavings(account);
+        		
+        		BigDecimal currentTransactionId=range.getCurrentTransactionId();
+        		
+        		transactionExternalId=currentTransactionId+"";
+        	
+        		range.setCurrentTransactionId(currentTransactionId.add(BigDecimal.ONE));
+        		
+        		this.retailTransactionRangeRepository.save(range);
+        		
+        	}
+        	else
+        	{
+        		
+        		 if(command.stringValueOfParameterNamed(transactionExternalIdParamName)==null
+        				 || command.stringValueOfParameterNamed(transactionExternalIdParamName).length()==0)
+             	   {
+        			 throw new EntryFieldException("transactionExternalId");
+             		  
+             	   }
+          		 else
+          		 {
+          			 transactionExternalId=command.stringValueOfParameterNamed(transactionExternalIdParamName);
+          		 }
+        		
+        		
+        	}
+        	
+     	deposit=this.savingsAccountDomainService.handleRetailDeposit(account, fmt, transactionDate,
+                  transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction,transactionExternalId);
+
+        }
+        else
+        {
+        	deposit=this.savingsAccountDomainService.handleDeposit(account, fmt, transactionDate,
+                    transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction);
+        }
+        
+        // handle depositors info
+        
+    	JsonObject jsonObject;
+    	String entryValue;
+    	String entryKey;
+    	RetailAccountEntryType retailEntryType;
+    	RetailAccountEntry retailEntry;
+        
+        if(isRetail)
+        {
+        	//List<RetailAccountEntryType> entries=this.retailAccountEntryTypeRepository.findByRetailAccount(account);
+        	
+        	JsonArray entries=command.arrayOfParameterNamed("retailEntries");
+        	
+        	for(JsonElement entry:entries)
+        	{
+        		jsonObject=entry.getAsJsonObject();
+        		
+        		if(jsonObject.get("entryKey")==null)
+        		{
+        			throw new EntryFieldException("entryKey");
+        		}
+        		
+        		if(jsonObject.get("entryValue")==null)
+        		{
+        			throw new EntryFieldException("entryValue");
+        		}
+        		
+        		entryKey=jsonObject.get("entryKey").getAsString();
+        		entryValue=jsonObject.get("entryValue").getAsString();
+        		
+        		retailEntryType=this.retailAccountEntryTypeRepository.findOneByRetailAccountAndName(account, entryKey);
+        		
+        		retailEntry=RetailAccountEntry.getInstance(retailEntryType, entryValue, deposit);
+        		
+        		this.retailAccountEntryRepository.save(retailEntry);
+        		
+        	}
+        	
+        	
+        	
+        }
+        
+        // check of constant entries
+        
+	List<RetailAccountEntryType> entries=this.retailAccountEntryTypeRepository.findByRetailAccount(account);
+      	
+		if(entries!=null)
+      	for(RetailAccountEntryType entry:entries)
+      	{
+      		
+      		if(entry.isConstant())
+      		{
+      			retailEntry=RetailAccountEntry.getInstance(entry, entry.getConstantValue(), deposit);
+      			this.retailAccountEntryRepository.save(retailEntry);
+      		}
+      	
+      	
+      	}
+       
+     
         	if(isGsim && (deposit.getId()!=null))
         	{
         		GroupSavingsIndividualMonitoring gsim=gsimRepository.findOne(account.getGsim().getId());
