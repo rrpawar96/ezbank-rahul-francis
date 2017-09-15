@@ -342,28 +342,9 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
      	for(JsonElement element:savingsArray)
      	{
      		
-     		result=deposit(childAccounts.get(count++).getAsLong(), JsonCommand.fromExistingCommand(command, element));
+     		result=deposit(element.getAsJsonObject().get("childAccountId").getAsLong(), JsonCommand.fromExistingCommand(command, element));
      	}
-     	
-     	
-     	
-     	/*for(SavingsAccount account:childSavings)
-     	{
-     		
-     		result=deposit(account.getId(), command);
-     		
-     		if(result!=null)
-     		{
-     			count++;
-     			if(count==parentSavings.getChildAccountsCount())
-     			{
-     				parentSavings.setSavingsStatus(SavingsAccountStatusType.ACTIVE.getValue());
-     				gsimRepository.save(parentSavings);
-     			}
-     		}
-     		
-     		
-     	}*/
+    
      	
      	return result;
     	
