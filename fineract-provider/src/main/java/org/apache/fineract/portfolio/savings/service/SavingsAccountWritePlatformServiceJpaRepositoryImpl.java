@@ -461,24 +461,17 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         
         if(isRetail)
         {
-        	//List<RetailAccountEntryType> entries=this.retailAccountEntryTypeRepository.findByRetailAccount(account);
+        	// fetch all entries required for the transaction for this particular account
+        	List<RetailAccountEntryType> entries=this.retailAccountEntryTypeRepository.findByRetailAccount(account);
         	
-        	JsonArray entries=command.arrayOfParameterNamed("retailEntries");
+        	this.savingsAccountTransactionDataValidator.vaidateRetailEntries(command, entries);
         	
-        	for(JsonElement entry:entries)
+        	JsonArray jsonEntries=command.arrayOfParameterNamed("retailEntries");
+        	
+        	for(JsonElement entry:jsonEntries)
         	{
         		jsonObject=entry.getAsJsonObject();
-        		
-        		if(jsonObject.get("entryKey")==null)
-        		{
-        			throw new EntryFieldException("entryKey");
-        		}
-        		
-        		if(jsonObject.get("entryValue")==null)
-        		{
-        			throw new EntryFieldException("entryValue");
-        		}
-        		
+        	
         		entryKey=jsonObject.get("entryKey").getAsString();
         		entryValue=jsonObject.get("entryValue").getAsString();
         		
@@ -488,28 +481,30 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         		
         		this.retailAccountEntryRepository.save(retailEntry);
         		
+        		
         	}
+        	
+        	
+        	 // check of constant entries
+            
+    			if(entries!=null)
+    	      	for(RetailAccountEntryType entry:entries)
+    	      	{
+    	      		
+    	      		if(entry.isConstant())
+    	      		{
+    	      			retailEntry=RetailAccountEntry.getInstance(entry, entry.getConstantValue(), deposit);
+    	      			this.retailAccountEntryRepository.save(retailEntry);
+    	      		}
+    	      	
+    	      	
+    	      	}
         	
         	
         	
         }
         
-        // check of constant entries
-        
-	List<RetailAccountEntryType> entries=this.retailAccountEntryTypeRepository.findByRetailAccount(account);
-      	
-		if(entries!=null)
-      	for(RetailAccountEntryType entry:entries)
-      	{
-      		
-      		if(entry.isConstant())
-      		{
-      			retailEntry=RetailAccountEntry.getInstance(entry, entry.getConstantValue(), deposit);
-      			this.retailAccountEntryRepository.save(retailEntry);
-      		}
-      	
-      	
-      	}
+       
        
      
         	if(isGsim && (deposit.getId()!=null))

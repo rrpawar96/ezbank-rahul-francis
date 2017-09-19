@@ -18,20 +18,14 @@
  */
 package org.apache.fineract.portfolio.savings;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.apache.fineract.accounting.common.AccountingConstants.SAVINGS_PRODUCT_ACCOUNTING_PARAMS;
-import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
-import org.apache.fineract.portfolio.savings.data.SavingsProductData;
-
 public class    SavingsApiConstants {
 
     public static final String SAVINGS_PRODUCT_RESOURCE_NAME = "savingsproduct";
     public static final String SAVINGS_ACCOUNT_RESOURCE_NAME = "savingsaccount";
     public static final String SAVINGS_ACCOUNT_TRANSACTION_RESOURCE_NAME = "savingsaccount.transaction";
     public static final String SAVINGS_ACCOUNT_CHARGE_RESOURCE_NAME = "savingsaccountcharge";
+    public static final String RETAIL_ACCOUNT_RESOURCE_NAME = "retailAccount";
+    
 
     // actions
     public static final String postInterestValidationOnClosure = "postInterestValidationOnClosure";
@@ -191,6 +185,15 @@ public class    SavingsApiConstants {
     public static final String onHoldTransactionTypeParamName = "transactionType";
     public static final String onHoldTransactionDateParamName = "transactionDate";
     public static final String onHoldReversedParamName = "reversed";
+    
+    // retail account parameters
+    public static final String transactionIdParamName="transactionId";
+    public static final String dataTypeParamName="dataType";
+    public static final String entrykeyParamName="entrykey";
+    public static final String entryValueParamName="entryValue";
+    public static final String retailAccountIdParamName="retailAccountId";
+    public static final String isConstantParamName="isConstant";
+    public static final String constantValueParamName="constantValue";
     
     // Savings Dormancy
     public static final String isDormancyTrackingActiveParamName = "isDormancyTrackingActive";

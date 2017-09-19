@@ -30,6 +30,15 @@
 	ALTER TABLE `m_savings_account`
 	ADD COLUMN `autogenerate_transaction_id` TINYINT(1) NOT NULL DEFAULT '0' AFTER `is_retail`;
 	
+	ALTER TABLE `m_savings_account_transaction` 
+	ADD CONSTRAINT `unique_retail_transaction` UNIQUE(`savings_account_id`,`external_id`);
+	
+	-- permissions
+	
+	INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'CREATE_RETAILACCOUNTENTRIES', 'RETAILACCOUNTENTRIES', 'CREATE', 0);
+	  
+	INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'UPDATE_RETAILACCOUNTENTRIES', 'RETAILACCOUNTENTRIES', 'UPDATE', 0);
+	
 	
 	-- new retail transaction table
 	

@@ -3,9 +3,9 @@ package org.apache.fineract.portfolio.savings.data;
 public class RetailAccountKeyValuePairData 
 {
 
-	private long id;
+	private Long id;
 	
-	private long transactionId;
+	private Long transactionId;
 	
 	private String dataType;
 	
@@ -13,14 +13,14 @@ public class RetailAccountKeyValuePairData
 	
 	private String entryValue;
 	
-	private long retailAccountId;
+	private Long retailAccountId;
 	
 	private boolean isConstant;
 	
 	private String constantValue;
 	
-	private RetailAccountKeyValuePairData(long id,long transactionId,String dataType,
-			String entryKey,String entryValue,long retailAccountId,
+	private RetailAccountKeyValuePairData(Long id,Long transactionId,String dataType,
+			String entryKey,String entryValue,Long retailAccountId,
 			boolean isConstant,String constantValue)
 	{
 		this.id=id;
@@ -34,28 +34,37 @@ public class RetailAccountKeyValuePairData
 		
 	}
 	
-	public static RetailAccountKeyValuePairData getInstance(long id,long transactionId,String dataType,
-			String entryKey,String entryValue,long retailAccountId,
+	public static RetailAccountKeyValuePairData getInstance(Long id,Long transactionId,String dataType,
+			String entryKey,String entryValue,Long retailAccountId,
 			boolean isConstant,String constantValue)
 	{
 		return new RetailAccountKeyValuePairData(id,transactionId,dataType,
 				entryKey,entryValue,retailAccountId,isConstant,constantValue);
 	}
 	
+	public static RetailAccountKeyValuePairData getInstanceWithoutTransaction(Long id,String dataType,
+			String entryKey,String entryValue,Long retailAccountId,
+			boolean isConstant,String constantValue)
+	{
+		
+		return new RetailAccountKeyValuePairData(id,null,dataType,
+				entryKey,entryValue,retailAccountId,isConstant,constantValue);
+	}
+	
 
-	public long getId() {
+	public Long getId() {
 		return id;
 	}
 
-	public void setId(long id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 
-	public long getTransactionId() {
+	public Long getTransactionId() {
 		return transactionId;
 	}
 
-	public void setTransactionId(long transactionId) {
+	public void setTransactionId(Long transactionId) {
 		this.transactionId = transactionId;
 	}
 
@@ -83,11 +92,11 @@ public class RetailAccountKeyValuePairData
 		this.entryValue = entryValue;
 	}
 
-	public long getRetailAccountId() {
+	public Long getRetailAccountId() {
 		return retailAccountId;
 	}
 
-	public void setRetailAccountId(long retailAccountId) {
+	public void setRetailAccountId(Long retailAccountId) {
 		this.retailAccountId = retailAccountId;
 	}
 

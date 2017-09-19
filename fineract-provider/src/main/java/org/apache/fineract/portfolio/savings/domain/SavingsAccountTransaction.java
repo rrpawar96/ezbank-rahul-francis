@@ -38,6 +38,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.UniqueConstraint;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
@@ -60,7 +61,8 @@ import org.springframework.util.CollectionUtils;
  * entity.
  */
 @Entity
-@Table(name = "m_savings_account_transaction")
+@Table(name = "m_savings_account_transaction", 
+uniqueConstraints = { @UniqueConstraint(columnNames = { "savings_account_id","external_id" }, name = "unique_retail_transaction") })
 public final class SavingsAccountTransaction extends AbstractPersistableCustom<Long> {
 
     @ManyToOne(optional = false)
@@ -75,7 +77,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
     @JoinColumn(name = "payment_detail_id", nullable = true)
     private PaymentDetail paymentDetail;
     
-    @Column(name = "external_id", nullable = false)
+    @Column(name = "external_id", nullable = true)
     private String transactionExternalId;
     
 

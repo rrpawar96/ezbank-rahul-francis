@@ -375,15 +375,19 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         			  throw new EntryFieldException("dataType");
         		  }
         		  
-        		  if(entry.getAsJsonObject().get("isConstant")==null)
+        		  if(entry.getAsJsonObject().get("isConstant")!=null)
         		  {
-        			  isConstant=false;
+        			  isConstant=true;
         		  }
         		  
-        		  if(entry.getAsJsonObject().get("constantValue")==null)
+        		  if(isConstant)
         		  {
-        			  constantValue=null;
+        			  if(entry.getAsJsonObject().get("constantValue")==null)
+            		  {
+            			  throw new EntryFieldException("constantValue");
+            		  }  
         		  }
+        		  
         		  
         		  
         		  RetailAccountEntryType retailEntry;
@@ -397,7 +401,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         		  {
         			  retailEntry= RetailAccountEntryType.getInstance(entry.getAsJsonObject().get("entryName").getAsString(),
               				  entry.getAsJsonObject().get("dataType").getAsString(), account,
-              				 false,null);	
+              				isConstant,constantValue);	
         		  }
 
         	
