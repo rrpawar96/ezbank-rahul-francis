@@ -78,6 +78,15 @@ public class RetailSavingsAccountTransactionData
                 RetailSavingsAccountTransactionData.amount,RetailSavingsAccountTransactionData.outstandingChargeAmount, RetailSavingsAccountTransactionData.runningBalance, RetailSavingsAccountTransactionData.reversed,
                 RetailSavingsAccountTransactionData.transfer, paymentTypeOptions,retailAccountEntries, RetailSavingsAccountTransactionData.interestedPostedAsOn);
     }
+    
+    public static RetailSavingsAccountTransactionData retailTemplate(final RetailSavingsAccountTransactionData RetailSavingsAccountTransactionData,
+            final Collection<RetailAccountKeyValuePairData> retailAccountEntries) {
+        return new RetailSavingsAccountTransactionData(RetailSavingsAccountTransactionData.id, RetailSavingsAccountTransactionData.transactionType,
+                RetailSavingsAccountTransactionData.paymentDetailData, RetailSavingsAccountTransactionData.accountId,
+                RetailSavingsAccountTransactionData.accountNo, RetailSavingsAccountTransactionData.date, RetailSavingsAccountTransactionData.currency,
+                RetailSavingsAccountTransactionData.amount,RetailSavingsAccountTransactionData.outstandingChargeAmount, RetailSavingsAccountTransactionData.runningBalance, RetailSavingsAccountTransactionData.reversed,
+                RetailSavingsAccountTransactionData.transfer, RetailSavingsAccountTransactionData.paymentTypeOptions,retailAccountEntries, RetailSavingsAccountTransactionData.interestedPostedAsOn);
+    }
 
     private RetailSavingsAccountTransactionData(final Long id, final SavingsAccountTransactionEnumData transactionType,
             final PaymentDetailData paymentDetailData, final Long savingsId, final String savingsAccountNo, final LocalDate date,
@@ -127,5 +136,11 @@ public class RetailSavingsAccountTransactionData
                 RetailSavingsAccountTransactionData.transfer, RetailSavingsAccountTransactionData.paymentTypeOptions,RetailSavingsAccountTransactionData.retailAccountEntries,
                 RetailSavingsAccountTransactionData.interestedPostedAsOn);
     }
+
+	public Long getId() {
+		return id;
+	}
+    
+    
 
 }
