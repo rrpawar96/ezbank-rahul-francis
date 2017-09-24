@@ -339,5 +339,26 @@ public class RetailAccountReadPlatformServiceImpl implements RetailAccountReadPl
         return enhancedRetailTransactions;
         
     }
+    
+    @Override
+    public Collection<RetailSavingsAccountTransactionData> retrieveRetailTransactions(final Long retailAccountId, DepositAccountType depositAccountType,
+    		String startDate,String endDate) {
+
+        final String sql = "select " + this.transactionsMapper.schema()
+                + " where sa.id = ? and sa.deposit_type_enum = ? and tr.transaction_date between '"+startDate+"' and '"+endDate+"' "
+                + "order by tr.transaction_date DESC, tr.created_date DESC, tr.id DESC";
+
+        List<RetailSavingsAccountTransactionData> retailTransactions= (List)this.jdbcTemplate.query(sql, this.transactionsMapper, new Object[] { retailAccountId, depositAccountType.getValue() });
+        
+        List<RetailSavingsAccountTransactionData> enhancedRetailTransactions=new ArrayList<RetailSavingsAccountTransactionData>();
+        
+        for(RetailSavingsAccountTransactionData retailTransaction:retailTransactions)
+        {
+        	enhancedRetailTransactions.add(RetailSavingsAccountTransactionData.retailTemplate(retailTransaction, getEntriesBySavingsIdAndTransaction(retailAccountId,retailTransaction.getId())));
+        }
+        	
+        return enhancedRetailTransactions;
+        
+    }
 
 }

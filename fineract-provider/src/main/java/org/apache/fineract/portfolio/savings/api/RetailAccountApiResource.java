@@ -9,6 +9,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
@@ -95,11 +96,13 @@ public class RetailAccountApiResource
     @Path("{retailAccountId}/retailTransactions")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveRetailTransactions(@Context final UriInfo uriInfo,@PathParam("retailAccountId") final Long retailAccountId) {
+    public String retrieveRetailTransactions(@Context final UriInfo uriInfo,@PathParam("retailAccountId") final Long retailAccountId,
+    		@QueryParam("startDate") final String startDate,@QueryParam("endDate") final String endDate ) {
 
         this.context.authenticatedUser().validateHasReadPermission(SavingsApiConstants.RETAIL_ACCOUNT_RESOURCE_NAME);
         
-        final Collection<RetailSavingsAccountTransactionData> currentTransactions =this.retailAccountReadPlatformService.retrieveRetailAllTransactions(retailAccountId, DepositAccountType.SAVINGS_DEPOSIT);
+        final Collection<RetailSavingsAccountTransactionData> currentTransactions =this.retailAccountReadPlatformService.retrieveRetailTransactions(retailAccountId, DepositAccountType.SAVINGS_DEPOSIT,
+        		startDate,endDate);
         
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 		return this.retailToApiJsonSerializer.serialize(settings, currentTransactions,

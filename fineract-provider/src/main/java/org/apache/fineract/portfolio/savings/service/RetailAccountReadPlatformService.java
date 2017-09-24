@@ -40,4 +40,7 @@ public interface RetailAccountReadPlatformService {
 
 	Collection<RetailAccountKeyValuePairData> getEntriesBySavingsIdAndTransaction(long savingsId, long transactionId);
 
+	Collection<RetailSavingsAccountTransactionData> retrieveRetailTransactions(Long retailAccountId,
+			DepositAccountType depositAccountType, String startDate, String endDate);
+
 }

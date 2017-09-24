@@ -33,6 +33,9 @@
 	ALTER TABLE `m_savings_account_transaction` 
 	ADD CONSTRAINT `unique_retail_transaction` UNIQUE(`savings_account_id`,`external_id`);
 	
+	INSERT INTO c_configuration (`id`, `name`,`enabled`, `description`) 
+	VALUES ('33', 'enable-retail-account', 0,'Configuration to enable Retail Account creation');
+	
 	-- permissions
 	
 	INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'CREATE_RETAILACCOUNTENTRIES', 'RETAILACCOUNTENTRIES', 'CREATE', 0);
