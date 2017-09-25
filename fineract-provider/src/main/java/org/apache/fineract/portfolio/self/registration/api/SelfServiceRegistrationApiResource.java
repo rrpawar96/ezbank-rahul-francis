@@ -26,8 +26,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
-import org.apache.fineract.portfolio.note.data.NoteData;
-import org.apache.fineract.portfolio.self.registration.SelfServiceApiConstants;
+import org.apache.fineract.portfolio.self.registration.domain.SelfServiceRegistration;
 import org.apache.fineract.portfolio.self.registration.service.SelfServiceRegistrationWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,8 +52,8 @@ public class SelfServiceRegistrationApiResource {
     @POST
     @Produces({ MediaType.APPLICATION_JSON })
     public String createSelfServiceRegistrationRequest(final String apiRequestBodyAsJson) {
-        this.selfServiceRegistrationWritePlatformService.createRegistrationRequest(apiRequestBodyAsJson);
-        return SelfServiceApiConstants.createRequestSuccessMessage;
+    	SelfServiceRegistration registeration=this.selfServiceRegistrationWritePlatformService.createRegistrationRequest(apiRequestBodyAsJson);
+        return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(registeration.getId(), null));
     }
 
     @POST
