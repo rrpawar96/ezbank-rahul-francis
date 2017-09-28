@@ -81,4 +81,14 @@ public class SavingsApiSetConstants extends SavingsApiConstants {
 	protected static final Set<String> SAVINGS_ACCOUNT_ON_HOLD_RESPONSE_DATA_PARAMETERS = new HashSet<>(
 			Arrays.asList(idParamName, amountParamName, onHoldTransactionTypeParamName, onHoldTransactionDateParamName,
 					onHoldReversedParamName));
+	
+	protected static final Set<String> RETAIL_ACCOUNT_RESPONSE_DATA_PARAMETERS = new HashSet<>(
+			Arrays.asList(idParamName, amountParamName, onHoldTransactionTypeParamName, onHoldTransactionDateParamName,
+					onHoldReversedParamName));
+	
+	protected static final Set<String> RETAIL_TRANSACTION_RESPONSE_DATA_PARAMETERS = new HashSet<>(
+			Arrays.asList(idParamName, "accountId", accountNoParamName, "currency", "amount", dateParamName,
+					paymentDetailDataParamName, runningBalanceParamName, reversedParamName,"retailAccountEntries"));
+	
+	
 }

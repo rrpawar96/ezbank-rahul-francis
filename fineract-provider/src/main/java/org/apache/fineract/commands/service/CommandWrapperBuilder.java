@@ -1145,6 +1145,21 @@ public class CommandWrapperBuilder {
         this.href = "/journalentries/update";
         return this;
     }
+    
+    public CommandWrapperBuilder createRetailEntry(final long retailAccountId) {
+        this.actionName = "CREATE";
+        this.entityName = "RETAILACCOUNTENTRIES";
+        this.entityId = retailAccountId;
+        this.href = "/retailaccount/template";
+        return this;
+    }
+    public CommandWrapperBuilder updadateRetailEntry(final long retailAccountId) {
+        this.actionName = "UPDATE";
+        this.entityName = "RETAILACCOUNTENTRIES";
+        this.entityId = retailAccountId;
+        this.href = "/retailaccount/"+retailAccountId;
+        return this;
+    }
 
     public CommandWrapperBuilder createSavingProduct() {
         this.actionName = "CREATE";

@@ -199,7 +199,7 @@ public class SavingsAccountsApiResource {
                 mandatoryResponseParameters.add(SavingsApiConstants.transactions);
                 final Collection<SavingsAccountTransactionData> currentTransactions = this.savingsAccountReadPlatformService
                         .retrieveAllTransactions(accountId, DepositAccountType.SAVINGS_DEPOSIT);
-              /*  if(savingsAccount.isRetail())
+            /*    if(savingsAccount.isRetail())
                 {
               final Collection<RetailAccountKeyValuePairData>	retailEntries=this.savingsAccountReadPlatformService.getEntriesBySavingsId(accountId);
               	

@@ -52,8 +52,10 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.portfolio.client.exception.EntryFieldException;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.savings.SavingsApiConstants;
+import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -61,7 +63,9 @@ import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
 @Component
@@ -103,6 +107,82 @@ public class SavingsAccountTransactionDataValidator {
         validatePaymentTypeDetails(baseDataValidator, element);
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+    
+    public void vaidateRetailEntries(final JsonCommand command,List<RetailAccountEntryType> entries)
+    {
+    	
+    	if(command.arrayOfParameterNamed("retailEntries")==null)
+    	{
+    		throw new EntryFieldException("retailEntries");
+    	}
+    	
+    	JsonArray jsonEntries=command.arrayOfParameterNamed("retailEntries");
+    	
+    	JsonObject jsonObject;
+    	String retailEntryKey;
+    	String retailAccountNumber=entries.get(0).getRetailAccount().getAccountNumber();
+    	
+    	List<String> entryKeys=new ArrayList<String>();
+    	List<String> constantKeys=new ArrayList<String>();
+    	for(RetailAccountEntryType entryKey:entries)
+    	{	
+    		// sort keys as constant or not constant
+    		if(entryKey.isConstant())
+    		{
+    			constantKeys.add(entryKey.getName());	
+    		}
+    		else
+    		{
+    			entryKeys.add(entryKey.getName());	
+    		}
+    		
+    	
+    	}
+    	
+    	// validate all entries provided by user
+    	for(JsonElement entry:jsonEntries)
+    	{
+    		jsonObject=entry.getAsJsonObject();
+    		if(jsonObject.get("entryKey")==null)
+    		{
+    			throw new EntryFieldException();
+    		}
+    		
+    		if(jsonObject.get("entryValue")==null)
+    		{
+    			throw new EntryFieldException();
+    		}
+    		
+    		retailEntryKey=jsonObject.get("entryKey").getAsString();
+    		
+    		if(entryKeys.contains((String)retailEntryKey))
+    		{
+    			entryKeys.remove((String)retailEntryKey);
+    		}
+    		else if(constantKeys.contains((String)retailEntryKey))
+    		{
+    			// just ignore constant values
+    			continue;
+    		}
+    		else
+    		{
+    			// throw exception if entry is not configured to be used by retail account
+    			throw new EntryFieldException(retailEntryKey,retailAccountNumber);
+    		}
+    		
+    		
+    	}
+    	
+    	// check if some non constant entry has not been entered in by user, else throw exception
+    	if(entryKeys.size()!=0)
+    	{
+    		for(String missingEntry:entryKeys)
+    		{
+    			throw new EntryFieldException(missingEntry+" key ");
+    		}
+    	}
+    	
     }
 
     public void validateActivation(final JsonCommand command) {

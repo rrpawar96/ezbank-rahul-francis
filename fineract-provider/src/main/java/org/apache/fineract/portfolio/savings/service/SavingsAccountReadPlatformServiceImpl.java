@@ -60,6 +60,7 @@ import org.apache.fineract.portfolio.savings.SavingsPeriodFrequencyType;
 import org.apache.fineract.portfolio.savings.SavingsPostingInterestPeriodType;
 import org.apache.fineract.portfolio.savings.data.RetailAccountEntryTypeData;
 import org.apache.fineract.portfolio.savings.data.RetailAccountKeyValuePairData;
+import org.apache.fineract.portfolio.savings.data.RetailSavingsAccountTransactionData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountApplicationTimelineData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountChargeData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
@@ -761,6 +762,7 @@ public class SavingsAccountReadPlatformServiceImpl implements SavingsAccountRead
 
         return this.jdbcTemplate.query(sql, this.transactionsMapper, new Object[] { savingsId, depositAccountType.getValue() });
     }
+  
 
     @Override
     public SavingsAccountTransactionData retrieveSavingsTransaction(final Long savingsId, final Long transactionId,
