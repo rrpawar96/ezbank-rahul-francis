@@ -33,8 +33,7 @@
 	ALTER TABLE `m_savings_account_transaction` 
 	ADD CONSTRAINT `unique_retail_transaction` UNIQUE(`savings_account_id`,`external_id`);
 	
-	INSERT INTO c_configuration (`id`, `name`,`enabled`, `description`) 
-	VALUES ('33', 'enable-retail-account', 0,'Configuration to enable Retail Account creation');
+
 	
 	-- permissions
 	
@@ -43,18 +42,18 @@
 	INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'UPDATE_RETAILACCOUNTENTRIES', 'RETAILACCOUNTENTRIES', 'UPDATE', 0);
 	
 	
-	-- new retail transaction table
+	-- new retail transaction table (no longer being used) should we add a script to drop this table?
 	
-	CREATE TABLE `idt_retail_transaction_range` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `retail_savings_id` bigint(20) NOT NULL,
-  `transaction_upper_limit` bigint(20) NOT NULL,
-  `transaction_lower_limit` bigint(20) NOT NULL,
-  `current_transaction_id_used` bigint(20) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK_retail_savings_id` (`retail_savings_id`),
-  CONSTRAINT `FK_retail_savings_id` FOREIGN KEY (`retail_savings_id`) REFERENCES `m_savings_account` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+--	CREATE TABLE `idt_retail_transaction_range` (
+--  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+--  `retail_savings_id` bigint(20) NOT NULL,
+--  `transaction_upper_limit` bigint(20) NOT NULL,
+--  `transaction_lower_limit` bigint(20) NOT NULL,
+--  `current_transaction_id_used` bigint(20) NOT NULL,
+--  PRIMARY KEY (`id`),
+--  KEY `FK_retail_savings_id` (`retail_savings_id`),
+--  CONSTRAINT `FK_retail_savings_id` FOREIGN KEY (`retail_savings_id`) REFERENCES `m_savings_account` (`id`)
+-- ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 
 
 -- new retail account type entry table

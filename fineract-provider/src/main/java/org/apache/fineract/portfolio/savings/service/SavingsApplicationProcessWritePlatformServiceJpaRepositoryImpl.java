@@ -19,8 +19,6 @@
 package org.apache.fineract.portfolio.savings.service;
 
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transactionLowerLimitParamName;
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transactionUpperLimitParamName;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -79,8 +77,6 @@ import org.apache.fineract.portfolio.savings.domain.GSIMRepositoy;
 import org.apache.fineract.portfolio.savings.domain.GroupSavingsIndividualMonitoring;
 import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryType;
 import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryTypeRepository;
-import org.apache.fineract.portfolio.savings.domain.RetailTransactionRange;
-import org.apache.fineract.portfolio.savings.domain.RetailTransactionRangeRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
@@ -91,7 +87,6 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
 import org.apache.fineract.portfolio.savings.domain.SavingsProduct;
 import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
-import org.apache.fineract.portfolio.savings.exception.TransactionIdExceededLowerLimitException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,7 +124,6 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
     private final GSIMRepositoy gsimRepository;
     private final GroupRepositoryWrapper groupRepositoryWrapper;
     private final GroupSavingsIndividualMonitoringWritePlatformService gsimWritePlatformService;
-    private final RetailTransactionRangeRepository retailTransactionRangeRepository;
     private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
    
 	
@@ -149,7 +143,6 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GSIMRepositoy gsimRepository,final GroupRepositoryWrapper groupRepositoryWrapper,
             final GroupSavingsIndividualMonitoringWritePlatformService gsimWritePlatformService,
-            final RetailTransactionRangeRepository retailTransactionRangeRepository,
             final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository) {
         this.context = context;
         this.savingAccountRepository = savingAccountRepository;
@@ -172,7 +165,6 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         this.gsimRepository=gsimRepository;
         this.groupRepositoryWrapper=groupRepositoryWrapper;
         this.gsimWritePlatformService=gsimWritePlatformService;
-        this.retailTransactionRangeRepository=retailTransactionRangeRepository;
         this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
     }
 
@@ -409,8 +401,11 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         		  this.retailAccountEntryTypeRepository.save(retailEntry);
         	  }
            }
+           
+           
+           // retail range is embeded in savings account itself due to issue of mysql refer EZbank-80
             
-            if(account.isAutogenerate_transaction_id())
+          /*  if(account.isAutogenerate_transaction_id())
             {
          	   transactionUpperLimit=command.bigDecimalValueOfParameterNamed(transactionUpperLimitParamName);
          	   
@@ -423,7 +418,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
          	   
          	   retailTransactionRangeRepository.save(RetailTransactionRange.getInstance(account, transactionUpperLimit, transactionLowerLimit, transactionLowerLimit));
          	   
-            }
+            }*/
             
             
             // end of retail account
