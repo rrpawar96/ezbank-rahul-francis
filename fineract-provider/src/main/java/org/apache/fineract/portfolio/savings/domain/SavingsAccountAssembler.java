@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.savings.domain;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.accountNoParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.allowOverdraftParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.autogenerateTransactionIdParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.clientIdParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.enforceMinRequiredBalanceParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.externalIdParamName;
@@ -30,6 +31,7 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.interest
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.interestCalculationTypeParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.interestCompoundingPeriodTypeParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.interestPostingPeriodTypeParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.isRetailAccountParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.lockinPeriodFrequencyParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.lockinPeriodFrequencyTypeParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.minOverdraftForInterestCalculationParamName;
@@ -40,10 +42,10 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.nominalA
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.overdraftLimitParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.productIdParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.submittedOnDateParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transactionLowerLimitParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.transactionUpperLimitParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withHoldTaxParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.withdrawalFeeForTransfersParamName;
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.isRetailAccountParamName;
-import static org.apache.fineract.portfolio.savings.SavingsApiConstants.autogenerateTransactionIdParamName;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -71,6 +73,7 @@ import org.apache.fineract.portfolio.savings.SavingsInterestCalculationType;
 import org.apache.fineract.portfolio.savings.SavingsPeriodFrequencyType;
 import org.apache.fineract.portfolio.savings.SavingsPostingInterestPeriodType;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
+import org.apache.fineract.portfolio.savings.exception.TransactionIdExceededUpperLimitException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,7 +93,7 @@ public class SavingsAccountAssembler {
     private final SavingsAccountRepositoryWrapper savingsAccountRepository;
     private final SavingsAccountChargeAssembler savingsAccountChargeAssembler;
     private final FromJsonHelper fromApiJsonHelper;
-    private final RetailTransactionRangeRepository retailTransactionRangeRepository;
+
 
     @Autowired
     public SavingsAccountAssembler(final SavingsAccountTransactionSummaryWrapper savingsAccountTransactionSummaryWrapper,
@@ -98,8 +101,7 @@ public class SavingsAccountAssembler {
             final StaffRepositoryWrapper staffRepository, final SavingsProductRepository savingProductRepository,
             final SavingsAccountRepositoryWrapper savingsAccountRepository,
             final SavingsAccountChargeAssembler savingsAccountChargeAssembler, final FromJsonHelper fromApiJsonHelper,
-            final AccountTransfersReadPlatformService accountTransfersReadPlatformService,
-            final RetailTransactionRangeRepository retailTransactionRangeRepository) {
+            final AccountTransfersReadPlatformService accountTransfersReadPlatformService) {
         this.savingsAccountTransactionSummaryWrapper = savingsAccountTransactionSummaryWrapper;
         this.clientRepository = clientRepository;
         this.groupRepository = groupRepository;
@@ -109,7 +111,7 @@ public class SavingsAccountAssembler {
         this.savingsAccountChargeAssembler = savingsAccountChargeAssembler;
         this.fromApiJsonHelper = fromApiJsonHelper;
         savingsHelper = new SavingsHelper(accountTransfersReadPlatformService);
-        this.retailTransactionRangeRepository=retailTransactionRangeRepository;
+  
     }
 
     /**
@@ -124,6 +126,7 @@ public class SavingsAccountAssembler {
         final String accountNo = this.fromApiJsonHelper.extractStringNamed(accountNoParamName, element);
         final String externalId = this.fromApiJsonHelper.extractStringNamed(externalIdParamName, element);
         final Long productId = this.fromApiJsonHelper.extractLongNamed(productIdParamName, element);
+        
 
         final SavingsProduct product = this.savingProductRepository.findOne(productId);
         if (product == null) { throw new SavingsProductNotFoundException(productId); }
@@ -134,10 +137,26 @@ public class SavingsAccountAssembler {
         
         AccountType accountType = AccountType.INVALID;
         
+        
+        BigDecimal transactionUpperLimit=null;
+        BigDecimal transactionLowerLimit=null;
         Boolean isRetail=this.fromApiJsonHelper.extractBooleanNamed(isRetailAccountParamName, element);
        if(isRetail!=null)
        {
     	   isRetail=this.fromApiJsonHelper.extractBooleanNamed(isRetailAccountParamName, element);
+    	   
+    	   if(isRetail)
+    	   {
+    		   	transactionUpperLimit=command.bigDecimalValueOfParameterNamed(transactionUpperLimitParamName);
+         	   
+         	   transactionLowerLimit=command.bigDecimalValueOfParameterNamed(transactionLowerLimitParamName);
+         	   
+         	   if(transactionLowerLimit.compareTo(transactionUpperLimit)>0)
+         	   {
+         		   throw new TransactionIdExceededUpperLimitException();
+         	   }
+    	   }
+    	   
        }
        else
        {
@@ -315,7 +334,8 @@ public class SavingsAccountAssembler {
             }
         }
 
-        final SavingsAccount account = SavingsAccount.createNewRetailApplicationForSubmittal(client, group, product,isRetail,autogenerateTransactionId, fieldOfficer, accountNo,
+        final SavingsAccount account = SavingsAccount.createNewRetailApplicationForSubmittal(client, group, product,isRetail,autogenerateTransactionId,
+        		transactionLowerLimit,transactionUpperLimit,transactionLowerLimit,fieldOfficer, accountNo,
                 externalId, accountType, submittedOnDate, submittedBy, interestRate, interestCompoundingPeriodType,
                 interestPostingPeriodType, interestCalculationType, interestCalculationDaysInYearType, minRequiredOpeningBalance,
                 lockinPeriodFrequency, lockinPeriodFrequencyType, iswithdrawalFeeApplicableForTransfer, charges, allowOverdraft,

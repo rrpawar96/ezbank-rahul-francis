@@ -164,6 +164,15 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     
     @Column(name="autogenerate_transaction_id")
     private boolean autogenerateTransactionId;
+   
+    @Column(name="transaction_upper_limit")
+	private BigDecimal upperLimit;
+	
+	@Column(name="transaction_lower_limit")
+	private BigDecimal lowerLimit;
+	
+	@Column(name="current_transaction_id_used")
+	private BigDecimal currentTransactionId;
 
     @Column(name = "status_enum", nullable = false)
     protected Integer status;
@@ -343,14 +352,16 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         //
     }
     
-    @OneToOne(mappedBy = "retailSavings")
-    private RetailTransactionRange retailSavings;
+    // retail range is no longer being used due to limitation of joints caused by mysql refer EZbank-80
+    
+    /* @OneToOne(mappedBy = "retailSavings")
+    private RetailTransactionRange retailSavings;*/
     
     @OneToMany(mappedBy = "retailAccount")
     private List<RetailAccountEntryType> retailAccountEntryType;
   
     public static SavingsAccount createNewRetailApplicationForSubmittal(final Client client, final Group group, final SavingsProduct product,
-    		final boolean isRetail,final boolean autogenerateTransactionId,final Staff fieldOfficer, final String accountNo, final String externalId, final AccountType accountType,
+    		final boolean isRetail,final boolean autogenerateTransactionId,final BigDecimal lowerLimit,BigDecimal upperLimit,BigDecimal currentTransactionId,final Staff fieldOfficer, final String accountNo, final String externalId, final AccountType accountType,
             final LocalDate submittedOnDate, final AppUser submittedBy, final BigDecimal interestRate,
             final SavingsCompoundingInterestPeriodType interestCompoundingPeriodType,
             final SavingsPostingInterestPeriodType interestPostingPeriodType, final SavingsInterestCalculationType interestCalculationType,
@@ -362,7 +373,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             final BigDecimal minOverdraftForInterestCalculation, final boolean withHoldTax) {
 
         final SavingsAccountStatusType status = SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL;
-        return new SavingsAccount(client, group, product,isRetail,autogenerateTransactionId, fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate,
+        return new SavingsAccount(client, group, product,isRetail,autogenerateTransactionId,lowerLimit,upperLimit,currentTransactionId, fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate,
                 submittedBy, interestRate, interestCompoundingPeriodType, interestPostingPeriodType, interestCalculationType,
                 interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType,
                 withdrawalFeeApplicableForTransfer, savingsAccountCharges, allowOverdraft, overdraftLimit, enforceMinRequiredBalance,
@@ -382,7 +393,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             final BigDecimal minOverdraftForInterestCalculation, final boolean withHoldTax) {
 
         final SavingsAccountStatusType status = SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL;
-        return new SavingsAccount(client, group, product, false,false,fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate,
+        return new SavingsAccount(client, group, product, false,false,null,null,null,fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate,
                 submittedBy, interestRate, interestCompoundingPeriodType, interestPostingPeriodType, interestCalculationType,
                 interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType,
                 withdrawalFeeApplicableForTransfer, savingsAccountCharges, allowOverdraft, overdraftLimit, enforceMinRequiredBalance,
@@ -398,14 +409,15 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             final Integer lockinPeriodFrequency, final SavingsPeriodFrequencyType lockinPeriodFrequencyType,
             final boolean withdrawalFeeApplicableForTransfer, final Set<SavingsAccountCharge> savingsAccountCharges,
             final boolean allowOverdraft, final BigDecimal overdraftLimit, boolean withHoldTax) {
-        this(client, group, product, false,false,fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate, submittedBy,
+        this(client, group, product, false,false,null,null,null,fieldOfficer, accountNo, externalId, status, accountType, submittedOnDate, submittedBy,
                 nominalAnnualInterestRate, interestCompoundingPeriodType, interestPostingPeriodType, interestCalculationType,
                 interestCalculationDaysInYearType, minRequiredOpeningBalance, lockinPeriodFrequency, lockinPeriodFrequencyType,
                 withdrawalFeeApplicableForTransfer, savingsAccountCharges, allowOverdraft, overdraftLimit, false, null, null, null,
                 withHoldTax);
     }
 
-    protected SavingsAccount(final Client client, final Group group, final SavingsProduct product,final boolean isRetail,final boolean autogenerateTransactionId, final Staff savingsOfficer,
+    protected SavingsAccount(final Client client, final Group group, final SavingsProduct product,final boolean isRetail,final boolean autogenerateTransactionId,
+    		final BigDecimal lowerLimit,BigDecimal upperLimit,BigDecimal currentTransactionId,final Staff savingsOfficer,
             final String accountNo, final String externalId, final SavingsAccountStatusType status, final AccountType accountType,
             final LocalDate submittedOnDate, final AppUser submittedBy, final BigDecimal nominalAnnualInterestRate,
             final SavingsCompoundingInterestPeriodType interestCompoundingPeriodType,
@@ -421,6 +433,9 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         this.product = product;
         this.isRetail=isRetail;
         this.autogenerateTransactionId=autogenerateTransactionId;
+        this.lowerLimit=lowerLimit;
+        this.upperLimit=upperLimit;
+        this.currentTransactionId=currentTransactionId;
         this.savingsOfficer = savingsOfficer;
         if (StringUtils.isBlank(accountNo)) {
             this.accountNumber = new RandomPasswordGenerator(19).generate();
@@ -495,6 +510,32 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
 	public void setAutogenerate_transaction_id(boolean autogenerate_transaction_id) {
 		this.autogenerateTransactionId = autogenerate_transaction_id;
+	}
+	
+	
+
+	public BigDecimal getUpperLimit() {
+		return upperLimit;
+	}
+
+	public void setUpperLimit(BigDecimal upperLimit) {
+		this.upperLimit = upperLimit;
+	}
+
+	public BigDecimal getLowerLimit() {
+		return lowerLimit;
+	}
+
+	public void setLowerLimit(BigDecimal lowerLimit) {
+		this.lowerLimit = lowerLimit;
+	}
+
+	public BigDecimal getCurrentTransactionId() {
+		return currentTransactionId;
+	}
+
+	public void setCurrentTransactionId(BigDecimal currentTransactionId) {
+		this.currentTransactionId = currentTransactionId;
 	}
 
 	public boolean isActive() {

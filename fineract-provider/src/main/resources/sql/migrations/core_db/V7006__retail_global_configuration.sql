@@ -17,7 +17,7 @@
 -- under the License.
 --
 
+-- global configuration of retail accounts, by default it is turned off
 
-
-
-ALTER TABLE `m_savings_account_transaction` ADD COLUMN `is_loan_disbursement` TINYINT(1) NULL DEFAULT '0' AFTER `is_manual`;
+	INSERT INTO c_configuration (`id`, `name`,`enabled`, `description`) 
+	VALUES ('33', 'enable-retail-account', 0,'Configuration to enable Retail Account creation');

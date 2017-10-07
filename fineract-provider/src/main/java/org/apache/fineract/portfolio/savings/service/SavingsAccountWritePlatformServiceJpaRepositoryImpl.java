@@ -100,8 +100,6 @@ import org.apache.fineract.portfolio.savings.domain.RetailAccountEntry;
 import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryRepository;
 import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryType;
 import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryTypeRepository;
-import org.apache.fineract.portfolio.savings.domain.RetailTransactionRange;
-import org.apache.fineract.portfolio.savings.domain.RetailTransactionRangeRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
@@ -118,6 +116,7 @@ import org.apache.fineract.portfolio.savings.exception.SavingsAccountClosingNotA
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountTransactionNotFoundException;
 import org.apache.fineract.portfolio.savings.exception.SavingsOfficerAssignmentException;
 import org.apache.fineract.portfolio.savings.exception.SavingsOfficerUnassignmentException;
+import org.apache.fineract.portfolio.savings.exception.TransactionIdExceededUpperLimitException;
 import org.apache.fineract.portfolio.savings.exception.TransactionUpdateNotAllowedException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepositoryWrapper;
@@ -162,7 +161,6 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final StandingInstructionRepository standingInstructionRepository;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final GSIMRepositoy gsimRepository;
-    private final RetailTransactionRangeRepository retailTransactionRangeRepository;
     private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
     private final RetailAccountEntryRepository retailAccountEntryRepository;
 
@@ -188,7 +186,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final AppUserRepositoryWrapper appuserRepository, 
             final StandingInstructionRepository standingInstructionRepository, 
             final BusinessEventNotifierService businessEventNotifierService,
-            final GSIMRepositoy gsimRepository,final RetailTransactionRangeRepository retailTransactionRangeRepository,
+            final GSIMRepositoy gsimRepository,
             final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository,
             final RetailAccountEntryRepository retailAccountEntryRepository
             ) {
@@ -218,7 +216,6 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.standingInstructionRepository = standingInstructionRepository;
         this.businessEventNotifierService = businessEventNotifierService;
         this.gsimRepository=gsimRepository;
-        this.retailTransactionRangeRepository=retailTransactionRangeRepository;
         this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
         this.retailAccountEntryRepository=retailAccountEntryRepository;
     }
@@ -328,16 +325,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     @Transactional
     @Override
     public CommandProcessingResult gsimDeposit(final Long gsimId, final JsonCommand command) {
-    	
-    	Long parentSavingId=gsimId;
-     	GroupSavingsIndividualMonitoring parentSavings=gsimRepository.findOne(parentSavingId);
-     	List<SavingsAccount> childSavings=this.savingAccountRepositoryWrapper.findByGsimId(gsimId);
+   
      	
      	JsonArray savingsArray=command.arrayOfParameterNamed("savingsArray");
      	
-     	JsonArray childAccounts=command.arrayOfParameterNamed("childAccounts");
-     	
-     	int count=0;
      	CommandProcessingResult result=null;
      	for(JsonElement element:savingsArray)
      	{
@@ -412,16 +403,23 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         	
         	if(autogenerateExternalTransactionId)
         	{
+        	
         		
-        		RetailTransactionRange range=this.retailTransactionRangeRepository.findOneByRetailSavings(account);
-        		
-        		BigDecimal currentTransactionId=range.getCurrentTransactionId();
+        		BigDecimal currentTransactionId=account.getCurrentTransactionId();
         		
         		transactionExternalId=currentTransactionId+"";
-        	
-        		range.setCurrentTransactionId(currentTransactionId.add(BigDecimal.ONE));
         		
-        		this.retailTransactionRangeRepository.save(range);
+        		BigDecimal newTransactionId=currentTransactionId.add(BigDecimal.ONE);
+        		
+        		if(newTransactionId.compareTo(account.getUpperLimit())==1)
+        		{
+        			 throw new TransactionIdExceededUpperLimitException();
+        		}
+        		else
+        		{
+        			account.setCurrentTransactionId(newTransactionId);
+        		}
+        	
         		
         	}
         	else

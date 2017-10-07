@@ -27,7 +27,6 @@ import org.apache.fineract.portfolio.client.exception.EntryFieldException;
 import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryRepository;
 import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryType;
 import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryTypeRepository;
-import org.apache.fineract.portfolio.savings.domain.RetailTransactionRangeRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,20 +40,17 @@ public class RetailAccountEntriesWritePlatformServiceImpl implements RetailAccou
 {
 	
 	private final PlatformSecurityContext context;
-	private final RetailTransactionRangeRepository retailTransactionRangeRepository;
 	private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
 	private final RetailAccountEntryRepository retailAccountEntryRepository;
 	private final SavingsAccountRepository savingsAccountRepository;
 	
 	@Autowired
 	public RetailAccountEntriesWritePlatformServiceImpl(final PlatformSecurityContext context,
-			final RetailTransactionRangeRepository retailTransactionRangeRepository,
 			final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository,
 			final RetailAccountEntryRepository retailAccountEntryRepository,
 			final SavingsAccountRepository savingsAccountRepository)
 	{
 		this.context=context;
-		this.retailTransactionRangeRepository=retailTransactionRangeRepository;
 		this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
 		this.retailAccountEntryRepository=retailAccountEntryRepository;
 		this.savingsAccountRepository=savingsAccountRepository;

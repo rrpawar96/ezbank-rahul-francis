@@ -18,6 +18,21 @@
 --
 
 
+-- MODIFY m_savings_account TP ACCOMODATE RETAIL RANGE COLUMNS
 
 
-ALTER TABLE `m_savings_account_transaction` ADD COLUMN `is_loan_disbursement` TINYINT(1) NULL DEFAULT '0' AFTER `is_manual`;
+ALTER TABLE  m_savings_account
+ADD COLUMN `transaction_upper_limit` bigint(20) DEFAULT NULL after autogenerate_transaction_id,
+ADD COLUMN  `transaction_lower_limit` bigint(20) DEFAULT NULL after transaction_upper_limit,
+ADD COLUMN  `current_transaction_id_used` bigint(20) DEFAULT NULL after transaction_lower_limit;
+
+
+-- ENSURE THAT TRANSACTION RANGE COLUMNS ARE FILLED WHEN A SAVINGS ACCOUNT IS RETAIL ACCOUNT
+
+	ALTER TABLE m_savings_account
+	ADD CONSTRAINT retail_check CHECK
+							( 
+							autogenerate_transaction_id=0
+							or ( transaction_upper_limit IS NOT NULL AND transaction_lower_limit IS NOT NULL AND current_transaction_id_used )
+										
+							);
