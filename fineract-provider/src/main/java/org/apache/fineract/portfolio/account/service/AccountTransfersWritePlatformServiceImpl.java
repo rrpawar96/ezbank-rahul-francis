@@ -418,11 +418,15 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
             transferTransactionId = accountTransferDetails.getId();
             
             // if the savings account is GSIM, update its parent as well
-            GroupSavingsIndividualMonitoring gsim=gsimRepository.findOne(toSavingsAccount.getGsim().getId());
-    		BigDecimal currentBalance=gsim.getParentDeposit();
-    		BigDecimal newBalance=currentBalance.add(accountTransferDTO.getTransactionAmount());
-    		gsim.setParentDeposit(newBalance);
-    		gsimRepository.save(gsim);
+            if(toSavingsAccount.getGsim()!=null)
+            {
+                GroupSavingsIndividualMonitoring gsim=gsimRepository.findOne(toSavingsAccount.getGsim().getId());
+        		BigDecimal currentBalance=gsim.getParentDeposit();
+        		BigDecimal newBalance=currentBalance.add(accountTransferDTO.getTransactionAmount());
+        		gsim.setParentDeposit(newBalance);
+        		gsimRepository.save(gsim);
+            }
+        
             
         } else {
             throw new GeneralPlatformDomainRuleException("error.msg.accounttransfer.loan.to.loan.not.supported",
