@@ -137,6 +137,17 @@ public class SavingsAccountAssembler {
         
         AccountType accountType = AccountType.INVALID;
         
+        Boolean autogenerateTransactionId=this.fromApiJsonHelper.extractBooleanNamed(autogenerateTransactionIdParamName, element);
+        
+        if(autogenerateTransactionId!=null)
+        {
+     	   autogenerateTransactionId=this.fromApiJsonHelper.extractBooleanNamed(autogenerateTransactionIdParamName, element);
+        }
+        else
+        {
+     	   autogenerateTransactionId=false;
+        }
+        
         
         BigDecimal transactionUpperLimit=null;
         BigDecimal transactionLowerLimit=null;
@@ -145,17 +156,22 @@ public class SavingsAccountAssembler {
        {
     	   isRetail=this.fromApiJsonHelper.extractBooleanNamed(isRetailAccountParamName, element);
     	   
-    	   if(isRetail)
+    	   if(autogenerateTransactionId)
     	   {
-    		   	transactionUpperLimit=command.bigDecimalValueOfParameterNamed(transactionUpperLimitParamName);
-         	   
-         	   transactionLowerLimit=command.bigDecimalValueOfParameterNamed(transactionLowerLimitParamName);
-         	   
-         	   if(transactionLowerLimit.compareTo(transactionUpperLimit)>0)
-         	   {
-         		   throw new TransactionIdExceededUpperLimitException();
-         	   }
+    		   if(isRetail)
+        	   {
+        		   	transactionUpperLimit=command.bigDecimalValueOfParameterNamed(transactionUpperLimitParamName);
+             	   
+             	   transactionLowerLimit=command.bigDecimalValueOfParameterNamed(transactionLowerLimitParamName);
+             	   
+             	   if(transactionLowerLimit.compareTo(transactionUpperLimit)>0)
+             	   {
+             		   throw new TransactionIdExceededUpperLimitException();
+             	   }
+        	   }
     	   }
+    	   
+    	
     	   
        }
        else
@@ -163,15 +179,7 @@ public class SavingsAccountAssembler {
     	   isRetail=false;
        }
        
-       Boolean autogenerateTransactionId=this.fromApiJsonHelper.extractBooleanNamed(autogenerateTransactionIdParamName, element);
-       if(autogenerateTransactionId!=null)
-       {
-    	   autogenerateTransactionId=this.fromApiJsonHelper.extractBooleanNamed(autogenerateTransactionIdParamName, element);
-       }
-       else
-       {
-    	   autogenerateTransactionId=false;
-       }
+     
        
      
        

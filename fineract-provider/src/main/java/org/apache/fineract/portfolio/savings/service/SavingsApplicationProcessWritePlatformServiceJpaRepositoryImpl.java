@@ -399,6 +399,9 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         	
         		 
         		  this.retailAccountEntryTypeRepository.save(retailEntry);
+        		  
+        		  // reset isCOnstant to false
+        		  isConstant=false;
         	  }
            }
            
