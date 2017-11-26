@@ -78,6 +78,7 @@ import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchCardDetails;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -90,7 +91,6 @@ import org.apache.fineract.portfolio.charge.exception.SavingsAccountChargeNotFou
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.group.domain.Group;
-import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.SavingsApiConstants;
@@ -356,6 +356,10 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     
     /* @OneToOne(mappedBy = "retailSavings")
     private RetailTransactionRange retailSavings;*/
+    
+    @OneToOne(mappedBy="savingsAccount")
+    private InterswitchCardDetails interswitchCardDetails;
+    
     
     @OneToMany(mappedBy = "retailAccount")
     private List<RetailAccountEntryType> retailAccountEntryType;
