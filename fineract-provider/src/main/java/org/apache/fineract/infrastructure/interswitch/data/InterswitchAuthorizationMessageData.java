@@ -18,11 +18,11 @@ public class InterswitchAuthorizationMessageData
 	
 	private final BigDecimal settlementAmount;
 	
-	private final String settlementCurrency;
+	private final int settlementCurrency;
 	
 	private final BigDecimal settlementCurrencyRate;
 	
-	private final String transactionCurrency;
+	private final int transactionCurrency;
 	
 	private final LocalDate transactionDate;
 	
@@ -38,8 +38,8 @@ public class InterswitchAuthorizationMessageData
 	
 	
 	private InterswitchAuthorizationMessageData(final String sessionId,final BigInteger authorizationNumber,final BigInteger transactionId,
-			final BigDecimal authorizationAmount,final BigDecimal settlementAmount,final String settlementCurrency,
-			final BigDecimal settlementCurrencyRate,final String transactionCurrency,final LocalDate transactionDate,
+			final BigDecimal authorizationAmount,final BigDecimal settlementAmount,final int settlementCurrency,
+			final BigDecimal settlementCurrencyRate,final int transactionCurrency,final LocalDate transactionDate,
 			final LocalDate settlementDate,final boolean isSettled,final boolean isReversed,final boolean isAdviced,
 			final LocalDate settledOn)
 	{
@@ -78,13 +78,13 @@ public class InterswitchAuthorizationMessageData
 	public BigDecimal getSettlementAmount() {
 		return settlementAmount;
 	}
-	public String getSettlementCurrency() {
+	public int getSettlementCurrency() {
 		return settlementCurrency;
 	}
 	public BigDecimal getSettlementCurrencyRate() {
 		return settlementCurrencyRate;
 	}
-	public String getTransactionCurrency() {
+	public int getTransactionCurrency() {
 		return transactionCurrency;
 	}
 	public LocalDate getTransactionDate() {

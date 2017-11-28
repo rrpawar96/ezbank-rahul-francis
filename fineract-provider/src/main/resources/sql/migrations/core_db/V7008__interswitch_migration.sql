@@ -41,7 +41,7 @@ ENGINE=InnoDB
 CREATE TABLE `idt_interswitch_transactions` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT,
 	`session_id` VARCHAR(50) NOT NULL,
-	`authorization_number` BIGINT(20) NOT NULL,
+	`authorization_number` VARCHAR(50) NOT NULL,
 	`application_transaction_id` BIGINT(20) NOT NULL,
 	`transaction_amount` DECIMAL(10,0) NOT NULL,
 	`transaction_date` DATE NOT NULL,
@@ -60,7 +60,6 @@ ENGINE=InnoDB
 CREATE TABLE `idt_interswitch_authorization_requests` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT,
 	`session_id` VARCHAR(50) NOT NULL,
-	`authorization_number` BIGINT(20) NOT NULL,
 	`transaction_id` BIGINT(20) NULL DEFAULT NULL,
 	`authorization_amount` DECIMAL(10,0) NOT NULL,
 	`settlement_amount` DECIMAL(10,0) NULL DEFAULT NULL,

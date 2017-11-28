@@ -22,7 +22,7 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	private String sessionId;
 	
 	@Column(name="authorization_number")
-	private BigInteger authorizationNumber;
+	private String authorizationNumber;
 	
 	@OneToOne
 	@JoinColumn(name="application_transaction_id")
@@ -45,7 +45,7 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	private InterswitchAuthorizationRequests authorizationRequests;
 	
 	
-	public InterswitchTransactions(String sessionId,BigInteger authorizationNumber,SavingsAccountTransaction applicationTransaction,
+	public InterswitchTransactions(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
 			BigDecimal transactionAmount,LocalDate transactionDate,boolean isReversed,boolean isAdviced)
 	{
 		this.sessionId=sessionId;
@@ -55,6 +55,13 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 		this.transactionDate=transactionDate;
 		this.isReversed=isReversed;
 		this.isAdviced=isAdviced;
+	}
+	
+	public static InterswitchTransactions getInstance(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
+			BigDecimal transactionAmount,LocalDate transactionDate,boolean isReversed,boolean isAdviced)
+	{
+		return new InterswitchTransactions(sessionId,authorizationNumber,applicationTransaction,
+				transactionAmount,transactionDate,isReversed,isAdviced);
 	}
 
 
@@ -68,12 +75,12 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	}
 
 
-	public BigInteger getAuthorizationNumber() {
+	public String getAuthorizationNumber() {
 		return authorizationNumber;
 	}
 
 
-	public void setAuthorizationNumber(BigInteger authorizationNumber) {
+	public void setAuthorizationNumber(String authorizationNumber) {
 		this.authorizationNumber = authorizationNumber;
 	}
 

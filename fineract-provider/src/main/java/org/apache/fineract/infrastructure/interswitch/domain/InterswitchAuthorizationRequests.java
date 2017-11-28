@@ -21,9 +21,6 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	@Column(name="session_id")
 	private String sessionId;
 	
-	@Column(name="authorization_number")
-	private BigInteger authorizationNumber;
-	
 	@OneToOne
 	@JoinColumn(name="transaction_id")
 	private InterswitchTransactions interswitchtransaction;
@@ -35,13 +32,13 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	private BigDecimal settlementAmount;
 	
 	@Column(name="settlement_currency")
-	private String settlementCurrency;
+	private int settlementCurrency;
 	
 	@Column(name="settlement_currency_rate")
 	private BigDecimal settlementCurrencyRate;
 	
 	@Column(name="transaction_currency")
-	private String transactionCurrency;
+	private int transactionCurrency;
 	
 	@Column(name="transaction_date")
 	private LocalDate transactionDate;
@@ -53,12 +50,11 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	private boolean isSettled;
 	
 	
-	public InterswitchAuthorizationRequests(String sessionId,BigInteger authorizationNumber,InterswitchTransactions interswitchtransaction,
-			BigDecimal authorizationAmount,BigDecimal settlementAmount,String settlementCurrency,BigDecimal settlementCurrencyRate,
-			String transactionCurrency,LocalDate transactionDate,LocalDate settlementDate,boolean isSettled)
+	public InterswitchAuthorizationRequests(String sessionId,InterswitchTransactions interswitchtransaction,
+			BigDecimal authorizationAmount,BigDecimal settlementAmount,int settlementCurrency,BigDecimal settlementCurrencyRate,
+			int transactionCurrency,LocalDate transactionDate,LocalDate settlementDate,boolean isSettled)
 	{
 		this.sessionId=sessionId;
-		this.authorizationNumber=authorizationNumber;
 		this.interswitchtransaction=interswitchtransaction;
 		this.authorizationAmount=authorizationAmount;
 		this.settlementAmount=authorizationAmount;
@@ -70,7 +66,14 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 		this.isSettled=isSettled;
 				
 	}
-
+	
+	public static InterswitchAuthorizationRequests getInstance(String sessionId,InterswitchTransactions interswitchtransaction,
+			BigDecimal authorizationAmount,BigDecimal settlementAmount,int settlementCurrency,BigDecimal settlementCurrencyRate,
+			int transactionCurrency,LocalDate transactionDate,LocalDate settlementDate,boolean isSettled)
+	{
+		return new InterswitchAuthorizationRequests(sessionId,interswitchtransaction,authorizationAmount,settlementAmount,settlementCurrency,
+				settlementCurrencyRate,transactionCurrency,transactionDate,settlementDate,isSettled	);
+	}
 
 	public String getSessionId() {
 		return sessionId;
@@ -80,19 +83,6 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	public void setSessionId(String sessionId) {
 		this.sessionId = sessionId;
 	}
-
-
-	public BigInteger getAuthorizationNumber() {
-		return authorizationNumber;
-	}
-
-
-	public void setAuthorizationNumber(BigInteger authorizationNumber) {
-		this.authorizationNumber = authorizationNumber;
-	}
-
-
-
 
 
 	public InterswitchTransactions getInterswitchtransaction() {
@@ -125,12 +115,12 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	}
 
 
-	public String getSettlementCurrency() {
+	public int getSettlementCurrency() {
 		return settlementCurrency;
 	}
 
 
-	public void setSettlementCurrency(String settlementCurrency) {
+	public void setSettlementCurrency(int settlementCurrency) {
 		this.settlementCurrency = settlementCurrency;
 	}
 
@@ -145,12 +135,12 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	}
 
 
-	public String getTransactionCurrency() {
+	public int getTransactionCurrency() {
 		return transactionCurrency;
 	}
 
 
-	public void setTransactionCurrency(String transactionCurrency) {
+	public void setTransactionCurrency(int transactionCurrency) {
 		this.transactionCurrency = transactionCurrency;
 	}
 
