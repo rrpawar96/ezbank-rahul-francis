@@ -2,11 +2,14 @@ package org.apache.fineract.infrastructure.interswitch.service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.interswitch.domain.InterSwitchCardDetailsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchAuthorizationRequestRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchAuthorizationRequests;
@@ -19,6 +22,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
@@ -60,6 +64,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 	}
 	
 	
+	@Override
 	public CommandProcessingResult mapDebitCardToSavingsAccount(JsonCommand command)
 	{
 		this.context.authenticatedUser();
@@ -84,7 +89,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				.build();
 	}
 	
-	
+	@Override
 	public CommandProcessingResult authorizetransaction(JsonCommand command)
 	{
 		this.context.authenticatedUser();
@@ -114,15 +119,30 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		
 		
 		
+		String accountNumber="";
 		
-		InterswitchCardDetails cardDetails=this.interSwitchCardDetailsRepository.getOneByPrimaryAccountNumber(primaryAccountNumber);
+		if(command.stringValueOfParameterNamed("account_debit")!=null)
+		{
+			accountNumber=command.stringValueOfParameterNamed("account_debit");
+		}
+		else if(command.stringValueOfParameterNamed("account_credit")!=null)
+		{
+			accountNumber=command.stringValueOfParameterNamed("account_credit");
+		}
+		else
+		{
+			throw new GeneralPlatformDomainRuleException("account number missing", "account number missing","account number missing");
+		}
 		
-		SavingsAccount savingsAccount=cardDetails.getSavingsAccount();
+		
+		
+		SavingsAccount savingsAccount=this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
 		
 		
 		
-		// validate card
+		/*// validate card
 	
+		not sure if this is completely not required hence commenting the code..
 		
 		if(cardDetails.getValidThrough().isBefore(LocalDate.now()))
 		{
@@ -139,12 +159,12 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			 authorizationNumber= authorizationRequest.getId()+"";
 			 
 			 return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
-		}
+		}*/
 		
 		BigDecimal transactionAmount=command.bigDecimalValueOfParameterNamed("transaction_amount");
 		
 		
-		if(savingsAccount.getWithdrawableBalance().compareTo(transactionAmount)==-1)
+		if(savingsAccount.getWithdrawableBalance().compareTo(settlementAmount)==-1)
 		{
 			// return response code as insufficient bal
 			 responseCode=ResponseCodes.NOTSUFFICIENTFUNDS.getValue()+"";
@@ -159,9 +179,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			 return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 			
 		}
-		
-		// if everything is fine put funds on hold
-		
+				
 		// marking transaction as null ,because during authorization we don't execute transaction
 		InterswitchAuthorizationRequests authorizationRequest= this.interswitchAuthorizationRequestRepository.save(InterswitchAuthorizationRequests.getInstance(sessionId, null, authorizationAmount, settlementAmount,
 				 settlementCurrency, settlementCurrencyRate, transactionCurrency, transactionDate, settlementDate, isSettled));
@@ -169,7 +187,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		authorizationNumber= authorizationRequest.getId()+"";
 		responseCode=ResponseCodes.APPROVED.getValue()+"";
 		
-		savingsAccount.holdAmount(transactionAmount);
+		
 		
 		
 		
@@ -179,7 +197,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		
 	}
 	
-	
+	@Override
 	public CommandProcessingResult executeTransaction(JsonCommand command)
 	{
 		
@@ -210,13 +228,33 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		
 		boolean isAdviced=false; // what isAdviced?
 		
-		// get savings account linked to card
+		boolean isDebit=false;
 		
-		InterswitchCardDetails cardDetails=this.interSwitchCardDetailsRepository.getOneByPrimaryAccountNumber(primaryAccountNumber);
+		// get savings account
 		
-		SavingsAccount savingsAccount=cardDetails.getSavingsAccount();
+	String accountNumber="";
 		
-		// validate card
+		if(command.stringValueOfParameterNamed("account_debit")!=null)
+		{
+			accountNumber=command.stringValueOfParameterNamed("account_debit");
+			isDebit=true;
+		}
+		else if(command.stringValueOfParameterNamed("account_credit")!=null)
+		{
+			accountNumber=command.stringValueOfParameterNamed("account_credit");
+		}
+		else
+		{
+			throw new GeneralPlatformDomainRuleException("account number missing", "account number missing","account number missing");
+		}
+		
+		
+		
+		SavingsAccount savingsAccount=this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
+		
+		
+		
+		/*// validate card
 		
 		
 			if(cardDetails.getValidThrough().isBefore(LocalDate.now()))
@@ -229,7 +267,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				 authorizationNumber=""; // because we did not execute transaction??
 				 
 				 return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
-			}
+			}*/
 			
 			
 			
@@ -247,6 +285,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		
 			// if everything goes well 
 			
+			  SavingsAccountTransaction applicationTransaction;
+			
+			if(isDebit)
+			{
 			  final Locale locale = command.extractLocale();
 		        final DateTimeFormatter fmt = DateTimeFormat.forPattern(command.dateFormat()).withLocale(locale);
 		
@@ -259,19 +301,35 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		        final boolean isWithdrawBalance = false;
 		        final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(isAccountTransfer,
 		                isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
-		        final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(savingsAccount, fmt, transactionDate,
-		                transactionAmount, null, transactionBooleanValues);
+		        applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccount, fmt, transactionDate,
+		        		settlementAmount, null, transactionBooleanValues);
 		        
 		        
-		        InterswitchTransactions transaction=InterswitchTransactions.getInstance(sessionId, authorizationNumber, withdrawal, transactionAmount, transactionDate, isReversed, isAdviced);
+			}
+			else
+			{
+				  checkClientOrGroupActive(savingsAccount);
+			        final Locale locale = command.extractLocale();
+			        final DateTimeFormatter fmt = DateTimeFormat.forPattern(command.dateFormat()).withLocale(locale);
+
+			 
+			      //  final Map<String, Object> changes = new LinkedHashMap<>();
+			      //  final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
+			        boolean isAccountTransfer = false;
+			        boolean isRegularTransaction = true;
+			        
+			        applicationTransaction=this.savingsAccountDomainService.handleDeposit(savingsAccount, fmt, transactionDate,
+		                    transactionAmount, null, isAccountTransfer, isRegularTransaction);
+			        
+			}
+		        
+		        
+		        InterswitchTransactions transaction=InterswitchTransactions.getInstance(sessionId, authorizationNumber, applicationTransaction, transactionAmount, transactionDate, isReversed, isAdviced);
 		        
 		        
 
 				authorizationNumber= transaction.getId()+"";               // this time we return transaction id instead of authorization id
 				responseCode=ResponseCodes.APPROVED.getValue()+"";
-				
-				savingsAccount.holdAmount(transactionAmount);
-				
 				
 				
 				//send the response code

@@ -80,4 +80,20 @@ public class InterswitchAPI
 
 	           return this.toApiJsonSerializer.serialize(result);
 	    }
+	  	
+	  	@POST
+	    @Path("transaction")
+	    @Consumes({ MediaType.APPLICATION_JSON })
+	    @Produces({ MediaType.APPLICATION_JSON })
+	    public String executeTransaction(final String apiRequestBodyAsJson) {
+	    	
+	    	// to do: check for permissions here after creating one in backend
+	    	//this.context.authenticatedUser().validateHasPermissionTo();
+	    	
+	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().authorizeTransaction().withJson(apiRequestBodyAsJson).build();
+
+	           final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+	           return this.toApiJsonSerializer.serialize(result);
+	    }
 }

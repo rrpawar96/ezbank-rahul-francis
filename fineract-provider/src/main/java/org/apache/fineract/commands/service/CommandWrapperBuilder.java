@@ -1160,6 +1160,13 @@ public class CommandWrapperBuilder {
         return this;
     }
     
+    public CommandWrapperBuilder executeTransaction() {
+        this.actionName = "EXECUTE";
+        this.entityName = "TRANSACTION";
+        this.href = "/interswitch/template";
+        return this;
+    }
+    
     public CommandWrapperBuilder createRetailEntry(final long retailAccountId) {
         this.actionName = "CREATE";
         this.entityName = "RETAILACCOUNTENTRIES";
