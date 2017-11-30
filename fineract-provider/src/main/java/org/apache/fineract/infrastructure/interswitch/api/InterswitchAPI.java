@@ -47,22 +47,7 @@ public class InterswitchAPI
 	 }
 	 
 	 
-	 
-	  	@POST
-	    @Path("debitcard")
-	    @Consumes({ MediaType.APPLICATION_JSON })
-	    @Produces({ MediaType.APPLICATION_JSON })
-	    public String mapDebitCardWithSavings(final String apiRequestBodyAsJson) {
-	    	
-	    	// to do: check for permissions here after creating one in backend
-	    	//this.context.authenticatedUser().validateHasPermissionTo();
-	    	
-	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().mapDebitCardToSavingsAccount().withJson(apiRequestBodyAsJson).build();
 
-	           final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
-
-	           return this.toApiJsonSerializer.serialize(result);
-	    }
 	  	
 	  	
 	  	@POST
@@ -78,7 +63,7 @@ public class InterswitchAPI
 
 	           final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
-	           return this.toApiJsonSerializer.serialize(result);
+	           return this.authorizationToApiJsonSerializer.serialize(result);
 	    }
 	  	
 	  	@POST
@@ -90,7 +75,7 @@ public class InterswitchAPI
 	    	// to do: check for permissions here after creating one in backend
 	    	//this.context.authenticatedUser().validateHasPermissionTo();
 	    	
-	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().authorizeTransaction().withJson(apiRequestBodyAsJson).build();
+	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().executeTransaction().withJson(apiRequestBodyAsJson).build();
 
 	           final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 

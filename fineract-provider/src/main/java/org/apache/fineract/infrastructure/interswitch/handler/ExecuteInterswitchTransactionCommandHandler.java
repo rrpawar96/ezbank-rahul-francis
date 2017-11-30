@@ -1,4 +1,4 @@
-package org.apache.fineract.infrastructure.interswitch;
+package org.apache.fineract.infrastructure.interswitch.handler;
 
 import org.apache.fineract.commands.annotation.CommandType;
 import org.apache.fineract.commands.handler.NewCommandSourceHandler;

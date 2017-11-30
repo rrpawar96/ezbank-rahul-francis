@@ -1,13 +1,15 @@
 package org.apache.fineract.infrastructure.interswitch.domain;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
@@ -32,8 +34,9 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	@Column(name="transaction_amount")
 	private BigDecimal transactionAmount;
 	
+	@Temporal(TemporalType.DATE)
 	@Column(name="transaction_date")
-	private LocalDate transactionDate;
+	private Date transactionDate;
 	
 	@Column(name="is_reversed")
 	private boolean isReversed;
@@ -46,7 +49,7 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	
 	
 	public InterswitchTransactions(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
-			BigDecimal transactionAmount,LocalDate transactionDate,boolean isReversed,boolean isAdviced)
+			BigDecimal transactionAmount,Date transactionDate,boolean isReversed,boolean isAdviced)
 	{
 		this.sessionId=sessionId;
 		this.authorizationNumber=authorizationNumber;
@@ -58,7 +61,7 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	}
 	
 	public static InterswitchTransactions getInstance(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
-			BigDecimal transactionAmount,LocalDate transactionDate,boolean isReversed,boolean isAdviced)
+			BigDecimal transactionAmount,Date transactionDate,boolean isReversed,boolean isAdviced)
 	{
 		return new InterswitchTransactions(sessionId,authorizationNumber,applicationTransaction,
 				transactionAmount,transactionDate,isReversed,isAdviced);
@@ -104,16 +107,13 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 		this.transactionAmount = transactionAmount;
 	}
 
-
-	public LocalDate getTransactionDate() {
+	public Date getTransactionDate() {
 		return transactionDate;
 	}
 
-
-	public void setTransactionDate(LocalDate transactionDate) {
+	public void setTransactionDate(Date transactionDate) {
 		this.transactionDate = transactionDate;
 	}
-
 
 	public boolean isReversed() {
 		return isReversed;

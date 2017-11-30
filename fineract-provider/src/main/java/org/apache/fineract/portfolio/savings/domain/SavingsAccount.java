@@ -60,7 +60,6 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -78,7 +77,6 @@ import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchCardDetails;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -357,8 +355,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     /* @OneToOne(mappedBy = "retailSavings")
     private RetailTransactionRange retailSavings;*/
     
-    @OneToOne(mappedBy="savingsAccount")
-    private InterswitchCardDetails interswitchCardDetails;
+   
     
     
     @OneToMany(mappedBy = "retailAccount")

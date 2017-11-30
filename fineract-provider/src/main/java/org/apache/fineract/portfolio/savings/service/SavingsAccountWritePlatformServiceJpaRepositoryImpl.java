@@ -447,6 +447,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         {
         	deposit=this.savingsAccountDomainService.handleDeposit(account, fmt, transactionDate,
                     transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction);
+        	
         }
         
         // handle depositors info

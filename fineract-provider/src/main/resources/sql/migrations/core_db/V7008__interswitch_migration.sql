@@ -17,24 +17,7 @@
 -- under the License.
 --
 
--- Create new table to store card details
 
-
-CREATE TABLE `idt_interswitch_card_details` (
-	`id` BIGINT(20) NOT NULL AUTO_INCREMENT,
-	`primary_account_number` BIGINT(20) NOT NULL,
-	`savings_account_id` BIGINT(20) NOT NULL,
-	`cvv` INT(11) NOT NULL,
-	`valid_from` DATE NOT NULL,
-	`valid_through` DATE NOT NULL,
-	`pin` VARCHAR(50) NOT NULL,
-	INDEX `InterSwitchCard_savings_FK` (`savings_account_id`),
-	INDEX `primary_key` (`id`),
-	CONSTRAINT `InterSwitchCard_savings_FK` FOREIGN KEY (`savings_account_id`) REFERENCES `m_savings_account` (`id`)
-)
-COLLATE='utf8_general_ci'
-ENGINE=InnoDB
-;
 
 -- create new table to record  transactions resulting due to interswitch authorization
 

@@ -1,13 +1,15 @@
 package org.apache.fineract.infrastructure.interswitch.domain;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.joda.time.LocalDate;
@@ -40,19 +42,31 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	@Column(name="transaction_currency")
 	private int transactionCurrency;
 	
+	@Temporal(TemporalType.DATE)
 	@Column(name="transaction_date")
-	private LocalDate transactionDate;
+	private Date transactionDate;
 	
+	@Temporal(TemporalType.DATE)
 	@Column(name="settlement_date")
-	private LocalDate settlementDate;
+	private Date settlementDate;
 	
 	@Column(name="is_settled")
 	private boolean isSettled;
 	
+	@Column(name="is_reversed")
+	private boolean isReversed;
+	
+	@Column(name="is_adviced")
+	private boolean isAdviced;
+	
+	@Temporal(TemporalType.DATE)
+	@Column(name="settled_on")
+	private Date settledOn;
+	
 	
 	public InterswitchAuthorizationRequests(String sessionId,InterswitchTransactions interswitchtransaction,
 			BigDecimal authorizationAmount,BigDecimal settlementAmount,int settlementCurrency,BigDecimal settlementCurrencyRate,
-			int transactionCurrency,LocalDate transactionDate,LocalDate settlementDate,boolean isSettled)
+			int transactionCurrency,Date transactionDate,Date settlementDate,boolean isSettled,boolean isReversed,boolean isAdviced,Date settledOn)
 	{
 		this.sessionId=sessionId;
 		this.interswitchtransaction=interswitchtransaction;
@@ -64,15 +78,18 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 		this.transactionDate=transactionDate;
 		this.settlementDate=settlementDate;
 		this.isSettled=isSettled;
+		this.isReversed=isReversed;
+		this.isAdviced=isAdviced;
+		this.settledOn=settledOn;
 				
 	}
 	
 	public static InterswitchAuthorizationRequests getInstance(String sessionId,InterswitchTransactions interswitchtransaction,
 			BigDecimal authorizationAmount,BigDecimal settlementAmount,int settlementCurrency,BigDecimal settlementCurrencyRate,
-			int transactionCurrency,LocalDate transactionDate,LocalDate settlementDate,boolean isSettled)
+			int transactionCurrency,Date transactionDate,Date settlementDate,boolean isSettled,boolean isReversed,boolean isAdviced,Date settledOn)
 	{
 		return new InterswitchAuthorizationRequests(sessionId,interswitchtransaction,authorizationAmount,settlementAmount,settlementCurrency,
-				settlementCurrencyRate,transactionCurrency,transactionDate,settlementDate,isSettled	);
+				settlementCurrencyRate,transactionCurrency,transactionDate,settlementDate,isSettled,isReversed,isAdviced,settledOn	);
 	}
 
 	public String getSessionId() {
@@ -145,25 +162,21 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	}
 
 
-	public LocalDate getTransactionDate() {
+	public Date getTransactionDate() {
 		return transactionDate;
 	}
 
-
-	public void setTransactionDate(LocalDate transactionDate) {
+	public void setTransactionDate(Date transactionDate) {
 		this.transactionDate = transactionDate;
 	}
 
-
-	public LocalDate getSettlementDate() {
+	public Date getSettlementDate() {
 		return settlementDate;
 	}
 
-
-	public void setSettlementDate(LocalDate settlementDate) {
+	public void setSettlementDate(Date settlementDate) {
 		this.settlementDate = settlementDate;
 	}
-
 
 	public boolean isSettled() {
 		return isSettled;

@@ -7,8 +7,7 @@ public interface InterswitchWritePlatformService {
 
 	CommandProcessingResult authorizetransaction(JsonCommand command);
 
-	CommandProcessingResult mapDebitCardToSavingsAccount(JsonCommand command);
-
+	
 	CommandProcessingResult executeTransaction(JsonCommand command);
 
 }
