@@ -24,15 +24,13 @@
 CREATE TABLE `idt_interswitch_transactions` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT,
 	`session_id` VARCHAR(50) NOT NULL,
-	`authorization_number` VARCHAR(50) NOT NULL,
-	`application_transaction_id` BIGINT(20) NOT NULL,
+--	`authorization_number` VARCHAR(50) NOT NULL,
+--	`application_transaction_id` BIGINT(20) NOT NULL,
 	`transaction_amount` DECIMAL(10,0) NOT NULL,
 	`transaction_date` DATE NOT NULL,
 	`is_reversed` TINYINT(4) NOT NULL,
 	`is_adviced` TINYINT(4) NOT NULL,
-	PRIMARY KEY (`id`),
-	INDEX `FK_idt_interswitch_transactions_m_savings_account_transaction` (`application_transaction_id`),
-	CONSTRAINT `FK_idt_interswitch_transactions_m_savings_account_transaction` FOREIGN KEY (`application_transaction_id`) REFERENCES `m_savings_account_transaction` (`id`)
+	PRIMARY KEY (`id`)
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
@@ -42,13 +40,13 @@ ENGINE=InnoDB
 
 CREATE TABLE `idt_interswitch_authorization_requests` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT,
-	`session_id` VARCHAR(50) NOT NULL,
+--	`session_id` VARCHAR(50) NOT NULL,
 	`transaction_id` BIGINT(20) NULL DEFAULT NULL,
-	`authorization_amount` DECIMAL(10,0) NOT NULL,
+--	`authorization_amount` DECIMAL(10,0) NOT NULL,
 	`settlement_amount` DECIMAL(10,0) NULL DEFAULT NULL,
-	`settlement_currency` INT(11) NULL DEFAULT NULL,
-	`settlement_currency_rate` DECIMAL(10,0) NULL DEFAULT NULL,
-	`transaction_currency` INT(11) NULL DEFAULT NULL,
+--	`settlement_currency` INT(11) NULL DEFAULT NULL,
+--	`settlement_currency_rate` DECIMAL(10,0) NULL DEFAULT NULL,
+--	`transaction_currency` INT(11) NULL DEFAULT NULL,
 	`transaction_date` DATE NOT NULL,
 	`settlement_date` DATE NOT NULL,
 	`is_settled` TINYINT(4) NOT NULL,
@@ -63,18 +61,9 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
--- create new table to map iso currency codes
+-- permissions
 
-CREATE TABLE `idt_interswitch_currency_codes` (
-	`Entity` VARCHAR(50) NULL DEFAULT NULL,
-	`Currency` VARCHAR(50) NULL DEFAULT NULL,
-	`AlphabeticCode` VARCHAR(50) NULL DEFAULT NULL,
-	`NumericCode` INT(11) NULL DEFAULT NULL,
-	`MinorUnit` VARCHAR(50) NULL DEFAULT NULL,
-	`WithdrawalDate` DATE NULL DEFAULT NULL
-)
-COLLATE='utf8_general_ci'
-ENGINE=InnoDB
-;
-
+INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'AUTHORIZE_TRANSACTION', 'TRANSACTION', 'AUTHORIZE', 1);
+INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'EXECUTE_TRANSACTION', 'TRANSACTION', 'EXECUTE', 1);
+INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'UNDO_INTERSWITCHTRANSACTION', 'INTERSWITCHTRANSACTION', 'UNDO', 1);
 

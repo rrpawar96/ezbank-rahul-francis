@@ -78,12 +78,24 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         this.depositAccountOnHoldTransactionRepository = depositAccountOnHoldTransactionRepository;
         this.businessEventNotifierService = businessEventNotifierService;
     }
-
+    
+    
     @Transactional
     @Override
     public SavingsAccountTransaction handleWithdrawal(final SavingsAccount account, final DateTimeFormatter fmt,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
-            final SavingsTransactionBooleanValues transactionBooleanValues) {
+            final SavingsTransactionBooleanValues transactionBooleanValues){
+    	
+    	return handleWithdrawal( account,fmt, transactionDate,transactionAmount,paymentDetail,
+                transactionBooleanValues,false); 
+    }
+
+   
+    @Transactional
+    @Override
+    public SavingsAccountTransaction handleWithdrawal(final SavingsAccount account, final DateTimeFormatter fmt,
+            final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
+            final SavingsTransactionBooleanValues transactionBooleanValues,boolean isATMWithdrawal) {
 
         AppUser user = getAppUserIfPresent();
         account.validateForAccountBlock();
@@ -100,7 +112,17 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         Integer accountType = null;
         final SavingsAccountTransactionDTO transactionDTO = new SavingsAccountTransactionDTO(fmt, transactionDate, transactionAmount,
                 paymentDetail, new Date(), user, accountType);
-        final SavingsAccountTransaction withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee());
+         SavingsAccountTransaction withdrawal;
+        if(isATMWithdrawal)
+        {
+        	withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee(),true);	
+        }
+        else
+        {
+        	withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee());
+        }
+        
+        
         final MathContext mc = MathContext.DECIMAL64;
         if (account.isBeforeLastPostingPeriod(transactionDate)) {
             final LocalDate today = DateUtils.getLocalDateOfTenant();

@@ -45,4 +45,8 @@ public interface SavingsAccountDomainService {
 	SavingsAccountTransaction handleRetailDeposit(SavingsAccount account, DateTimeFormatter fmt,
 			LocalDate transactionDate, BigDecimal transactionAmount, PaymentDetail paymentDetail,
 			boolean isAccountTransfer, boolean isRegularTransaction,String transactionExternalId);
+
+	SavingsAccountTransaction handleWithdrawal(SavingsAccount account, DateTimeFormatter fmt, LocalDate transactionDate,
+			BigDecimal transactionAmount, PaymentDetail paymentDetail,
+			SavingsTransactionBooleanValues transactionBooleanValues, boolean isATMWithdrawal);
 }

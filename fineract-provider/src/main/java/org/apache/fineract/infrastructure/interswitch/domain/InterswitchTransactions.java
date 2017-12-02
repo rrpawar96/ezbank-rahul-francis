@@ -13,7 +13,6 @@ import javax.persistence.TemporalType;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
-import org.joda.time.LocalDate;
 
 @Entity
 @Table(name = "idt_interswitch_transactions")
@@ -43,9 +42,7 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	
 	@Column(name="is_adviced")
 	private boolean isAdviced;
-	
-	@OneToOne(mappedBy="interswitchtransaction")
-	private InterswitchAuthorizationRequests authorizationRequests;
+
 	
 	
 	public InterswitchTransactions(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,

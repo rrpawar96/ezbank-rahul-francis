@@ -1061,8 +1061,14 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             startInterestCalculationLocalDate = getActivationLocalDate();
         return startInterestCalculationLocalDate;
     }
+    
+    
+    public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee)
+    {
+    	return withdraw(transactionDTO,applyWithdrawFee,false);
+    }
 
-    public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee) {
+    public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee,final boolean isATMWithdrawal) {
 
         if (!isTransactionsAllowed()) {
 
@@ -1116,9 +1122,22 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         validateActivityNotBeforeClientOrGroupTransferDate(SavingsEvent.SAVINGS_WITHDRAWAL, transactionDTO.getTransactionDate());
 
         final Money transactionAmountMoney = Money.of(this.currency, transactionDTO.getTransactionAmount());
-        final SavingsAccountTransaction transaction = SavingsAccountTransaction.withdrawal(this, office(),
-                transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
-                transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        SavingsAccountTransaction transaction;
+        if(isATMWithdrawal)
+        {
+        	transaction = SavingsAccountTransaction.atmWithdrawal(this, office(),
+                    transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
+                    transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        }
+        else
+        {
+        	transaction = SavingsAccountTransaction.withdrawal(this, office(),
+                    transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
+                    transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        }
+         
+        
+        
         addTransaction(transaction);
         if (applyWithdrawFee) {
             // auto pay withdrawal fee

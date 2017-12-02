@@ -1146,13 +1146,6 @@ public class CommandWrapperBuilder {
         return this;
     }
     
-    public CommandWrapperBuilder mapDebitCardToSavingsAccount() {
-        this.actionName = "CREATE";
-        this.entityName = "DEBITCARD";
-        this.href = "/interswitch/template";
-        return this;
-    }
-    
     public CommandWrapperBuilder authorizeTransaction() {
         this.actionName = "AUTHORIZE";
         this.entityName = "TRANSACTION";
@@ -1163,6 +1156,15 @@ public class CommandWrapperBuilder {
     public CommandWrapperBuilder executeTransaction() {
         this.actionName = "EXECUTE";
         this.entityName = "TRANSACTION";
+        this.href = "/interswitch/template";
+        return this;
+    }
+    
+    public CommandWrapperBuilder undoTransaction(String transactionId,long savingsAccountId) {
+        this.actionName = "UNDO";
+        this.entityName = "INTERSWITCHTRANSACTION";
+        this.transactionId=transactionId;
+        this.savingsId=savingsAccountId;
         this.href = "/interswitch/template";
         return this;
     }

@@ -3,7 +3,9 @@ package org.apache.fineract.infrastructure.interswitch.api;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -13,8 +15,9 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchAuthorizationMessageData;
-import org.apache.fineract.infrastructure.interswitch.data.InterswitchCardData;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -28,22 +31,22 @@ public class InterswitchAPI
 	private final PlatformSecurityContext context;
 	private final ApiRequestParameterHelper apiRequestParameterHelper;
 	private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
-	private final DefaultToApiJsonSerializer<InterswitchCardData> toApiJsonSerializer;
-	private final DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> authorizationToApiJsonSerializer;
-	
-	
+	private final DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> toApiJsonSerializer;
+	private final SavingsAccountRepository savingsAccountRepository;
 	
 	 @Autowired
 	 public InterswitchAPI(PlatformSecurityContext context,ApiRequestParameterHelper apiRequestParameterHelper,
 			 PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-			 DefaultToApiJsonSerializer<InterswitchCardData> toApiJsonSerializer,
-			 DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> authorizationToApiJsonSerializer)
+			 DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> toApiJsonSerializer,
+			 DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> authorizationToApiJsonSerializer,
+			 SavingsAccountRepository savingsAccountRepository)
 	 {
 		 this.context=context;
 		 this.apiRequestParameterHelper=apiRequestParameterHelper;
 		this.commandsSourceWritePlatformService=commandsSourceWritePlatformService;
 		this.toApiJsonSerializer=toApiJsonSerializer;
-		this.authorizationToApiJsonSerializer=authorizationToApiJsonSerializer;
+		this.savingsAccountRepository=savingsAccountRepository;
+		
 	 }
 	 
 	 
@@ -63,7 +66,7 @@ public class InterswitchAPI
 
 	           final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
-	           return this.authorizationToApiJsonSerializer.serialize(result);
+	           return this.toApiJsonSerializer.serialize(result);
 	    }
 	  	
 	  	@POST
@@ -76,6 +79,30 @@ public class InterswitchAPI
 	    	//this.context.authenticatedUser().validateHasPermissionTo();
 	    	
 	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().executeTransaction().withJson(apiRequestBodyAsJson).build();
+
+	           final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+	           return this.toApiJsonSerializer.serialize(result);
+	    }
+	  	
+	  	@POST
+	    @Path("/undotransaction/{transactionId}")
+	    @Consumes({ MediaType.APPLICATION_JSON })
+	    @Produces({ MediaType.APPLICATION_JSON })
+	    public String undoTransaction(final String apiRequestBodyAsJson,@QueryParam("savingsAccountNumber") final String savingsAccountNumber,
+	    		 @PathParam("transactionId") final String transactionId) {
+	    	
+	    	// to do: check for permissions here after creating one in backend
+	    	//this.context.authenticatedUser().validateHasPermissionTo();
+	  		
+	  		// get savingsAccountId from savings account number
+	  		
+
+			SavingsAccount savingsAccount = this.savingsAccountRepository.findSavingAccountByAccountNumber(savingsAccountNumber);
+			
+			long savingsAccountId=savingsAccount.getId();
+	    	
+	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().undoTransaction(transactionId,savingsAccountId).withJson(apiRequestBodyAsJson).build();
 
 	           final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 

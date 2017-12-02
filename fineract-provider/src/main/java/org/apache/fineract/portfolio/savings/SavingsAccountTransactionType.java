@@ -44,7 +44,8 @@ public enum SavingsAccountTransactionType {
     ESCHEAT(19, "savingsAccountTransactionType.escheat"),
     AMOUNT_HOLD(20, "savingsAccountTransactionType.onHold"),
     AMOUNT_RELEASE(21, "savingsAccountTransactionType.release"),
-	LOAN_DISBURSEMENT(22, "savingsAccountTransactionType.loanDisbursement");
+	LOAN_DISBURSEMENT(22, "savingsAccountTransactionType.loanDisbursement"),
+	ATM_WITHDRAWAL(23, "savingsAccountTransactionType.atmWithdrawal");
 
     private final Integer value;
     private final String code;
@@ -125,6 +126,9 @@ public enum SavingsAccountTransactionType {
             case 22:
             	savingsAccountTransactionType = SavingsAccountTransactionType.LOAN_DISBURSEMENT;
             break;
+            case 23:
+            	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_WITHDRAWAL;
+            break;
         }
         return savingsAccountTransactionType;
     }
@@ -138,7 +142,11 @@ public enum SavingsAccountTransactionType {
     	     }
 
     public boolean isWithdrawal() {
-        return this.value.equals(SavingsAccountTransactionType.WITHDRAWAL.getValue());
+        return this.value.equals(SavingsAccountTransactionType.WITHDRAWAL.getValue()) || isATMWithdrawal();
+    }
+    
+    public boolean isATMWithdrawal() {
+        return this.value.equals(SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue()) ;
     }
 
     public boolean isInterestPosting() {
@@ -214,7 +222,7 @@ public enum SavingsAccountTransactionType {
     }
 
     public boolean isDebit() {
-        return isWithdrawal() || isWithdrawalFee() || isAnnualFee() || isPayCharge() || isIncomeFromInterest() || isWithHoldTax() || isEscheat() || isAmountOnHold();
+        return isWithdrawal() ||isATMWithdrawal() || isWithdrawalFee() || isAnnualFee() || isPayCharge() || isIncomeFromInterest() || isWithHoldTax() || isEscheat() || isAmountOnHold();
     }
 
     public boolean isCredit() {
