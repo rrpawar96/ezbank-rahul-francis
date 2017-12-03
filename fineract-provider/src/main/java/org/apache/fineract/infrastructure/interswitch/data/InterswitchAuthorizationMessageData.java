@@ -18,12 +18,6 @@ public class InterswitchAuthorizationMessageData
 	
 	private final BigDecimal settlementAmount;
 	
-	private final int settlementCurrency;
-	
-	private final BigDecimal settlementCurrencyRate;
-	
-	private final int transactionCurrency;
-	
 	private final LocalDate transactionDate;
 	
 	private final LocalDate settlementDate;
@@ -38,8 +32,7 @@ public class InterswitchAuthorizationMessageData
 	
 	
 	private InterswitchAuthorizationMessageData(final String sessionId,final BigInteger authorizationNumber,final BigInteger transactionId,
-			final BigDecimal authorizationAmount,final BigDecimal settlementAmount,final int settlementCurrency,
-			final BigDecimal settlementCurrencyRate,final int transactionCurrency,final LocalDate transactionDate,
+			final BigDecimal authorizationAmount,final BigDecimal settlementAmount,final LocalDate transactionDate,
 			final LocalDate settlementDate,final boolean isSettled,final boolean isReversed,final boolean isAdviced,
 			final LocalDate settledOn)
 	{
@@ -48,9 +41,6 @@ public class InterswitchAuthorizationMessageData
 		this.transactionId=transactionId;
 		this.authorizationAmount=authorizationAmount;
 		this.settlementAmount=settlementAmount;
-		this.settlementCurrency=settlementCurrency;
-		this.settlementCurrencyRate=settlementCurrencyRate;
-		this.transactionCurrency=transactionCurrency;
 		this.transactionDate=transactionDate;
 		this.settlementDate=settlementDate;
 		this.isSettled=isSettled;
@@ -77,15 +67,6 @@ public class InterswitchAuthorizationMessageData
 	}
 	public BigDecimal getSettlementAmount() {
 		return settlementAmount;
-	}
-	public int getSettlementCurrency() {
-		return settlementCurrency;
-	}
-	public BigDecimal getSettlementCurrencyRate() {
-		return settlementCurrencyRate;
-	}
-	public int getTransactionCurrency() {
-		return transactionCurrency;
 	}
 	public LocalDate getTransactionDate() {
 		return transactionDate;

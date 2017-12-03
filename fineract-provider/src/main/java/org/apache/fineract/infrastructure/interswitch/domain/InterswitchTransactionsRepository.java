@@ -7,4 +7,6 @@ public interface InterswitchTransactionsRepository
 extends JpaRepository<InterswitchTransactions, Long>, JpaSpecificationExecutor<InterswitchTransactions>
 {
 
+	InterswitchTransactions findOneBySessionIdAndAuthorizationNumber(String sessionId,String authorizationNumber);
+	
 }

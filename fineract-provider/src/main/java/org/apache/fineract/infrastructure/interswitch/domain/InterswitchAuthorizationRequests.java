@@ -1,6 +1,7 @@
 package org.apache.fineract.infrastructure.interswitch.domain;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -27,6 +28,10 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	@Column(name="transaction_date")
 	private Date transactionDate;
 	
+	@Temporal(TemporalType.TIME)
+	@Column(name="transaction_time")
+	private LocalTime transactionTime;
+	
 	@Temporal(TemporalType.DATE)
 	@Column(name="settlement_date")
 	private Date settlementDate;
@@ -46,11 +51,13 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	
 	
 	public InterswitchAuthorizationRequests(String sessionId,
-			BigDecimal settlementAmount,Date transactionDate,Date settlementDate,boolean isSettled,boolean isReversed,boolean isAdviced,Date settledOn)
+			BigDecimal settlementAmount,Date transactionDate,LocalTime transactionTime,Date settlementDate,boolean isSettled,boolean isReversed,boolean isAdviced,
+			Date settledOn)
 	{
 		this.sessionId=sessionId;
 		this.settlementAmount=settlementAmount;
 		this.transactionDate=transactionDate;
+		this.transactionTime=transactionTime;
 		this.settlementDate=settlementDate;
 		this.isSettled=isSettled;
 		this.isReversed=isReversed;
@@ -60,10 +67,11 @@ public class InterswitchAuthorizationRequests extends AbstractPersistableCustom<
 	}
 	
 	public static InterswitchAuthorizationRequests getInstance(String sessionId,
-			BigDecimal settlementAmount,Date transactionDate,Date settlementDate,boolean isSettled,boolean isReversed,boolean isAdviced,Date settledOn)
+			BigDecimal settlementAmount,Date transactionDate,LocalTime transactionTime,Date settlementDate,boolean isSettled,boolean isReversed,boolean isAdviced,
+			Date settledOn)
 	{
 		return new InterswitchAuthorizationRequests(sessionId,settlementAmount,
-				transactionDate,settlementDate,isSettled,isReversed,isAdviced,settledOn	);
+				transactionDate,transactionTime,settlementDate,isSettled,isReversed,isAdviced,settledOn	);
 	}
 
 	public String getSessionId() {

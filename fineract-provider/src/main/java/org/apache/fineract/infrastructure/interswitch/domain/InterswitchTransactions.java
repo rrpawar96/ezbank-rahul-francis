@@ -1,6 +1,7 @@
 package org.apache.fineract.infrastructure.interswitch.domain;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -37,6 +38,10 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	@Column(name="transaction_date")
 	private Date transactionDate;
 	
+	@Temporal(TemporalType.TIME)
+	@Column(name="transaction_time")
+	private LocalTime transactionTime;
+	
 	@Column(name="is_reversed")
 	private boolean isReversed;
 	
@@ -46,22 +51,23 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	
 	
 	public InterswitchTransactions(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
-			BigDecimal transactionAmount,Date transactionDate,boolean isReversed,boolean isAdviced)
+			BigDecimal transactionAmount,Date transactionDate,LocalTime transactionTime,boolean isReversed,boolean isAdviced)
 	{
 		this.sessionId=sessionId;
 		this.authorizationNumber=authorizationNumber;
 		this.applicationTransaction=applicationTransaction;
 		this.transactionAmount=transactionAmount;
 		this.transactionDate=transactionDate;
+		this.transactionTime=transactionTime;
 		this.isReversed=isReversed;
 		this.isAdviced=isAdviced;
 	}
 	
 	public static InterswitchTransactions getInstance(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
-			BigDecimal transactionAmount,Date transactionDate,boolean isReversed,boolean isAdviced)
+			BigDecimal transactionAmount,Date transactionDate,LocalTime transactionTime,boolean isReversed,boolean isAdviced)
 	{
 		return new InterswitchTransactions(sessionId,authorizationNumber,applicationTransaction,
-				transactionAmount,transactionDate,isReversed,isAdviced);
+				transactionAmount,transactionDate,transactionTime,isReversed,isAdviced);
 	}
 
 
