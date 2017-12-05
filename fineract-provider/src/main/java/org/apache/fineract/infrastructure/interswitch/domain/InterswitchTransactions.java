@@ -25,49 +25,51 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	
 	@Column(name="authorization_number")
 	private String authorizationNumber;
-	
+		
 	@OneToOne
 	@JoinColumn(name="application_transaction_id")
 	private SavingsAccountTransaction applicationTransaction;
 
-	
-	@Column(name="transaction_amount")
-	private BigDecimal transactionAmount;
+	@Column(name="settlement_amount")
+	private BigDecimal settlementAmount;
 	
 	@Temporal(TemporalType.DATE)
-	@Column(name="transaction_date")
-	private Date transactionDate;
+	@Column(name="settlement_date")
+	private Date settlementDate;
 	
-	@Temporal(TemporalType.TIME)
-	@Column(name="transaction_time")
-	private LocalTime transactionTime;
+	@Column(name="local_transaction_time")
+	private String transactionTime;
 	
 	@Column(name="is_reversed")
 	private boolean isReversed;
 	
 	@Column(name="is_adviced")
 	private boolean isAdviced;
-
 	
+	@Column(name="is_debit")
+	private boolean isDebit;
 	
 	public InterswitchTransactions(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
-			BigDecimal transactionAmount,Date transactionDate,LocalTime transactionTime,boolean isReversed,boolean isAdviced)
+			BigDecimal settlementAmount,Date settlementDate,String transactionTime,
+			boolean isReversed,boolean isAdviced,boolean isDebit)
 	{
 		this.sessionId=sessionId;
 		this.authorizationNumber=authorizationNumber;
 		this.applicationTransaction=applicationTransaction;
-		this.transactionAmount=transactionAmount;
-		this.transactionDate=transactionDate;
+		this.settlementAmount=settlementAmount;
+		this.settlementDate=settlementDate;
 		this.transactionTime=transactionTime;
 		this.isReversed=isReversed;
 		this.isAdviced=isAdviced;
+		this.isDebit=isDebit;
 	}
 	
 	public static InterswitchTransactions getInstance(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
-			BigDecimal transactionAmount,Date transactionDate,LocalTime transactionTime,boolean isReversed,boolean isAdviced)
+			BigDecimal settlementAmount,Date settlementDate,String transactionTime,
+			boolean isReversed,boolean isAdviced,boolean isDebit)
 	{
 		return new InterswitchTransactions(sessionId,authorizationNumber,applicationTransaction,
-				transactionAmount,transactionDate,transactionTime,isReversed,isAdviced);
+				settlementAmount,settlementDate,transactionTime,isReversed,isAdviced,isDebit);
 	}
 
 
@@ -81,15 +83,6 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	}
 
 
-	public String getAuthorizationNumber() {
-		return authorizationNumber;
-	}
-
-
-	public void setAuthorizationNumber(String authorizationNumber) {
-		this.authorizationNumber = authorizationNumber;
-	}
-
 
 	public SavingsAccountTransaction getApplicationTransaction() {
 		return applicationTransaction;
@@ -101,21 +94,21 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	}
 
 
-	public BigDecimal getTransactionAmount() {
-		return transactionAmount;
+	public BigDecimal getSettlementAmount() {
+		return settlementAmount;
 	}
 
 
-	public void setTransactionAmount(BigDecimal transactionAmount) {
-		this.transactionAmount = transactionAmount;
+	public void setSettlementAmount(BigDecimal settlementAmount) {
+		this.settlementAmount = settlementAmount;
 	}
 
-	public Date getTransactionDate() {
-		return transactionDate;
+	public Date getSettlementDate() {
+		return settlementDate;
 	}
 
-	public void setTransactionDate(Date transactionDate) {
-		this.transactionDate = transactionDate;
+	public void setSettlementDate(Date settlementDate) {
+		this.settlementDate = settlementDate;
 	}
 
 	public boolean isReversed() {
@@ -135,6 +128,15 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 
 	public void setAdviced(boolean isAdviced) {
 		this.isAdviced = isAdviced;
+	}
+
+
+	public boolean isDebit() {
+		return isDebit;
+	}
+
+	public void setDebit(boolean isDebit) {
+		this.isDebit = isDebit;
 	}
 	
 	

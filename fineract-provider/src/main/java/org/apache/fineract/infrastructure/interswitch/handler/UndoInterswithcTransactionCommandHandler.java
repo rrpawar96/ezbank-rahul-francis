@@ -41,7 +41,8 @@ public class UndoInterswithcTransactionCommandHandler implements NewCommandSourc
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
-        final Long transactionId = Long.valueOf(command.getTransactionId());
-        return this.writePlatformService.undoTransaction(command.getSavingsId(), transactionId, false);
+        //final Long transactionId = Long.valueOf(command.getTransactionId());
+        
+        return this.writePlatformService.undoTransaction(command);
     }
 }

@@ -1,7 +1,6 @@
 package org.apache.fineract.infrastructure.interswitch.service;
 
 import java.math.BigDecimal;
-import java.time.LocalTime;
 import java.util.Date;
 import java.util.Locale;
 
@@ -87,14 +86,6 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					"settlement Amount missing");
 		}
 
-		Date transactionDate = null;
-		if (command.localDateValueOfParameterNamed("local_transaction_date") != null) {
-			transactionDate = command.DateValueOfParameterNamed("local_transaction_date");
-
-		} else {
-			throw new GeneralPlatformDomainRuleException("local transaction date missing",
-					"local transaction date missing", "local transaction date missing");
-		}
 		
 		String time = "";
 		if (command.stringValueOfParameterNamed("local_transaction_time") != "") {
@@ -160,8 +151,8 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 				
 				InterswitchAuthorizationRequests authorizationRequest = this.interswitchAuthorizationRequestRepository
-						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, transactionDate,LocalTime.parse(time),
-								settlementDate, isSettled, isReversed, isAdviced, null));
+						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, 
+								settlementDate,time, isSettled, isReversed, isAdviced,responseCode, null,isDebit));
 
 				authorizationNumber = authorizationRequest.getId() + "";
 
@@ -170,14 +161,18 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			}
 		}
 
-		// marking transaction as null ,because during authorization we don't
-		// execute transaction
-		InterswitchAuthorizationRequests authorizationRequest = this.interswitchAuthorizationRequestRepository
-				.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, transactionDate,LocalTime.parse(time),
-						settlementDate, isSettled, isReversed, isAdviced, null));
+		
 
-		authorizationNumber = authorizationRequest.getId() + "";
+		
 		responseCode = ResponseCodes.APPROVED.getValue() + "";
+		
+		// marking transaction as null ,because during authorization we don't
+				// execute transaction
+				InterswitchAuthorizationRequests authorizationRequest = this.interswitchAuthorizationRequestRepository
+						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, settlementDate,
+								time, isSettled, isReversed, isAdviced,responseCode, null,isDebit));
+				
+				authorizationNumber = authorizationRequest.getId() + "";
 
 		// send the response code
 		return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
@@ -197,7 +192,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 		final BigDecimal settlementAmount = command.bigDecimalValueOfParameterNamed("settlement_amount");
 
-		final Date transactionDate = command.DateValueOfParameterNamed("local_transaction_date");
+		final Date settlementDate = command.DateValueOfParameterNamed("settlement_date");
 		
 		String time = "";
 		if (command.stringValueOfParameterNamed("local_transaction_time") != "") {
@@ -238,8 +233,9 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 		}
 
-		SavingsAccount savingsAccount = this.savingsAccountRepository.findSavingAccountByAccountNumber(accountNumber);
+		SavingsAccount savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
 
+		System.out.println("savings account id found was"+savingsAccount.getId());
 		savingsAccount = this.savingAccountAssembler.assembleFrom(savingsAccount.getId());
 
 		if (savingsAccount == null) {
@@ -285,7 +281,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			boolean isAccountTransfer = false;
 			boolean isRegularTransaction = true;
 
-			applicationTransaction = this.savingsAccountDomainService.handleDeposit(savingsAccount, fmt,
+			applicationTransaction = this.savingsAccountDomainService.handleInterswitchDeposit(savingsAccount, fmt,
 					transactionDateDep, settlementAmount, null, isAccountTransfer, isRegularTransaction);
 
 		}
@@ -300,7 +296,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		responseCode = ResponseCodes.APPROVED.getValue() + "";
 		
 		InterswitchTransactions transaction = InterswitchTransactions.getInstance(sessionId, authorizationNumber,
-				applicationTransaction, settlementAmount, transactionDate,LocalTime.parse(time), isReversed, isAdviced);
+				applicationTransaction, settlementAmount, settlementDate,time, isReversed, isAdviced,isDebit);
 
 		InterswitchTransactions interswithTransaction = this.interswitchTransactionsRepository.save(transaction);
 

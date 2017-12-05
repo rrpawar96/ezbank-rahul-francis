@@ -45,7 +45,8 @@ public enum SavingsAccountTransactionType {
     AMOUNT_HOLD(20, "savingsAccountTransactionType.onHold"),
     AMOUNT_RELEASE(21, "savingsAccountTransactionType.release"),
 	LOAN_DISBURSEMENT(22, "savingsAccountTransactionType.loanDisbursement"),
-	ATM_WITHDRAWAL(23, "savingsAccountTransactionType.atmWithdrawal");
+	ATM_WITHDRAWAL(23, "savingsAccountTransactionType.atmWithdrawal"),
+	ATM_DEPOSIT(24,"savingsAccountTransactionType.atmDeposit");
 
     private final Integer value;
     private final String code;
@@ -129,12 +130,17 @@ public enum SavingsAccountTransactionType {
             case 23:
             	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_WITHDRAWAL;
             break;
+            case 24:
+            	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_DEPOSIT;
+            break;
+            
         }
         return savingsAccountTransactionType;
     }
 
     public boolean isDeposit() {
-        return this.value.equals(SavingsAccountTransactionType.DEPOSIT.getValue()) || isLoanDisbursement();
+        return this.value.equals(SavingsAccountTransactionType.DEPOSIT.getValue()) || isLoanDisbursement()
+        		||isATMDeposit();
     }
     
     public boolean isLoanDisbursement() {
@@ -147,6 +153,10 @@ public enum SavingsAccountTransactionType {
     
     public boolean isATMWithdrawal() {
         return this.value.equals(SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue()) ;
+    }
+    
+    public boolean isATMDeposit() {
+        return this.value.equals(SavingsAccountTransactionType.ATM_DEPOSIT.getValue()) ;
     }
 
     public boolean isInterestPosting() {
@@ -226,6 +236,6 @@ public enum SavingsAccountTransactionType {
     }
 
     public boolean isCredit() {
-        return isDeposit() || isInterestPosting() || isDividendPayout() || isAmountRelease();
+        return isDeposit() || isInterestPosting() || isDividendPayout() || isAmountRelease()||isATMDeposit();
     }
 }

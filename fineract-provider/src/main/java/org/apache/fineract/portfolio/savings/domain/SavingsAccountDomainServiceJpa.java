@@ -183,6 +183,15 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     
     
     
+    @Transactional
+    @Override
+    public SavingsAccountTransaction handleInterswitchDeposit(final SavingsAccount account, final DateTimeFormatter fmt,
+            final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
+            final boolean isAccountTransfer, final boolean isRegularTransaction) {
+        final SavingsAccountTransactionType savingsAccountTransactionType = SavingsAccountTransactionType.ATM_DEPOSIT;
+        return handleDeposit(account, fmt, transactionDate, transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
+                savingsAccountTransactionType,false,null);
+    }
     
   /*  handleDeposit was overloaded to handle new transaction type loandisbursement*/
     
@@ -195,7 +204,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         return handleDeposit(account, fmt, transactionDate, transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
                 savingsAccountTransactionType,false,null);
     }
-
+  
+    
     private SavingsAccountTransaction handleDeposit(final SavingsAccount account, final DateTimeFormatter fmt,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
             final boolean isAccountTransfer, final boolean isRegularTransaction,

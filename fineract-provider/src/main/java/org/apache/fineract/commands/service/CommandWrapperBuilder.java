@@ -1160,11 +1160,9 @@ public class CommandWrapperBuilder {
         return this;
     }
     
-    public CommandWrapperBuilder undoTransaction(String transactionId,long savingsAccountId) {
+    public CommandWrapperBuilder undoTransaction() {
         this.actionName = "UNDO";
         this.entityName = "INTERSWITCHTRANSACTION";
-        this.transactionId=transactionId;
-        this.savingsId=savingsAccountId;
         this.href = "/interswitch/template";
         return this;
     }

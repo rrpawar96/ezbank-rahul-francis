@@ -705,6 +705,23 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds);
         }
     }
+    //undotransaction overloaded to make ezbank compliant with sugarloaf
+    //sugarload is not going to pass any path param and hence all the required fields are fetched from json command.
+    
+    @Override
+    public CommandProcessingResult undoTransaction(final JsonCommand command)
+    {
+    	
+    	String authorizationNumber= command.stringValueOfParameterNamed("authorization_number");
+    	Long transactionId=Long.parseLong(authorizationNumber);
+    	SavingsAccountTransaction transaction=this.savingsAccountTransactionRepository.findOne(transactionId);
+  		
+		long savingsAccountId=transaction.getSavingsAccount().getId();
+		
+    	return undoTransaction(savingsAccountId,  transactionId,
+                false);
+    }
+    
     
     @Override
     public CommandProcessingResult undoTransaction(final Long savingsId, final Long transactionId,

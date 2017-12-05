@@ -209,6 +209,10 @@ public class SavingsEnumerations {
             	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.WITHDRAWAL.getValue().longValue(),
 					SavingsAccountTransactionType.WITHDRAWAL.getCode(), "ATM Withdrawal");
 				break;
+            case ATM_DEPOSIT:
+            	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.DEPOSIT.getValue().longValue(),
+					SavingsAccountTransactionType.DEPOSIT.getCode(), "ATM Deposit");
+				break;
         }
         return optionData;
     }

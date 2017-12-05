@@ -24,42 +24,40 @@
 CREATE TABLE `idt_interswitch_transactions` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT,
 	`session_id` VARCHAR(50) NOT NULL,
---	`authorization_number` VARCHAR(50) NOT NULL,
---	`application_transaction_id` BIGINT(20) NOT NULL,
-	`transaction_amount` DECIMAL(10,0) NOT NULL,
-	`transaction_date` DATE NOT NULL,
+	`authorization_number` VARCHAR(50) NOT NULL,
+	`application_transaction_id` BIGINT(20) NOT NULL,
+	`settlement_amount` DECIMAL(10,0) NOT NULL,
+	`settlement_date` DATE NOT NULL,
+	`local_transaction_time` VARCHAR(50) NOT NULL,
+	`is_debit` TINYINT(4) NOT NULL,
 	`is_reversed` TINYINT(4) NOT NULL,
 	`is_adviced` TINYINT(4) NOT NULL,
-	PRIMARY KEY (`id`)
+	PRIMARY KEY (`id`),
+	INDEX `FK_idt_interswitch_transactions_m_savings_account_transaction` (`application_transaction_id`),
+	CONSTRAINT `FK_idt_interswitch_transactions_m_savings_account_transaction` FOREIGN KEY (`application_transaction_id`) REFERENCES `m_savings_account_transaction` (`id`)
 )
 COLLATE='utf8_general_ci'
-ENGINE=InnoDB
-;
+ENGINE=InnoDB;
+
 
 -- create new table to record  interswitch authorization messages
 
 CREATE TABLE `idt_interswitch_authorization_requests` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT,
---	`session_id` VARCHAR(50) NOT NULL,
-	`transaction_id` BIGINT(20) NULL DEFAULT NULL,
---	`authorization_amount` DECIMAL(10,0) NOT NULL,
-	`settlement_amount` DECIMAL(10,0) NULL DEFAULT NULL,
---	`settlement_currency` INT(11) NULL DEFAULT NULL,
---	`settlement_currency_rate` DECIMAL(10,0) NULL DEFAULT NULL,
---	`transaction_currency` INT(11) NULL DEFAULT NULL,
-	`transaction_date` DATE NOT NULL,
+	`session_id` VARCHAR(50) NOT NULL,
+	`settlement_amount` DECIMAL(10,0) NOT NULL,
 	`settlement_date` DATE NOT NULL,
+	`local_transaction_time` VARCHAR(50) NOT NULL,
 	`is_settled` TINYINT(4) NOT NULL,
+	`response_code` VARCHAR(50) NOT NULL,
 	`is_reversed` TINYINT(4) NOT NULL,
 	`is_adviced` TINYINT(4) NOT NULL,
-	`settled_on` DATE NOT NULL,
-	PRIMARY KEY (`id`),
-	INDEX `FK_interswitch_auth_transation` (`transaction_id`),
-	CONSTRAINT `FK_interswitch_auth_transation` FOREIGN KEY (`transaction_id`) REFERENCES `idt_interswitch_transactions` (`id`)
+	`is_debit` TINYINT(4) NOT NULL,
+	`settled_on` DATE NULL DEFAULT NULL,
+	PRIMARY KEY (`id`)
 )
 COLLATE='utf8_general_ci'
-ENGINE=InnoDB
-;
+ENGINE=InnoDB;
 
 -- permissions
 
