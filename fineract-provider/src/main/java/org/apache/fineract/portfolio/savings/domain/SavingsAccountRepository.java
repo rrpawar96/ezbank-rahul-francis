@@ -33,6 +33,9 @@ public interface SavingsAccountRepository extends JpaRepository<SavingsAccount, 
     
     @Query("select s_acc from SavingsAccount s_acc where s_acc.gsim.id = :gsimId")
     List<SavingsAccount> findSavingAccountByGsimId(@Param("gsimId") Long gsimId);
+    
+    @Query("select sa from SavingsAccount sa where sa.accountNumber = :accountNumber")
+    SavingsAccount findSavingAccountByAccountNumber(@Param("accountNumber") String accountNumber);
 
     @Query("select s_acc from SavingsAccount s_acc where s_acc.status = :status")
     List<SavingsAccount> findSavingAccountByStatus(@Param("status") Integer status);

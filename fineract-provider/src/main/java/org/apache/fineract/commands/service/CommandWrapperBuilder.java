@@ -1146,6 +1146,27 @@ public class CommandWrapperBuilder {
         return this;
     }
     
+    public CommandWrapperBuilder authorizeTransaction() {
+        this.actionName = "AUTHORIZE";
+        this.entityName = "TRANSACTION";
+        this.href = "/interswitch/template";
+        return this;
+    }
+    
+    public CommandWrapperBuilder executeTransaction() {
+        this.actionName = "EXECUTE";
+        this.entityName = "TRANSACTION";
+        this.href = "/interswitch/template";
+        return this;
+    }
+    
+    public CommandWrapperBuilder undoTransaction() {
+        this.actionName = "UNDO";
+        this.entityName = "INTERSWITCHTRANSACTION";
+        this.href = "/interswitch/template";
+        return this;
+    }
+    
     public CommandWrapperBuilder createRetailEntry(final long retailAccountId) {
         this.actionName = "CREATE";
         this.entityName = "RETAILACCOUNTENTRIES";

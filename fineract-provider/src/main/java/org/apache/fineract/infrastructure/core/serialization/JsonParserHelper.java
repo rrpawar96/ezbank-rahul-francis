@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.core.serialization;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -110,7 +111,8 @@ public class JsonParserHelper {
         }
         return value;
     }
-
+ 
+ 
     public BigDecimal extractBigDecimalNamed(final String parameterName, final JsonObject element, final Locale locale,
             final Set<String> modifiedParameters) {
         BigDecimal value = null;

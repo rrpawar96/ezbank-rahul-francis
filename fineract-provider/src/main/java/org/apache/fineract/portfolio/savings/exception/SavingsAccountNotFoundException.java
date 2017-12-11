@@ -25,4 +25,8 @@ public class SavingsAccountNotFoundException extends AbstractPlatformResourceNot
     public SavingsAccountNotFoundException(final Long id) {
         super("error.msg.saving.account.id.invalid", "Savings account with identifier " + id + " does not exist", id);
     }
+    
+    public SavingsAccountNotFoundException(String accounNumber) {
+        super("error.msg.saving.account.number.invalid", "Savings account with account number " + accounNumber + " does not exist", accounNumber);
+    }
 }

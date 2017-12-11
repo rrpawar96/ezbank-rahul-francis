@@ -42,13 +42,20 @@ public class CommandProcessingResult implements Serializable {
     private final String resourceIdentifier;
     private final Long productId;
     private Boolean rollbackTransaction;
+    
+    //fields for interswitch
+    private String authorizationNumber;
+    
+    private  String responseCode;
 
     public static CommandProcessingResult fromDetails(final Long commandId, final Long officeId, final Long groupId, final Long clientId,
             final Long loanId, final Long savingsId, final String resourceIdentifier, final Long entityId, final String transactionId,
             final Map<String, Object> changes, final Long productId, final Boolean rollbackTransaction, final Long subResourceId) {
         return new CommandProcessingResult(commandId, officeId, groupId, clientId, loanId, savingsId, resourceIdentifier, entityId,
-                transactionId, changes, productId, rollbackTransaction, subResourceId);
+                transactionId, changes, productId, rollbackTransaction, subResourceId,null,null);
     }
+    
+    
 
     public static CommandProcessingResult commandOnlyResult(final Long commandId) {
         return new CommandProcessingResult(null, null, commandId, null);
@@ -78,6 +85,11 @@ public class CommandProcessingResult implements Serializable {
     public static CommandProcessingResult empty() {
         return new CommandProcessingResult(null, null, null, null);
     }
+    
+    public static CommandProcessingResult interswitchResponse(final String authorizationNumber, final String responseCode)
+    {
+    	return new CommandProcessingResult(authorizationNumber,responseCode);
+    }
 
     /*
      * Deprecated
@@ -98,11 +110,14 @@ public class CommandProcessingResult implements Serializable {
         this.changes = new HashMap<>();
         this.productId = null;
         this.subResourceId = null;
+        this.authorizationNumber=null;
+        this.responseCode=null;
     }
 
     private CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
             final Long savingsId, final String resourceIdentifier, final Long resourceId, final String transactionId,
-            final Map<String, Object> changesOnly, final Long productId, Boolean rollbackTransaction, final Long subResourceId) {
+            final Map<String, Object> changesOnly, final Long productId, Boolean rollbackTransaction, final Long subResourceId,final String authorizationNumber,
+            final String responseCode) {
         this.commandId = commandId;
         this.officeId = officeId;
         this.groupId = groupId;
@@ -116,6 +131,8 @@ public class CommandProcessingResult implements Serializable {
         this.productId = productId;
         this.rollbackTransaction = rollbackTransaction;
         this.subResourceId = subResourceId;
+        this.authorizationNumber=authorizationNumber;
+        this.responseCode=responseCode;
     }
 
     private CommandProcessingResult(final Long resourceId, final Long officeId, final Long commandId, final Map<String, Object> changesOnly) {
@@ -135,6 +152,29 @@ public class CommandProcessingResult implements Serializable {
         this.changes = changesOnly;
         this.productId = null;
         this.subResourceId = null;
+        this.authorizationNumber=null;
+        this.responseCode=null;
+    }
+    
+    // for interswitch response
+    private CommandProcessingResult(final String authorizationNumber, final String responseCode)
+    {
+    this.resourceIdentifier = null;
+    this.resourceId = null;
+    this.officeId = null;
+    this.groupId = null;
+    this.clientId = null;
+    this.loanId = null;
+    this.savingsId = null;
+    this.transactionId = null;
+    this.commandId = null;
+    this.changes = null;
+    this.productId = null;
+    this.subResourceId = null;
+    this.authorizationNumber=null;
+    this.responseCode=null;
+    this.authorizationNumber=authorizationNumber;
+    this.responseCode=responseCode;
     }
 
     public Long commandId() {

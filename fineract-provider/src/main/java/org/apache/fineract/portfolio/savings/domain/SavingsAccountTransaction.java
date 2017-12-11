@@ -35,6 +35,7 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -42,6 +43,7 @@ import javax.persistence.UniqueConstraint;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchTransactions;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -136,6 +138,9 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
     
     @OneToMany(mappedBy="retailTransaction")
     private List<RetailAccountEntry> retailEntries;
+    
+    @OneToOne(mappedBy="applicationTransaction")
+    private InterswitchTransactions interswitchTransactions;
 
     protected SavingsAccountTransaction() {
         this.dateOf = null;
@@ -174,6 +179,14 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
         final boolean isReversed = false;
         final boolean isManualTransaction = false;
         return new SavingsAccountTransaction(savingsAccount, office, paymentDetail, SavingsAccountTransactionType.WITHDRAWAL.getValue(),
+                date, createdDate, amount, isReversed, appUser, isManualTransaction);
+    }
+    
+    public static SavingsAccountTransaction atmWithdrawal(final SavingsAccount savingsAccount, final Office office,
+            final PaymentDetail paymentDetail, final LocalDate date, final Money amount, Date createdDate, final AppUser appUser) {
+        final boolean isReversed = false;
+        final boolean isManualTransaction = false;
+        return new SavingsAccountTransaction(savingsAccount, office, paymentDetail, SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue(),
                 date, createdDate, amount, isReversed, appUser, isManualTransaction);
     }
 

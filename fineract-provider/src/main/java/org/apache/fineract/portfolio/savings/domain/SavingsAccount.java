@@ -60,7 +60,6 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -90,7 +89,6 @@ import org.apache.fineract.portfolio.charge.exception.SavingsAccountChargeNotFou
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.group.domain.Group;
-import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
 import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.SavingsApiConstants;
@@ -356,6 +354,9 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     
     /* @OneToOne(mappedBy = "retailSavings")
     private RetailTransactionRange retailSavings;*/
+    
+   
+    
     
     @OneToMany(mappedBy = "retailAccount")
     private List<RetailAccountEntryType> retailAccountEntryType;
@@ -1060,8 +1061,14 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             startInterestCalculationLocalDate = getActivationLocalDate();
         return startInterestCalculationLocalDate;
     }
+    
+    
+    public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee)
+    {
+    	return withdraw(transactionDTO,applyWithdrawFee,false);
+    }
 
-    public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee) {
+    public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee,final boolean isATMWithdrawal) {
 
         if (!isTransactionsAllowed()) {
 
@@ -1115,9 +1122,22 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         validateActivityNotBeforeClientOrGroupTransferDate(SavingsEvent.SAVINGS_WITHDRAWAL, transactionDTO.getTransactionDate());
 
         final Money transactionAmountMoney = Money.of(this.currency, transactionDTO.getTransactionAmount());
-        final SavingsAccountTransaction transaction = SavingsAccountTransaction.withdrawal(this, office(),
-                transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
-                transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        SavingsAccountTransaction transaction;
+        if(isATMWithdrawal)
+        {
+        	transaction = SavingsAccountTransaction.atmWithdrawal(this, office(),
+                    transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
+                    transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        }
+        else
+        {
+        	transaction = SavingsAccountTransaction.withdrawal(this, office(),
+                    transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
+                    transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        }
+         
+        
+        
         addTransaction(transaction);
         if (applyWithdrawFee) {
             // auto pay withdrawal fee

@@ -78,12 +78,24 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         this.depositAccountOnHoldTransactionRepository = depositAccountOnHoldTransactionRepository;
         this.businessEventNotifierService = businessEventNotifierService;
     }
-
+    
+    
     @Transactional
     @Override
     public SavingsAccountTransaction handleWithdrawal(final SavingsAccount account, final DateTimeFormatter fmt,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
-            final SavingsTransactionBooleanValues transactionBooleanValues) {
+            final SavingsTransactionBooleanValues transactionBooleanValues){
+    	
+    	return handleWithdrawal( account,fmt, transactionDate,transactionAmount,paymentDetail,
+                transactionBooleanValues,false); 
+    }
+
+   
+    @Transactional
+    @Override
+    public SavingsAccountTransaction handleWithdrawal(final SavingsAccount account, final DateTimeFormatter fmt,
+            final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
+            final SavingsTransactionBooleanValues transactionBooleanValues,boolean isATMWithdrawal) {
 
         AppUser user = getAppUserIfPresent();
         account.validateForAccountBlock();
@@ -100,7 +112,17 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         Integer accountType = null;
         final SavingsAccountTransactionDTO transactionDTO = new SavingsAccountTransactionDTO(fmt, transactionDate, transactionAmount,
                 paymentDetail, new Date(), user, accountType);
-        final SavingsAccountTransaction withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee());
+         SavingsAccountTransaction withdrawal;
+        if(isATMWithdrawal)
+        {
+        	withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee(),true);	
+        }
+        else
+        {
+        	withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee());
+        }
+        
+        
         final MathContext mc = MathContext.DECIMAL64;
         if (account.isBeforeLastPostingPeriod(transactionDate)) {
             final LocalDate today = DateUtils.getLocalDateOfTenant();
@@ -161,6 +183,15 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     
     
     
+    @Transactional
+    @Override
+    public SavingsAccountTransaction handleInterswitchDeposit(final SavingsAccount account, final DateTimeFormatter fmt,
+            final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
+            final boolean isAccountTransfer, final boolean isRegularTransaction) {
+        final SavingsAccountTransactionType savingsAccountTransactionType = SavingsAccountTransactionType.ATM_DEPOSIT;
+        return handleDeposit(account, fmt, transactionDate, transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
+                savingsAccountTransactionType,false,null);
+    }
     
   /*  handleDeposit was overloaded to handle new transaction type loandisbursement*/
     
@@ -173,7 +204,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         return handleDeposit(account, fmt, transactionDate, transactionAmount, paymentDetail, isAccountTransfer, isRegularTransaction,
                 savingsAccountTransactionType,false,null);
     }
-
+  
+    
     private SavingsAccountTransaction handleDeposit(final SavingsAccount account, final DateTimeFormatter fmt,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
             final boolean isAccountTransfer, final boolean isRegularTransaction,
