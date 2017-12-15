@@ -140,7 +140,7 @@ public enum SavingsAccountTransactionType {
 
     public boolean isDeposit() {
         return this.value.equals(SavingsAccountTransactionType.DEPOSIT.getValue()) || isLoanDisbursement()
-        		||isATMDeposit();
+        		|| isATMDeposit();
     }
     
     public boolean isLoanDisbursement() {

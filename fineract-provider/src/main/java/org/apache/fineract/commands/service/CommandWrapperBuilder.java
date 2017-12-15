@@ -1159,6 +1159,12 @@ public class CommandWrapperBuilder {
         this.href = "/interswitch/template";
         return this;
     }
+  /*  public CommandWrapperBuilder getBalanceForInterswitch() {
+        this.actionName = "GET";
+        this.entityName = "BALANCEFORINTERSWITCH";
+        this.href = "/interswitch/template";
+        return this;
+    }*/
     
     public CommandWrapperBuilder undoTransaction() {
         this.actionName = "UNDO";

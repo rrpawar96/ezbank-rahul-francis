@@ -96,12 +96,12 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		}
 		
 
-		Date settlementDate = null;
-		if (command.DateValueOfParameterNamed("settlement_date") != null) {
-			settlementDate = command.DateValueOfParameterNamed("settlement_date");
+		Date localTransactionDate = null;
+		if (command.DateValueOfParameterNamed("local_transaction_date") != null) {
+			localTransactionDate = command.DateValueOfParameterNamed("local_transaction_date");
 		} else {
-			throw new GeneralPlatformDomainRuleException("settlement date missing", "settlement date missing",
-					"settlement date missing");
+			throw new GeneralPlatformDomainRuleException("transaction date missing", "transaction date missing",
+					"transaction date missing");
 		}
 
 		String accountNumber = "";
@@ -152,7 +152,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				
 				InterswitchAuthorizationRequests authorizationRequest = this.interswitchAuthorizationRequestRepository
 						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, 
-								settlementDate,time, isSettled, isReversed, isAdviced,responseCode, null,isDebit));
+								localTransactionDate,time, isSettled, isReversed, isAdviced,responseCode, null,isDebit));
 
 				authorizationNumber = authorizationRequest.getId() + "";
 
@@ -169,7 +169,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		// marking transaction as null ,because during authorization we don't
 				// execute transaction
 				InterswitchAuthorizationRequests authorizationRequest = this.interswitchAuthorizationRequestRepository
-						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, settlementDate,
+						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, localTransactionDate,
 								time, isSettled, isReversed, isAdviced,responseCode, null,isDebit));
 				
 				authorizationNumber = authorizationRequest.getId() + "";
