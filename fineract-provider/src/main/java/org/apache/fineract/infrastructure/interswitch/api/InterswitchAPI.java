@@ -1,5 +1,8 @@
 package org.apache.fineract.infrastructure.interswitch.api;
 
+import java.util.HashMap;
+import java.util.List;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -127,5 +130,20 @@ public class InterswitchAPI
 					.retrieveBalance(apiRequestBodyAsJson);
 			
 			return this.toApiJsonSerializer.serialize(interswitchBalanceEnquiryData);
+		}
+		
+		
+		@POST
+		@Path("/ministatement")
+		@Consumes({ MediaType.APPLICATION_JSON })
+		@Produces({ MediaType.APPLICATION_JSON })
+		public String getMinistatement(final String apiRequestBodyAsJson) {
+			
+			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+
+			final List<HashMap<String,String>> miniStatement = this.interswitchReadPlatformServiceImpl
+					.getMinistatement(apiRequestBodyAsJson);
+			
+			return this.toApiJsonSerializer.serialize(miniStatement);
 		}
 }
