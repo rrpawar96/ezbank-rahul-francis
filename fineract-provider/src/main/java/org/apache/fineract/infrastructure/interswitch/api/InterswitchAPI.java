@@ -146,4 +146,20 @@ public class InterswitchAPI
 			
 			return this.toApiJsonSerializer.serialize(miniStatement);
 		}
+		
+		@POST
+		@Path("/transferAdvice")
+		@Consumes({ MediaType.APPLICATION_JSON })
+		@Produces({ MediaType.APPLICATION_JSON })
+		public String handleTransfer(final String apiRequestBodyAsJson) {
+			
+			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+
+			 final CommandWrapper commandRequest = new CommandWrapperBuilder().executeTransaction().withJson(apiRequestBodyAsJson).build();
+
+	         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+	         return this.toApiJsonSerializer.serialize(result);
+	           
+		}
 }

@@ -14,16 +14,22 @@ import org.apache.fineract.infrastructure.interswitch.domain.InterswitchTransact
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchTransactionsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.account.PortfolioAccountType;
+import org.apache.fineract.portfolio.account.data.AccountTransferDTO;
+import org.apache.fineract.portfolio.account.domain.AccountTransferType;
+import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatformService;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
+import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -35,26 +41,32 @@ import com.google.gson.JsonElement;
 @Service
 public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlatformService {
 
-	private PlatformSecurityContext context;
+	private final PlatformSecurityContext context;
 
-	private InterswitchTransactionsRepository interswitchTransactionsRepository;
+	private final InterswitchTransactionsRepository interswitchTransactionsRepository;
 
-	private InterswitchAuthorizationRequestRepository interswitchAuthorizationRequestRepository;
+	private final InterswitchAuthorizationRequestRepository interswitchAuthorizationRequestRepository;
 
-	private SavingsAccountRepository savingsAccountRepository;
+	private final SavingsAccountRepository savingsAccountRepository;
 
 	private final SavingsAccountDomainService savingsAccountDomainService;
 
-	final SavingsAccountAssembler savingAccountAssembler;
+	private final SavingsAccountAssembler savingAccountAssembler;
 
 	private final FromJsonHelper fromApiJsonHelper;
+
+	private final AccountTransfersWritePlatformService accountTransfersWritePlatformService;
+
+	private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
 
 	@Autowired
 	public InterswitchWritePlatformServiceImpl(PlatformSecurityContext context,
 			InterswitchTransactionsRepository interswitchTransactionsRepository,
 			InterswitchAuthorizationRequestRepository interswitchAuthorizationRequestRepository,
 			SavingsAccountRepository savingsAccountRepository, SavingsAccountDomainService savingsAccountDomainService,
-			SavingsAccountAssembler savingAccountAssembler, FromJsonHelper fromApiJsonHelper) {
+			SavingsAccountAssembler savingAccountAssembler, FromJsonHelper fromApiJsonHelper,
+			AccountTransfersWritePlatformService accountTransfersWritePlatformService,
+			SavingsAccountTransactionRepository savingsAccountTransactionRepository) {
 		this.context = context;
 		this.interswitchTransactionsRepository = interswitchTransactionsRepository;
 		this.interswitchAuthorizationRequestRepository = interswitchAuthorizationRequestRepository;
@@ -62,6 +74,8 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		this.savingsAccountDomainService = savingsAccountDomainService;
 		this.savingAccountAssembler = savingAccountAssembler;
 		this.fromApiJsonHelper = fromApiJsonHelper;
+		this.accountTransfersWritePlatformService = accountTransfersWritePlatformService;
+		this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
 	}
 
 	@Override
@@ -86,15 +100,13 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					"settlement Amount missing");
 		}
 
-		
 		String time = "";
 		if (command.stringValueOfParameterNamed("local_transaction_time") != "") {
 			time = command.stringValueOfParameterNamed("local_transaction_time");
 		} else {
-			throw new GeneralPlatformDomainRuleException("local_transaction_time missing", "local_transaction_time missing",
-					"local_transaction_time missing");
+			throw new GeneralPlatformDomainRuleException("local_transaction_time missing",
+					"local_transaction_time missing", "local_transaction_time missing");
 		}
-		
 
 		Date localTransactionDate = null;
 		if (command.DateValueOfParameterNamed("local_transaction_date") != null) {
@@ -113,15 +125,13 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		} else if (command.stringValueOfParameterNamed("account_credit") != "") {
 			accountNumber = command.stringValueOfParameterNamed("account_credit");
 		} else {
-			
+
 			responseCode = ResponseCodes.ERROR.getValue() + "";
 			authorizationNumber = ""; // because we did not execute
-										// transaction???
+			// transaction???
 
 			return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
-			
-			
-				
+
 		}
 
 		SavingsAccount savingsAccount = this.savingsAccountRepository.findSavingAccountByAccountNumber(accountNumber);
@@ -129,10 +139,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		savingsAccount = this.savingAccountAssembler.assembleFrom(savingsAccount.getId());
 
 		if (savingsAccount == null) {
-			
+
 			responseCode = ResponseCodes.ERROR.getValue() + "";
 			authorizationNumber = ""; // because we did not execute
-										// transaction???
+			// transaction???
 
 			return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 
@@ -149,10 +159,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				// return response code as insufficient bal
 				responseCode = ResponseCodes.NOTSUFFICIENTFUNDS.getValue() + "";
 
-				
 				InterswitchAuthorizationRequests authorizationRequest = this.interswitchAuthorizationRequestRepository
-						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, 
-								localTransactionDate,time, isSettled, isReversed, isAdviced,responseCode, null,isDebit));
+						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount,
+								localTransactionDate, time, isSettled, isReversed, isAdviced, responseCode, null,
+								isDebit));
 
 				authorizationNumber = authorizationRequest.getId() + "";
 
@@ -161,18 +171,15 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			}
 		}
 
-		
-
-		
 		responseCode = ResponseCodes.APPROVED.getValue() + "";
-		
+
 		// marking transaction as null ,because during authorization we don't
-				// execute transaction
-				InterswitchAuthorizationRequests authorizationRequest = this.interswitchAuthorizationRequestRepository
-						.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, localTransactionDate,
-								time, isSettled, isReversed, isAdviced,responseCode, null,isDebit));
-				
-				authorizationNumber = authorizationRequest.getId() + "";
+		// execute transaction
+		InterswitchAuthorizationRequests authorizationRequest = this.interswitchAuthorizationRequestRepository
+				.save(InterswitchAuthorizationRequests.getInstance(sessionId, settlementAmount, localTransactionDate,
+						time, isSettled, isReversed, isAdviced, responseCode, null, isDebit));
+
+		authorizationNumber = authorizationRequest.getId() + "";
 
 		// send the response code
 		return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
@@ -193,13 +200,13 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		final BigDecimal settlementAmount = command.bigDecimalValueOfParameterNamed("settlement_amount");
 
 		final Date settlementDate = command.DateValueOfParameterNamed("settlement_date");
-		
+
 		String time = "";
 		if (command.stringValueOfParameterNamed("local_transaction_time") != "") {
 			time = command.stringValueOfParameterNamed("local_transaction_time");
 		} else {
-			throw new GeneralPlatformDomainRuleException("local_transaction_time missing", "local_transaction_time missing",
-					"local_transaction_time missing");
+			throw new GeneralPlatformDomainRuleException("local_transaction_time missing",
+					"local_transaction_time missing", "local_transaction_time missing");
 		}
 
 		final Locale locale = command.extractLocale();
@@ -214,55 +221,137 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 		boolean isDebit = false;
 
+		boolean isTransferTransaction = false;
+
 		// get savings account
 
-		String accountNumber = "";
+		String accountNumberCredit = "";
+		String accountNumberDebit = "";
 
-		if (command.stringValueOfParameterNamed("account_debit") != "") {
-			accountNumber = command.stringValueOfParameterNamed("account_debit");
+		if ((command.stringValueOfParameterNamed("account_debit") != "")
+				&& (command.stringValueOfParameterNamed("account_credit") != "")) 
+		{
+
+			accountNumberDebit = command.stringValueOfParameterNamed("account_debit");
+			accountNumberCredit = command.stringValueOfParameterNamed("account_credit");
+			isTransferTransaction = true;
+
+		} else if (command.stringValueOfParameterNamed("account_debit") != "") 
+		{
+			accountNumberDebit = command.stringValueOfParameterNamed("account_debit");
 			isDebit = true;
-			System.out.println("account number at debit " + accountNumber);
-		} else if (command.stringValueOfParameterNamed("account_credit") != "") {
-			accountNumber = command.stringValueOfParameterNamed("account_credit");
-			System.out.println("account number at credit " + accountNumber);
-		} else {
+			
+		} 
+		else if (command.stringValueOfParameterNamed("account_credit") != "") 
+		{
+			accountNumberCredit = command.stringValueOfParameterNamed("account_credit");
+			
+		} 
+		else {
 			responseCode = ResponseCodes.ERROR.getValue() + "";
 			authorizationNumber = ""; // because we did not execute
-										// transaction???
+			// transaction???
 
 			return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 		}
 
-		SavingsAccount savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
+		SavingsAccount savingsAccountCredit = null;
+		SavingsAccount savingsAccountDebit = null;
 
-		System.out.println("savings account id found was"+savingsAccount.getId());
-		savingsAccount = this.savingAccountAssembler.assembleFrom(savingsAccount.getId());
+		if (isTransferTransaction) {
+			savingsAccountCredit = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumberCredit);
 
-		if (savingsAccount == null) {
-			responseCode = ResponseCodes.ERROR.getValue() + "";
-			authorizationNumber = ""; // because we did not execute
-										// transaction???
+			savingsAccountCredit = this.savingAccountAssembler.assembleFrom(savingsAccountCredit.getId());
 
-			return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
-		}
+			savingsAccountDebit = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumberDebit);
 
-		// if everything goes well
+			savingsAccountDebit = this.savingAccountAssembler.assembleFrom(savingsAccountDebit.getId());
 
-		SavingsAccountTransaction applicationTransaction;
+			if (savingsAccountCredit == null || savingsAccountDebit == null) {
+				responseCode = ResponseCodes.ERROR.getValue() + "";
+				authorizationNumber = ""; // because we did not execute
+				// transaction???
 
-		if (isDebit) {
+				return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
+			}
 
-			if (savingsAccount.getWithdrawableBalance().compareTo(settlementAmount) == -1) {
+		} else if (isDebit) {
+			savingsAccountDebit = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumberDebit);
+
+			savingsAccountDebit = this.savingAccountAssembler.assembleFrom(savingsAccountDebit.getId());
+
+			if (savingsAccountDebit == null) {
+				responseCode = ResponseCodes.ERROR.getValue() + "";
+				authorizationNumber = ""; // because we did not execute
+				// transaction???
+
+				return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
+			}
+
+			if (savingsAccountDebit.getWithdrawableBalance().compareTo(settlementAmount) == -1) {
 				// return response code as insufficient bal
 				responseCode = ResponseCodes.NOTSUFFICIENTFUNDS.getValue() + "";
 				authorizationNumber = ""; // because we did not execute
-											// transaction???
+				// transaction???
 
 				return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 
 			}
+		} else {
+			savingsAccountCredit = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumberCredit);
 
-			checkClientOrGroupActive(savingsAccount);
+			savingsAccountCredit = this.savingAccountAssembler.assembleFrom(savingsAccountCredit.getId());
+
+			if (savingsAccountCredit == null) {
+				responseCode = ResponseCodes.ERROR.getValue() + "";
+				authorizationNumber = ""; // because we did not execute
+				// transaction???
+
+				return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
+			}
+		}
+
+		// if everything goes well
+
+		/*
+		 * AccountTransferDTO(final LocalDate transactionDate, final BigDecimal
+		 * transactionAmount, final PortfolioAccountType fromAccountType, final
+		 * PortfolioAccountType toAccountType, final Long fromAccountId, final
+		 * Long toAccountId, final String description, final Locale locale,
+		 * final DateTimeFormatter fmt, final PaymentDetail paymentDetail, final
+		 * Integer fromTransferType, final Integer toTransferType, final Long
+		 * chargeId, Integer loanInstallmentNumber, Integer transferType, final
+		 * AccountTransferDetails accountTransferDetails, final String noteText,
+		 * final String txnExternalId, final Loan loan, SavingsAccount
+		 * toSavingsAccount, final SavingsAccount fromSavingsAccount, final
+		 * Boolean isRegularTransaction, Boolean isExceptionForBalanceCheck)
+		 */
+
+		SavingsAccountTransaction applicationTransaction;
+
+		if (isTransferTransaction) {
+
+			
+			final boolean isExceptionForBalanceCheck = false;
+			final boolean isRegularTransaction = true;
+			final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(transactionDateDep, settlementAmount,
+					PortfolioAccountType.SAVINGS, PortfolioAccountType.SAVINGS, savingsAccountDebit.getId(),
+					savingsAccountDebit.getId(), "Interswitch intra bank transfer", locale, fmt, null,
+					SavingsAccountTransactionType.WITHDRAWAL.getValue(),
+					SavingsAccountTransactionType.DEPOSIT.getValue(), null, null,
+					AccountTransferType.ACCOUNT_TRANSFER.getValue(), null, null, null, null, savingsAccountCredit,
+					savingsAccountDebit, isRegularTransaction, isExceptionForBalanceCheck);
+
+			long transferTransactionId = this.accountTransfersWritePlatformService.transferFunds(accountTransferDTO)
+					.longValue();
+
+			applicationTransaction = this.savingsAccountTransactionRepository.getOne(transferTransactionId);
+
+		}
+
+		else if (isDebit) {
+
+			checkClientOrGroupActive(savingsAccountDebit);
 
 			final boolean isAccountTransfer = false;
 			final boolean isRegularTransaction = true;
@@ -272,21 +361,19 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(
 					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
 
-			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccount, fmt,
+			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
 					transactionDateDep, settlementAmount, null, transactionBooleanValues, true);
 
 		} else {
-			checkClientOrGroupActive(savingsAccount);
+			checkClientOrGroupActive(savingsAccountCredit);
 
 			boolean isAccountTransfer = false;
 			boolean isRegularTransaction = true;
 
-			applicationTransaction = this.savingsAccountDomainService.handleInterswitchDeposit(savingsAccount, fmt,
-					transactionDateDep, settlementAmount, null, isAccountTransfer, isRegularTransaction);
+			applicationTransaction = this.savingsAccountDomainService.handleInterswitchDeposit(savingsAccountCredit,
+					fmt, transactionDateDep, settlementAmount, null, isAccountTransfer, isRegularTransaction);
 
 		}
-
-
 
 		// very imp: we are returning transaction id as authorization number,
 		// this is to facilitate undo of transaction, as ezbank would need
@@ -294,11 +381,11 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		// of the transaction to be undoed
 		authorizationNumber = applicationTransaction.getId() + "";
 		responseCode = ResponseCodes.APPROVED.getValue() + "";
-		
-		InterswitchTransactions transaction = InterswitchTransactions.getInstance(sessionId, authorizationNumber,
-				applicationTransaction, settlementAmount, settlementDate,time, isReversed, isAdviced,isDebit);
 
-		InterswitchTransactions interswithTransaction = this.interswitchTransactionsRepository.save(transaction);
+		InterswitchTransactions transaction = InterswitchTransactions.getInstance(sessionId, authorizationNumber,
+				applicationTransaction, settlementAmount, settlementDate, time, isReversed, isAdviced, isDebit);
+
+		 this.interswitchTransactionsRepository.save(transaction);
 
 		// send the response code
 		return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
