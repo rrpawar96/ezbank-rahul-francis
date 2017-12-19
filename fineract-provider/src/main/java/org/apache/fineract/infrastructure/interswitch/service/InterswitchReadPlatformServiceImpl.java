@@ -96,9 +96,13 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	
 	
 		@Override
-		public List<HashMap<String,String>> getMinistatement(String json)
+		public List<HashMap<String,HashMap<String,String>>> getMinistatement(String json)
 		{
-			List<HashMap<String,String>> miniStatement=new ArrayList<HashMap<String,String>>();
+		//	List<HashMap<String,String>> miniStatement=new ArrayList<HashMap<String,String>>();
+			List<HashMap<String,HashMap<String,String>>> miniStatement=new ArrayList<HashMap<String,HashMap<String,String>>>();
+			
+			HashMap<String,HashMap<String,String>> transactionWrapperMap;
+			
 			HashMap<String,String> transactionMap;
 			
 			final JsonElement element = this.fromApiJsonHelper.parse(json);
@@ -122,6 +126,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				while(i>0 && numberOfTransactions>=0)
 				{
 					transaction=transactions.get(numberOfTransactions);
+					transactionWrapperMap=new HashMap<String,HashMap<String,String>>();
 					transactionMap=new HashMap<String,String>();
 					transactionMap.put("SEQ_NR",transaction.getId()+"" );
 					transactionMap.put("DATE_TIME",transaction.getDateOf()+"" );
@@ -139,7 +144,10 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 					
 					transactionMap.put("TRAN_TYPE",transactionType );
 					transactionMap.put("TRAN_AMOUNT",transaction.getAmount()+"" );
-					miniStatement.add(transactionMap);
+					
+					transactionWrapperMap.put("additional_amount", transactionMap);
+					
+					miniStatement.add(transactionWrapperMap);
 					i--;
 					numberOfTransactions--;
 					

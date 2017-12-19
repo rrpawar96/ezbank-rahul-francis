@@ -10,6 +10,6 @@ public interface InterswitchReadPlatformService
 
 	InterswitchBalanceEnquiryData retrieveBalance(String json);
 
-	List<HashMap<String, String>> getMinistatement(String json);
+	List<HashMap<String, HashMap<String, String>>> getMinistatement(String json);
 	
 }

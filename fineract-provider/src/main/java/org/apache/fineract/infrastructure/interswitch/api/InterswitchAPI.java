@@ -141,7 +141,7 @@ public class InterswitchAPI
 			
 			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
-			final List<HashMap<String,String>> miniStatement = this.interswitchReadPlatformServiceImpl
+			final List<HashMap<String,HashMap<String,String>>> miniStatement = this.interswitchReadPlatformServiceImpl
 					.getMinistatement(apiRequestBodyAsJson);
 			
 			return this.toApiJsonSerializer.serialize(miniStatement);
