@@ -4,32 +4,25 @@ import java.math.BigDecimal;
 
 public class InterswitchBalanceEnquiryData 
 {
-
-	/*account_type : (savings=10)
-	amount_type: available balance 02
-	currency: uganda curruncy
-	amount:  figure
-	amount_sign*/
 	
+	String account_type;
 	
-	String accountType;
-	
-	String amountType;
+	String amount_type;
 	
 	String currency;
 	
 	BigDecimal amount;
 	
-	String amountSign;
+	String amount_sign;
 	
 	private InterswitchBalanceEnquiryData(String accountType,String amountType,String currency,
 			BigDecimal amount,String amountSign)
 	{
-		this.accountType=accountType;
-		this.amountType=amountType;
+		this.account_type=accountType;
+		this.amount_type=amountType;
 		this.currency=currency;
 		this.amount=amount;
-		this.amountSign=amountSign;
+		this.amount_sign=amountSign;
 	}
 	
 	
@@ -41,19 +34,19 @@ public class InterswitchBalanceEnquiryData
 	}
 
 	public String getAccountType() {
-		return accountType;
+		return account_type;
 	}
 
 	public void setAccountType(String accountType) {
-		this.accountType = accountType;
+		this.account_type = accountType;
 	}
 
 	public String getAmountType() {
-		return amountType;
+		return amount_type;
 	}
 
 	public void setAmountType(String amountType) {
-		this.amountType = amountType;
+		this.amount_type = amountType;
 	}
 
 	public String getCurrency() {
@@ -73,11 +66,11 @@ public class InterswitchBalanceEnquiryData
 	}
 
 	public String getAmountSign() {
-		return amountSign;
+		return amount_sign;
 	}
 
 	public void setAmountSign(String amountSign) {
-		this.amountSign = amountSign;
+		this.amount_sign = amountSign;
 	}
 	
 	

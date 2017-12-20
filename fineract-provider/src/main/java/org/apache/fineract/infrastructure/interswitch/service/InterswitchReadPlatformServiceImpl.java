@@ -1,8 +1,11 @@
 package org.apache.fineract.infrastructure.interswitch.service;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +13,9 @@ import java.util.List;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceEnquiryData;
+import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWrapper;
+import org.apache.fineract.infrastructure.interswitch.data.MinistatementDataWrapper;
+import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
@@ -74,37 +80,17 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	
 	
 	@Override
-	public InterswitchBalanceEnquiryData retrieveBalance(String json) {
+	public InterswitchBalanceWrapper retrieveBalance(String json) {
 		this.context.authenticatedUser();
 		final String accountType = "10";// hard code
 		final String amountType = "02";  // hard code
-		final String currency = "UGX";     // need to find better method
+		final String amountType_ledger = "01";
+		final String currency = "800";     // need to find better method
 		final String amountSign = "C";  // hard code
 		
-		final JsonElement element = this.fromApiJsonHelper.parse(json);
-		JsonObject requestBody=element.getAsJsonObject();
+		List<InterswitchBalanceEnquiryData> balances;
 		
-		String accountNumber=requestBody.get("account_debit").getAsString();
-		
-		SavingsAccount savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
-		
-		final BigDecimal amount = savingsAccount.getWithdrawableBalance();
-		
-		return InterswitchBalanceEnquiryData.getInstance(accountType, amountType, currency, amount,
-				amountSign);
-		}
-	
-	
-		@Override
-		public List<HashMap<String,HashMap<String,String>>> getMinistatement(String json)
-		{
-		//	List<HashMap<String,String>> miniStatement=new ArrayList<HashMap<String,String>>();
-			List<HashMap<String,HashMap<String,String>>> miniStatement=new ArrayList<HashMap<String,HashMap<String,String>>>();
-			
-			HashMap<String,HashMap<String,String>> transactionWrapperMap;
-			
-			HashMap<String,String> transactionMap;
-			
+		try{
 			final JsonElement element = this.fromApiJsonHelper.parse(json);
 			JsonObject requestBody=element.getAsJsonObject();
 			
@@ -112,51 +98,110 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			
 			SavingsAccount savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
 			
-			List<SavingsAccountTransaction> transactions= this.savingsAccountTransactionRepository.findBySavingsAccountId(savingsAccount.getId());
-				//	savingsAccount.getTransactions();
-			
-			
-			String transactionType="";
-			System.out.println("number of transaction returned:"+transactions.size());
-			
-			int numberOfTransactions=transactions.size()-1;
-			
-			int i=5;
-			SavingsAccountTransaction transaction;
-				while(i>0 && numberOfTransactions>=0)
-				{
-					transaction=transactions.get(numberOfTransactions);
-					transactionWrapperMap=new HashMap<String,HashMap<String,String>>();
-					transactionMap=new HashMap<String,String>();
-					transactionMap.put("SEQ_NR",transaction.getId()+"" );
-					transactionMap.put("DATE_TIME",transaction.getDateOf()+"" );
-					
-				
-					
-					if(SavingsAccountTransactionType.fromInt(transaction.getTypeOf()).isCredit())
-					{
-						transactionType="C";
-					}
-					else if(SavingsAccountTransactionType.fromInt(transaction.getTypeOf()).isDebit())
-					{
-						transactionType="D";
-					}
-					
-					transactionMap.put("TRAN_TYPE",transactionType );
-					transactionMap.put("TRAN_AMOUNT",transaction.getAmount()+"" );
-					
-					transactionWrapperMap.put("additional_amount", transactionMap);
-					
-					miniStatement.add(transactionWrapperMap);
-					i--;
-					numberOfTransactions--;
-					
-				}
+			final BigDecimal amount = savingsAccount.getWithdrawableBalance();
 		
 			
-			return miniStatement;
+			InterswitchBalanceEnquiryData actualBalance=	InterswitchBalanceEnquiryData.getInstance(accountType, amountType, currency, amount,
+					amountSign);
 			
+			InterswitchBalanceEnquiryData ledgerBalance=	InterswitchBalanceEnquiryData.getInstance(accountType, amountType_ledger, currency, amount,
+					amountSign);
+			
+			balances=new ArrayList<InterswitchBalanceEnquiryData>();
+			balances.add(ledgerBalance);
+			balances.add(actualBalance);
+			
+			
+			
+			return InterswitchBalanceWrapper.getInstance(balances,  ResponseCodes.APPROVED.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+			
+			
+			
+			//return transactionMap;
 		}
+		catch(Exception e)
+		{
+			return InterswitchBalanceWrapper.getInstance(null,  ResponseCodes.ERROR.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+		}
+		
+		
+		
+		
+		
+		
+		}
+	
+
+	@Override
+	public MinistatementDataWrapper getMinistatement(String json)
+	{
+		List<HashMap<String,String>> miniStatement=new ArrayList<HashMap<String,String>>();
+		HashMap<String,String> transactionMap;
+		
+		final JsonElement element = this.fromApiJsonHelper.parse(json);
+		JsonObject requestBody=element.getAsJsonObject();
+		
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+	
+		
+		try {
+		
+		String accountNumber=requestBody.get("account_debit").getAsString();
+		
+		SavingsAccount savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
+		
+		List<SavingsAccountTransaction> transactions= this.savingsAccountTransactionRepository.findBySavingsAccountId(savingsAccount.getId());
+			//	savingsAccount.getTransactions();
+		
+		
+		String transactionType="";
+		
+		
+		int numberOfTransactions=transactions.size()-1;
+		
+		int i=5;
+		SavingsAccountTransaction transaction;
+			while(i>0 && numberOfTransactions>=0)
+			{
+				transaction=transactions.get(numberOfTransactions);
+				transactionMap=new HashMap<String,String>();
+				transactionMap.put("seq_nr",transaction.getId()+"" );
+				transactionMap.put("date_time",dateFormat.format(transaction.getDateOf())+"" );
+				
+			
+				
+				if(SavingsAccountTransactionType.fromInt(transaction.getTypeOf()).isCredit())
+				{
+					//transactionType="C"; modified as instructed by Salton
+					transactionType="01";
+				}
+				else if(SavingsAccountTransactionType.fromInt(transaction.getTypeOf()).isDebit())
+				{
+					//transactionType="D"; modified as instructed by Salton
+					transactionType="01";
+				}
+				
+				transactionMap.put("tran_type",transactionType );
+				transactionMap.put("curr_code","800" );
+				transactionMap.put("tran_amount", transaction.getAmount().toBigInteger()+"" );
+				
+				miniStatement.add(transactionMap);
+				i--;
+				numberOfTransactions--;
+				
+			}
+			
+			
+		return	MinistatementDataWrapper.getInstance(miniStatement, ResponseCodes.APPROVED.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+	
+		
+		}
+		catch(Exception e)
+		{
+			return MinistatementDataWrapper.getInstance(null,  ResponseCodes.ERROR.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+		}
+		
+	}
 	
 	
 	

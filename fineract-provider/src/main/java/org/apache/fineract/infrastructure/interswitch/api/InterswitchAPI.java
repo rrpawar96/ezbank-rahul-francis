@@ -1,8 +1,5 @@
 package org.apache.fineract.infrastructure.interswitch.api;
 
-import java.util.HashMap;
-import java.util.List;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -19,7 +16,8 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchAuthorizationMessageData;
-import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceEnquiryData;
+import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWrapper;
+import org.apache.fineract.infrastructure.interswitch.data.MinistatementDataWrapper;
 import org.apache.fineract.infrastructure.interswitch.service.InterswitchReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
@@ -126,7 +124,7 @@ public class InterswitchAPI
 			
 			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
-			final InterswitchBalanceEnquiryData interswitchBalanceEnquiryData = this.interswitchReadPlatformServiceImpl
+			final InterswitchBalanceWrapper interswitchBalanceEnquiryData = this.interswitchReadPlatformServiceImpl
 					.retrieveBalance(apiRequestBodyAsJson);
 			
 			return this.toApiJsonSerializer.serialize(interswitchBalanceEnquiryData);
@@ -141,7 +139,7 @@ public class InterswitchAPI
 			
 			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
-			final List<HashMap<String,HashMap<String,String>>> miniStatement = this.interswitchReadPlatformServiceImpl
+			final MinistatementDataWrapper miniStatement = this.interswitchReadPlatformServiceImpl
 					.getMinistatement(apiRequestBodyAsJson);
 			
 			return this.toApiJsonSerializer.serialize(miniStatement);
