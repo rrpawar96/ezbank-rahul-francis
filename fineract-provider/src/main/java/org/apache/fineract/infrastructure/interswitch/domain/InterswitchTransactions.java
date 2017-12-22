@@ -23,6 +23,9 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	@Column(name="session_id")
 	private String sessionId;
 	
+	@Column(name="stan")
+	private String stan;
+	
 	@Column(name="authorization_number")
 	private String authorizationNumber;
 		
@@ -49,11 +52,12 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	@Column(name="is_debit")
 	private boolean isDebit;
 	
-	public InterswitchTransactions(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
+	public InterswitchTransactions(String sessionId,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
 			BigDecimal settlementAmount,Date settlementDate,String transactionTime,
 			boolean isReversed,boolean isAdviced,boolean isDebit)
 	{
 		this.sessionId=sessionId;
+		this.stan=stan;
 		this.authorizationNumber=authorizationNumber;
 		this.applicationTransaction=applicationTransaction;
 		this.settlementAmount=settlementAmount;
@@ -64,11 +68,11 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 		this.isDebit=isDebit;
 	}
 	
-	public static InterswitchTransactions getInstance(String sessionId,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
+	public static InterswitchTransactions getInstance(String sessionId,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
 			BigDecimal settlementAmount,Date settlementDate,String transactionTime,
 			boolean isReversed,boolean isAdviced,boolean isDebit)
 	{
-		return new InterswitchTransactions(sessionId,authorizationNumber,applicationTransaction,
+		return new InterswitchTransactions(sessionId,stan,authorizationNumber,applicationTransaction,
 				settlementAmount,settlementDate,transactionTime,isReversed,isAdviced,isDebit);
 	}
 
@@ -138,6 +142,7 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	public void setDebit(boolean isDebit) {
 		this.isDebit = isDebit;
 	}
+	
 	
 	
 	

@@ -17,7 +17,9 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchAuthorizationMessageData;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWrapper;
+import org.apache.fineract.infrastructure.interswitch.data.InterswitchTransactionData;
 import org.apache.fineract.infrastructure.interswitch.data.MinistatementDataWrapper;
+import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.interswitch.service.InterswitchReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
@@ -84,8 +86,23 @@ public class InterswitchAPI
 	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().executeTransaction().withJson(apiRequestBodyAsJson).build();
 
 	           final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+	           
+	           
+	           InterswitchBalanceWrapper interswitchBalanceEnquiryData = this.interswitchReadPlatformServiceImpl
+						.retrieveBalance(apiRequestBodyAsJson);
+	           
+	           String authorizationNumber=null;
+	           if(result.getAuthorizationNumber()!="")
+	           {
+	        	   authorizationNumber= String.format("%06d",Integer.parseInt(result.getAuthorizationNumber()) );
+	           }
+	           
+	           String responseCode= String.format("%02d", Integer.parseInt(result.getResponseCode()) );
+	           
+	           InterswitchTransactionData transactionResponse =InterswitchTransactionData.getInstance(authorizationNumber,responseCode,
+	        		   interswitchBalanceEnquiryData.getAdditional_amount());
 
-	           return this.toApiJsonSerializer.serialize(result);
+	           return this.toApiJsonSerializer.serialize(transactionResponse);
 	    }
 	  	
 	  	@POST

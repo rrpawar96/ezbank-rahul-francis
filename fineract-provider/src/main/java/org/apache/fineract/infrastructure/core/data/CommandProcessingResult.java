@@ -171,8 +171,6 @@ public class CommandProcessingResult implements Serializable {
     this.changes = null;
     this.productId = null;
     this.subResourceId = null;
-    this.authorizationNumber=null;
-    this.responseCode=null;
     this.authorizationNumber=authorizationNumber;
     this.responseCode=responseCode;
     }
@@ -241,4 +239,31 @@ public class CommandProcessingResult implements Serializable {
     public Long getSubResourceId() {
         return subResourceId;
     }
+
+
+
+	public String getAuthorizationNumber() {
+		return authorizationNumber;
+	}
+
+
+
+	public void setAuthorizationNumber(String authorizationNumber) {
+		this.authorizationNumber = authorizationNumber;
+	}
+
+
+
+	public String getResponseCode() {
+		return responseCode;
+	}
+
+
+
+	public void setResponseCode(String responseCode) {
+		this.responseCode = responseCode;
+	}
+    
+    
+    
 }

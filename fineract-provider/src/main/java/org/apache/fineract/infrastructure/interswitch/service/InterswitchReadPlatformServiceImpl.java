@@ -1,7 +1,6 @@
 package org.apache.fineract.infrastructure.interswitch.service;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -10,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceEnquiryData;
@@ -22,6 +22,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
+import org.apache.fineract.portfolio.savings.service.SavingsEnumerations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -89,14 +90,31 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		final String amountSign = "C";  // hard code
 		
 		List<InterswitchBalanceEnquiryData> balances;
+		String responseCode="";
+		
 		
 		try{
 			final JsonElement element = this.fromApiJsonHelper.parse(json);
 			JsonObject requestBody=element.getAsJsonObject();
 			
-			String accountNumber=requestBody.get("account_debit").getAsString();
+			String accountNumber="";
+			if(requestBody.get("account_debit")!=null)
+			{
+				accountNumber=requestBody.get("account_debit").getAsString();
+			}
+			else if(requestBody.get("account_credit")!=null)
+			{
+				accountNumber=requestBody.get("account_credit").getAsString();
+			}
+			
 			
 			SavingsAccount savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
+			
+			if (savingsAccount == null) {
+				responseCode = ResponseCodes.NOSAVINGSACCOUNT.getValue() + "";
+				
+				return InterswitchBalanceWrapper.getInstance(null,  null, null);
+			}
 			
 			final BigDecimal amount = savingsAccount.getWithdrawableBalance();
 		
@@ -113,7 +131,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			
 			
 			
-			return InterswitchBalanceWrapper.getInstance(balances,  ResponseCodes.APPROVED.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+			return InterswitchBalanceWrapper.getInstance(balances,  String.format("%02d", ResponseCodes.APPROVED.getValue()), (int)(100000 + Math.random() * 999999)+"");
 			
 			
 			
@@ -135,8 +153,10 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	@Override
 	public MinistatementDataWrapper getMinistatement(String json)
 	{
-		List<HashMap<String,String>> miniStatement=new ArrayList<HashMap<String,String>>();
-		HashMap<String,String> transactionMap;
+		List<HashMap<String,Object>> miniStatement=new ArrayList<HashMap<String,Object>>();
+		HashMap<String,Object> transactionMap;
+		
+		InterswitchBalanceWrapper balance=retrieveBalance(json);
 		
 		final JsonElement element = this.fromApiJsonHelper.parse(json);
 		JsonObject requestBody=element.getAsJsonObject();
@@ -164,26 +184,16 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			while(i>0 && numberOfTransactions>=0)
 			{
 				transaction=transactions.get(numberOfTransactions);
-				transactionMap=new HashMap<String,String>();
+				transactionMap=new HashMap<String,Object>();
 				transactionMap.put("seq_nr",transaction.getId()+"" );
 				transactionMap.put("date_time",dateFormat.format(transaction.getDateOf())+"" );
+		
 				
-			
+				transactionType=SavingsEnumerations.transactionType(transaction.getTypeOf()).getValue().substring(0,10);
 				
-				if(SavingsAccountTransactionType.fromInt(transaction.getTypeOf()).isCredit())
-				{
-					//transactionType="C"; modified as instructed by Salton
-					transactionType="01";
-				}
-				else if(SavingsAccountTransactionType.fromInt(transaction.getTypeOf()).isDebit())
-				{
-					//transactionType="D"; modified as instructed by Salton
-					transactionType="01";
-				}
-				
-				transactionMap.put("tran_type",transactionType );
-				transactionMap.put("curr_code","800" );
-				transactionMap.put("tran_amount", transaction.getAmount().toBigInteger()+"" );
+				transactionMap.put("tran_type", transactionType);
+				transactionMap.put("curr_code",800 );
+				transactionMap.put("tran_amount", transaction.getAmount() );
 				
 				miniStatement.add(transactionMap);
 				i--;
@@ -192,13 +202,13 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			}
 			
 			
-		return	MinistatementDataWrapper.getInstance(miniStatement, ResponseCodes.APPROVED.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+		return	MinistatementDataWrapper.getInstance(miniStatement,balance.getAdditional_amount(), String.format("%02d", ResponseCodes.APPROVED.getValue()), (int)(100000 + Math.random() * 999999)+"");
 	
 		
 		}
 		catch(Exception e)
 		{
-			return MinistatementDataWrapper.getInstance(null,  ResponseCodes.ERROR.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+			return MinistatementDataWrapper.getInstance(null,null,  ResponseCodes.ERROR.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
 		}
 		
 	}
