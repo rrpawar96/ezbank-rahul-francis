@@ -19,7 +19,6 @@ import org.apache.fineract.infrastructure.interswitch.data.InterswitchAuthorizat
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWrapper;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchTransactionData;
 import org.apache.fineract.infrastructure.interswitch.data.MinistatementDataWrapper;
-import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.interswitch.service.InterswitchReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
