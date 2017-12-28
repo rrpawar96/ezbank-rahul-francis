@@ -53,6 +53,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
+import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -716,10 +717,40 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     	Long transactionId=Long.parseLong(authorizationNumber);
     	SavingsAccountTransaction transaction=this.savingsAccountTransactionRepository.findOne(transactionId);
   		
-		long savingsAccountId=transaction.getSavingsAccount().getId();
+		if((transaction)==null)
+		{
+			return CommandProcessingResult.interswitchResponse(((int)(100000 + Math.random() * 999999)+""), ResponseCodes.ERROR.getValue() + "");	
+		}
+		else
+		{
+			
+			try
+			{
+				long savingsAccountId=transaction.getSavingsAccount().getId();
+				
+				CommandProcessingResult result=undoTransaction(savingsAccountId,transactionId,false);
+				
+		    	if(result.getOfficeId()==null)
+		    	{
+		    		return CommandProcessingResult.interswitchResponse(((int)(100000 + Math.random() * 999999)+""), ResponseCodes.ERROR.getValue() + "");
+		    	}
+		    	else
+		    	{
+		    		// send the response code
+		    		return CommandProcessingResult.interswitchResponse(((int)(100000 + Math.random() * 999999)+""), ResponseCodes.APPROVED.getValue() + "");	
+		    	}	
+			}
+			catch(Exception e)
+			{
+				return CommandProcessingResult.interswitchResponse(((int)(100000 + Math.random() * 999999)+""), ResponseCodes.ERROR.getValue() + "");
+			}
+			
+		}
 		
-    	return undoTransaction(savingsAccountId,  transactionId,
-                false);
+	
+		
+		
+		
     }
     
     
