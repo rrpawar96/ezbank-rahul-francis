@@ -239,40 +239,48 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		boolean isDebit = false;
 
 		boolean isTransferTransaction = false;
+		
+		boolean isCredit=false;
+		
+		
+		//determine the transaction
+		String processingType=command.stringValueOfParameterNamed("processing_type");
+		
+		switch(processingType)
+		{
+		
+		case "cash_withdrawal":
+			isDebit=true;
+		break;
+		
+		case "deposit":
+			isCredit=true;
+		break;
+		
+		case "payment_and_transfers":
+		isTransferTransaction=true;
+		System.out.println("is transfer");
+		break;
+		
+		case "purchase":
+			isDebit=true;
+			break;
+		}
+			
+			
 
 		// get savings account
 
 		String accountNumberCredit = "";
-		String accountNumberDebit = "";
-
-		if ((command.stringValueOfParameterNamed("account_debit") != "")
-				&& (command.stringValueOfParameterNamed("account_credit") != "")) {
-
-			accountNumberDebit = command.stringValueOfParameterNamed("account_debit");
-			accountNumberCredit = command.stringValueOfParameterNamed("account_credit");
-			isTransferTransaction = true;
-
-		} else if (command.stringValueOfParameterNamed("account_debit") != "") {
-			accountNumberDebit = command.stringValueOfParameterNamed("account_debit");
-			isDebit = true;
-
-			System.out.println("its a debit transaction");
-
-		} else if (command.stringValueOfParameterNamed("account_credit") != "") {
-			accountNumberCredit = command.stringValueOfParameterNamed("account_credit");
-
-		} else {
-			responseCode = ResponseCodes.ERROR.getValue() + "";
-			authorizationNumber = ""; // because we did not execute
-			// transaction???
-
-			return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
-		}
-
+		String accountNumberDebit = "";		
 		SavingsAccount savingsAccountCredit = null;
 		SavingsAccount savingsAccountDebit = null;
 
 		if (isTransferTransaction) {
+			
+			accountNumberDebit = command.stringValueOfParameterNamed("account_debit");
+			accountNumberCredit = command.stringValueOfParameterNamed("account_credit");
+			
 			savingsAccountCredit = this.savingsAccountRepository
 					.findNonClosedAccountByAccountNumber(accountNumberCredit);
 			savingsAccountDebit = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumberDebit);
@@ -284,6 +292,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 				return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 			}
+			
 			savingsAccountDebit = this.savingAccountAssembler.assembleFrom(savingsAccountDebit.getId());
 
 			savingsAccountCredit = this.savingAccountAssembler.assembleFrom(savingsAccountCredit.getId());
@@ -299,6 +308,9 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			}
 
 		} else if (isDebit) {
+			
+			accountNumberDebit = command.stringValueOfParameterNamed("account_debit");
+			
 			savingsAccountDebit = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumberDebit);
 
 			if (savingsAccountDebit == null) {
@@ -320,7 +332,8 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 
 			}
-		} else {
+		} else if(isCredit){
+			accountNumberCredit = command.stringValueOfParameterNamed("account_credit");
 			savingsAccountCredit = this.savingsAccountRepository
 					.findNonClosedAccountByAccountNumber(accountNumberCredit);
 
@@ -333,6 +346,13 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			}
 
 			savingsAccountCredit = this.savingAccountAssembler.assembleFrom(savingsAccountCredit.getId());
+		}
+		else {
+			responseCode = ResponseCodes.ERROR.getValue() + "";
+			authorizationNumber = ""; // because we did not execute
+			// transaction???
+
+			return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 		}
 
 		// if everything goes well
