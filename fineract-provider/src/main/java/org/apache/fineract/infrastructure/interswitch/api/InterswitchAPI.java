@@ -15,6 +15,8 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.interswitch.data.InterSwitchUndoTransactionData;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchAuthorizationMessageData;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWrapper;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchTransactionData;
@@ -25,6 +27,9 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRep
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 @Path("/interswitch")
 @Component
@@ -38,6 +43,7 @@ public class InterswitchAPI
 	private final DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> toApiJsonSerializer;
 	private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
 	private final InterswitchReadPlatformServiceImpl interswitchReadPlatformServiceImpl;
+	private final FromJsonHelper fromApiJsonHelper;
 	
 	 @Autowired
 	 public InterswitchAPI(PlatformSecurityContext context,ApiRequestParameterHelper apiRequestParameterHelper,
@@ -45,7 +51,8 @@ public class InterswitchAPI
 			 DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> toApiJsonSerializer,
 			 DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> authorizationToApiJsonSerializer,
 			 SavingsAccountTransactionRepository savingsAccountTransactionRepository,
-			 InterswitchReadPlatformServiceImpl interswitchReadPlatformServiceImpl)
+			 InterswitchReadPlatformServiceImpl interswitchReadPlatformServiceImpl,
+			 FromJsonHelper fromApiJsonHelper)
 	 {
 		 this.context=context;
 		 this.apiRequestParameterHelper=apiRequestParameterHelper;
@@ -53,6 +60,7 @@ public class InterswitchAPI
 		this.toApiJsonSerializer=toApiJsonSerializer;
 		this.savingsAccountTransactionRepository=savingsAccountTransactionRepository;
 		this.interswitchReadPlatformServiceImpl=interswitchReadPlatformServiceImpl;
+		this.fromApiJsonHelper=fromApiJsonHelper;
 		
 	 }
 	 	
@@ -119,8 +127,19 @@ public class InterswitchAPI
 	    	final CommandWrapper commandRequest = new CommandWrapperBuilder().undoTransaction().withJson(apiRequestBodyAsJson).build();
 
 	        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+	        
+	        final JsonElement element = this.fromApiJsonHelper.parse(apiRequestBodyAsJson);
+			JsonObject requestBody=element.getAsJsonObject();
+			
+			Long transactionId=Long.parseLong(requestBody.get("authorization_number").getAsString());
+			
+			
+			InterswitchBalanceWrapper balance=interswitchReadPlatformServiceImpl.retrieveBalanceForUndoTransaction(transactionId);
+			
+			InterSwitchUndoTransactionData interSwitchUndoTransactionData=InterSwitchUndoTransactionData.getInstance(balance.getAuthorization_number(),
+					result.getResponseCode(), balance.getAdditional_amount());
 
-	        return this.toApiJsonSerializer.serialize(result);
+	        return this.toApiJsonSerializer.serialize(interSwitchUndoTransactionData);
 	    }
 	  	
 		@GET

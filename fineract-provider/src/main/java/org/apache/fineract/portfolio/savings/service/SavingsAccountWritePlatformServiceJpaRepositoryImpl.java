@@ -53,7 +53,9 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
+import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWrapper;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
+import org.apache.fineract.infrastructure.interswitch.service.InterswitchReadPlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -164,6 +166,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final GSIMRepositoy gsimRepository;
     private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
     private final RetailAccountEntryRepository retailAccountEntryRepository;
+    private final InterswitchReadPlatformService interswitchReadPlatformService;
 
     @Autowired
     public SavingsAccountWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -189,7 +192,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final BusinessEventNotifierService businessEventNotifierService,
             final GSIMRepositoy gsimRepository,
             final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository,
-            final RetailAccountEntryRepository retailAccountEntryRepository
+            final RetailAccountEntryRepository retailAccountEntryRepository,
+            final InterswitchReadPlatformService interswitchReadPlatformService
             ) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
@@ -219,6 +223,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.gsimRepository=gsimRepository;
         this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
         this.retailAccountEntryRepository=retailAccountEntryRepository;
+        this.interswitchReadPlatformService=interswitchReadPlatformService;
     }
     
     
@@ -716,10 +721,16 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     	String authorizationNumber= command.stringValueOfParameterNamed("authorization_number");
     	Long transactionId=Long.parseLong(authorizationNumber);
     	SavingsAccountTransaction transaction=this.savingsAccountTransactionRepository.findOne(transactionId);
+    	
+    	authorizationNumber= String.format("%06d",((int)(100000 + Math.random() * 999999)) );
+    	
+    	String errorResponse=String.format("%02d",ResponseCodes.ERROR.getValue() );
+    	
+    	String successResponse=String.format("%02d",ResponseCodes.APPROVED.getValue() );
   		
 		if((transaction)==null)
 		{
-			return CommandProcessingResult.interswitchResponse(((int)(100000 + Math.random() * 999999)+""), ResponseCodes.ERROR.getValue() + "");	
+			return CommandProcessingResult.interswitchResponse(authorizationNumber, errorResponse);	
 		}
 		else
 		{
@@ -728,21 +739,23 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 			{
 				long savingsAccountId=transaction.getSavingsAccount().getId();
 				
+			//	InterswitchBalanceWrapper balance=interswitchReadPlatformService.retrieveBalanceForUndoTransaction(savingsAccountId);
+				
 				CommandProcessingResult result=undoTransaction(savingsAccountId,transactionId,false);
 				
 		    	if(result.getOfficeId()==null)
 		    	{
-		    		return CommandProcessingResult.interswitchResponse(((int)(100000 + Math.random() * 999999)+""), ResponseCodes.ERROR.getValue() + "");
+		    		return CommandProcessingResult.interswitchResponse(authorizationNumber, errorResponse);
 		    	}
 		    	else
 		    	{
 		    		// send the response code
-		    		return CommandProcessingResult.interswitchResponse(((int)(100000 + Math.random() * 999999)+""), ResponseCodes.APPROVED.getValue() + "");	
+		    		return CommandProcessingResult.interswitchResponse(authorizationNumber, successResponse);	
 		    	}	
 			}
 			catch(Exception e)
 			{
-				return CommandProcessingResult.interswitchResponse(((int)(100000 + Math.random() * 999999)+""), ResponseCodes.ERROR.getValue() + "");
+				return CommandProcessingResult.interswitchResponse(authorizationNumber,errorResponse);
 			}
 			
 		}

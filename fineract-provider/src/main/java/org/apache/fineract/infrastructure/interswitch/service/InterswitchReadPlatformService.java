@@ -9,5 +9,7 @@ public interface InterswitchReadPlatformService
 	InterswitchBalanceWrapper retrieveBalance(String json);
 
 	MinistatementDataWrapper getMinistatement(String json);
+
+	InterswitchBalanceWrapper retrieveBalanceForUndoTransaction(long transactionId);
 	
 }

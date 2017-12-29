@@ -95,6 +95,22 @@ public class ChargeEnumerations {
             	optionData = new EnumOptionData(ChargeTimeType.SAVINGS_NOACTIVITY_FEE.getValue().longValue(), ChargeTimeType.SAVINGS_NOACTIVITY_FEE.getCode(), 
             			"Saving No Activity Fee");
             break;
+            case ATM_BALANCE_ENQUIRY_FEE:
+            	optionData = new EnumOptionData(ChargeTimeType.ATM_BALANCE_ENQUIRY_FEE.getValue().longValue(), ChargeTimeType.ATM_BALANCE_ENQUIRY_FEE.getCode(), 
+            			"ATM Balance Enquiry Fee");
+            break;
+            case ATM_MINISTATEMENT_FEE:
+            	optionData = new EnumOptionData(ChargeTimeType.ATM_MINISTATEMENT_FEE.getValue().longValue(), ChargeTimeType.ATM_MINISTATEMENT_FEE.getCode(), 
+            			"ATM Ministatement Fee");
+            break;
+            case ATM_WITHDRAWAL_FEE:
+            	optionData = new EnumOptionData(ChargeTimeType.ATM_WITHDRAWAL_FEE.getValue().longValue(), ChargeTimeType.ATM_WITHDRAWAL_FEE.getCode(), 
+            			"ATM Withdrawal Fee");
+            break;
+            case ATM_PURCHASE_FEE:
+            	optionData = new EnumOptionData(ChargeTimeType.ATM_PURCHASE_FEE.getValue().longValue(), ChargeTimeType.ATM_PURCHASE_FEE.getCode(), 
+            			"ATM Purchase Fee");
+            break;
             default:
                 optionData = new EnumOptionData(ChargeTimeType.INVALID.getValue().longValue(), ChargeTimeType.INVALID.getCode(), "Invalid");
             break;

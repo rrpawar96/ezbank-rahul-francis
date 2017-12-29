@@ -1128,6 +1128,8 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         	transaction = SavingsAccountTransaction.atmWithdrawal(this, office(),
                     transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
                     transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        	payATMWithdrawalFee(transactionDTO.getTransactionAmount(), transactionDTO.getTransactionDate(), transactionDTO.getAppUser());
+        	
         }
         else
         {
@@ -1155,6 +1157,20 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             if (charge.isWithdrawalFee() && charge.isActive()) {
                 charge.updateWithdralFeeAmount(transactionAmoount);
                 this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, user);
+            }
+        }
+    }
+    
+    private void payATMWithdrawalFee(final BigDecimal transactionAmoount, final LocalDate transactionDate, final AppUser user) {
+    	
+    	System.out.println("Charges are "+this.charges());
+    	
+        for (SavingsAccountCharge charge : this.charges()) {
+            if (charge.isATMWithdrawalFee() && charge.isActive()) {
+            	System.out.println("atm withdrawal charge found");
+                charge.updateWithdralFeeAmount(transactionAmoount);
+                this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, user);
+                System.out.println("pay charge triggereds"+charge.getAmountOutstanding(this.getCurrency()));
             }
         }
     }
@@ -2703,7 +2719,13 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             chargeTransaction = SavingsAccountTransaction.withdrawalFee(this, office(), transactionDate, transactionAmount, user);
         } else if (savingsAccountCharge.isAnnualFee()) {
             chargeTransaction = SavingsAccountTransaction.annualFee(this, office(), transactionDate, transactionAmount, user);
-        } else {
+        } else if(savingsAccountCharge.isATMWithdrawalFee())
+        {
+        	System.out.println("atm charge with amount "+transactionAmount+"triggered");
+        chargeTransaction = SavingsAccountTransaction.atmWithdrawalFee(this, office(), transactionDate, transactionAmount, user);
+        }	
+        else {
+        
             chargeTransaction = SavingsAccountTransaction.charge(this, office(), transactionDate, transactionAmount, user);
         }
 

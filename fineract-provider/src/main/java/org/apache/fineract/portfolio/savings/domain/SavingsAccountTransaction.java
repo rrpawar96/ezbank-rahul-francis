@@ -211,6 +211,14 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
         return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.WITHDRAWAL_FEE.getValue(), date, amount,
                 isReversed, appUser, isManualTransaction);
     }
+    
+    public static SavingsAccountTransaction atmWithdrawalFee(final SavingsAccount savingsAccount, final Office office, final LocalDate date,
+            final Money amount, final AppUser appUser) {
+        final boolean isReversed = false;
+        final boolean isManualTransaction = false;
+        return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue(), date, amount,
+                isReversed, appUser, isManualTransaction);
+    }
 
     public static SavingsAccountTransaction annualFee(final SavingsAccount savingsAccount, final Office office, final LocalDate date,
             final Money amount, final AppUser appUser) {

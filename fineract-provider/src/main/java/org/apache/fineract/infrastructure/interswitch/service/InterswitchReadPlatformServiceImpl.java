@@ -119,10 +119,70 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			final BigDecimal amount = savingsAccount.getWithdrawableBalance();
 		
 			
-			InterswitchBalanceEnquiryData actualBalance=	InterswitchBalanceEnquiryData.getInstance(accountType, amountType, currency, amount,
+			InterswitchBalanceEnquiryData actualBalance=InterswitchBalanceEnquiryData.getInstance(accountType, amountType, currency, amount,
 					amountSign);
 			
-			InterswitchBalanceEnquiryData ledgerBalance=	InterswitchBalanceEnquiryData.getInstance(accountType, amountType_ledger, currency, amount,
+			InterswitchBalanceEnquiryData ledgerBalance=InterswitchBalanceEnquiryData.getInstance(accountType, amountType_ledger, currency, amount,
+					amountSign);
+			
+			balances=new ArrayList<InterswitchBalanceEnquiryData>();
+			balances.add(ledgerBalance);
+			balances.add(actualBalance);
+			
+			
+			
+			return InterswitchBalanceWrapper.getInstance(balances,  String.format("%02d", ResponseCodes.APPROVED.getValue()), (int)(100000 + Math.random() * 999999)+"");
+			
+			
+			
+			//return transactionMap;
+		}
+		catch(Exception e)
+		{
+			return InterswitchBalanceWrapper.getInstance(null,  ResponseCodes.ERROR.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+		}
+		
+		
+		
+		
+		
+		
+		}
+	
+	
+	@Override
+	public InterswitchBalanceWrapper retrieveBalanceForUndoTransaction(long transactionId) {
+		this.context.authenticatedUser();
+		final String accountType = "10";// hard code
+		final String amountType = "02";  // hard code
+		final String amountType_ledger = "01";
+		final String currency = "800";     // need to find better method
+		final String amountSign = "C";  // hard code
+		
+		List<InterswitchBalanceEnquiryData> balances;
+		
+		SavingsAccountTransaction transaction=this.savingsAccountTransactionRepository.findOne(transactionId);
+		
+		
+		try{
+			//SavingsAccount savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
+			long savingsAccountId=transaction.getSavingsAccount().getId();
+			
+			SavingsAccount savingsAccount =this.savingsAccountRepository.getOne(savingsAccountId);
+			
+			if (savingsAccount == null) {
+				
+				
+				return InterswitchBalanceWrapper.getInstance(null,  ResponseCodes.ERROR.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
+			}
+			
+			final BigDecimal amount = savingsAccount.getWithdrawableBalance();
+		
+			
+			InterswitchBalanceEnquiryData actualBalance=InterswitchBalanceEnquiryData.getInstance(accountType, amountType, currency, amount,
+					amountSign);
+			
+			InterswitchBalanceEnquiryData ledgerBalance=InterswitchBalanceEnquiryData.getInstance(accountType, amountType_ledger, currency, amount,
 					amountSign);
 			
 			balances=new ArrayList<InterswitchBalanceEnquiryData>();
