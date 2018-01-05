@@ -7,9 +7,12 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceEnquiryData;
@@ -17,12 +20,24 @@ import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWra
 import org.apache.fineract.infrastructure.interswitch.data.MinistatementDataWrapper;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
+import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
+import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_ENTITY;
+import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_EVENTS;
+import org.apache.fineract.portfolio.common.service.BusinessEventNotifierService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountChargeRepository;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
+import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsEnumerations;
+import org.apache.fineract.useradministration.domain.AppUser;
+import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -40,17 +55,40 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	private final FromJsonHelper fromApiJsonHelper;
 	private final SavingsAccountRepository savingsAccountRepository;
 	private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
+	private final SavingsAccountChargeRepository repository;
+	private final SavingsAccountAssembler savingAccountAssembler;
+	private final SavingsAccountDomainService savingsDomainService;
+	private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+	private final JournalEntryWritePlatformService journalEntryWritePlatformService;
+	private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper;
+	private final BusinessEventNotifierService businessEventNotifierService;
+
 
 	@Autowired
 	public InterswitchReadPlatformServiceImpl(final PlatformSecurityContext context,
 			final RoutingDataSource dataSource,final FromJsonHelper fromApiJsonHelper,
 			final SavingsAccountRepository savingsAccountRepository,
-			final SavingsAccountTransactionRepository savingsAccountTransactionRepository) {
+			final SavingsAccountTransactionRepository savingsAccountTransactionRepository,
+			final SavingsAccountChargeRepository repository,
+			final SavingsAccountAssembler savingAccountAssembler,
+			final SavingsAccountDomainService savingsDomainService,
+			final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
+			final JournalEntryWritePlatformService journalEntryWritePlatformService,
+			final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper,
+			final BusinessEventNotifierService businessEventNotifierService) {
 		this.context = context;
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 		this.fromApiJsonHelper=fromApiJsonHelper;
 		this.savingsAccountRepository=savingsAccountRepository;
 		this.savingsAccountTransactionRepository=savingsAccountTransactionRepository;
+		this.repository=repository;
+		this.savingAccountAssembler=savingAccountAssembler;
+		this.savingsDomainService=savingsDomainService;
+		this.savingsAccountWritePlatformService=savingsAccountWritePlatformService;
+		this.journalEntryWritePlatformService=journalEntryWritePlatformService;
+		this.applicationCurrencyRepositoryWrapper=applicationCurrencyRepositoryWrapper;
+		this.businessEventNotifierService=businessEventNotifierService;
+		
 	}
 	
 	private static final class InterswitchBalanceEnquiryMapper implements RowMapper<InterswitchBalanceEnquiryData> 
@@ -93,7 +131,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		String responseCode="";
 		
 		
-		try{
+	//	try{
 			final JsonElement element = this.fromApiJsonHelper.parse(json);
 			JsonObject requestBody=element.getAsJsonObject();
 			
@@ -130,17 +168,88 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			balances.add(actualBalance);
 			
 			
+		//	AppUser user = getAppUserIfPresent();
+			
+			//savingsAccount.payATMBalanceEnquiryFee(charge, new LocalDate(), user);
+			
+			
+			//this.savingsAccountRepository.save(savingsAccount);
+			
+			   Set<Long> existingTransactionIds = new HashSet<>();
+		        Set<Long> existingReversedTransactionIds = new HashSet<>();
+		        
+		        
+		        
+			List<SavingsAccountCharge> charges=new ArrayList<>();
+			
+			charges=this.repository.findBySavingsAccountId(savingsAccount.getId());
+			
+			for(SavingsAccountCharge charge:charges)
+			{
+				System.out.println("charge is"+charge.getId());
+				if(charge.isActive() && charge.isATMBalanceEnquiryFee())
+				{
+					
+					System.out.println("charge found");
+					
+					AppUser user = getAppUserIfPresent();
+					
+					savingsAccount=	savingAccountAssembler.assembleFrom(savingsAccount.getId());
+					
+					System.out.println("using savings account with id "+savingsAccount.getId());
+					
+					savingsAccount.payATMBalanceEnquiryFee(charge, new LocalDate(), user);
+					
+					 this.savingAccountAssembler.assignSavingAccountHelpers(savingsAccount);
+					
+					updateExistingTransactionsDetails(savingsAccount, existingTransactionIds, existingReversedTransactionIds);
+					
+					this.savingsAccountRepository.saveAndFlush(savingsAccount);
+					
+					
+					postJournalEntries(savingsAccount, existingTransactionIds, existingReversedTransactionIds);
+					
+					
+					this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.SAVINGS_WITHDRAWAL,
+			                constructEntityMap(BUSINESS_ENTITY.SAVINGS_TRANSACTION, null));
+					
+					//this.savingsAccountWritePlatformService.applyCustomChargeDue(charge.getId(),savingsAccount.getId());
+					/*
+					savingsAccount.payATMPurchaseFee(transactionAmoount, transactionDate, user);
+
+					Money chargeAmount = Money.of(savingsAccount.getCurrency(), BigDecimal.valueOf(10.0));
+					
+					SavingsAccountTransaction transaction = SavingsAccountTransaction.atmBalanceEnquiryFee(
+							savingsAccount, savingsAccount.office(), new LocalDate(), chargeAmount, user);
+
+					final SavingsAccountChargePaidBy chargePaidBy = SavingsAccountChargePaidBy.instance(transaction,
+							charge, transaction.getAmount(savingsAccount.getCurrency()).getAmount());
+					
+					transaction.getSavingsAccountChargesPaid().add(chargePaidBy);
+					
+					savingsAccount.addTransaction(transaction);
+					
+					this.savingsAccountRepository.save(savingsAccount);*/
+					
+					
+				}
+			}
+			
+		
+		        System.out.println("return from balance enquiry");
 			
 			return InterswitchBalanceWrapper.getInstance(balances,  String.format("%02d", ResponseCodes.APPROVED.getValue()), (int)(100000 + Math.random() * 999999)+"");
 			
 			
 			
 			//return transactionMap;
-		}
-		catch(Exception e)
+	//	}
+	/*	catch(Exception e)
 		{
+			
+			System.out.println(e);
 			return InterswitchBalanceWrapper.getInstance(null,  ResponseCodes.ERROR.getValue() + "", (int)(100000 + Math.random() * 999999)+"");
-		}
+		}*/
 		
 		
 		
@@ -148,6 +257,37 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		
 		
 		}
+	
+	private Map<BUSINESS_ENTITY, Object> constructEntityMap(final BUSINESS_ENTITY entityEvent, Object entity) {
+        Map<BUSINESS_ENTITY, Object> map = new HashMap<>(1);
+        map.put(entityEvent, entity);
+        return map;
+    }
+	
+	  private void updateExistingTransactionsDetails(SavingsAccount account, Set<Long> existingTransactionIds,
+	            Set<Long> existingReversedTransactionIds) {
+	        existingTransactionIds.addAll(account.findExistingTransactionIds());
+	        existingReversedTransactionIds.addAll(account.findExistingReversedTransactionIds());
+	    }
+
+	    private void postJournalEntries(final SavingsAccount savingsAccount, final Set<Long> existingTransactionIds,
+	            final Set<Long> existingReversedTransactionIds) {
+
+	        final MonetaryCurrency currency = savingsAccount.getCurrency();
+	        final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepositoryWrapper.findOneWithNotFoundDetection(currency);
+	        boolean isAccountTransfer = false;
+	        final Map<String, Object> accountingBridgeData = savingsAccount.deriveAccountingBridgeData(applicationCurrency.toData(),
+	                existingTransactionIds, existingReversedTransactionIds, isAccountTransfer);
+	        this.journalEntryWritePlatformService.createJournalEntriesForSavings(accountingBridgeData);
+	    }
+	
+	private AppUser getAppUserIfPresent() {
+        AppUser user = null;
+        if (this.context != null) {
+            user = this.context.getAuthenticatedUserIfPresent();
+        }
+        return user;
+    }
 	
 	
 	@Override

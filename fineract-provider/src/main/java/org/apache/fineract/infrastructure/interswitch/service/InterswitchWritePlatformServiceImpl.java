@@ -13,8 +13,9 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchAuthorizationRequestRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchAuthorizationRequests;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchTransactions;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchTransactionsRepository;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRepository;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEventsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
@@ -47,7 +48,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 	private final PlatformSecurityContext context;
 
-	private final InterswitchTransactionsRepository interswitchTransactionsRepository;
+	private final InterswitchEventsRepository interswitchTransactionsRepository;
 
 	private final InterswitchAuthorizationRequestRepository interswitchAuthorizationRequestRepository;
 
@@ -62,15 +63,18 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 	private final AccountTransfersWritePlatformService accountTransfersWritePlatformService;
 
 	private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
+	
+	private final InterswitchEventsRepository interswitchSubTransactionsRepository; 
 
 	@Autowired
 	public InterswitchWritePlatformServiceImpl(PlatformSecurityContext context,
-			InterswitchTransactionsRepository interswitchTransactionsRepository,
+			InterswitchEventsRepository interswitchTransactionsRepository,
 			InterswitchAuthorizationRequestRepository interswitchAuthorizationRequestRepository,
 			SavingsAccountRepository savingsAccountRepository, SavingsAccountDomainService savingsAccountDomainService,
 			SavingsAccountAssembler savingAccountAssembler, FromJsonHelper fromApiJsonHelper,
 			AccountTransfersWritePlatformService accountTransfersWritePlatformService,
-			SavingsAccountTransactionRepository savingsAccountTransactionRepository) {
+			SavingsAccountTransactionRepository savingsAccountTransactionRepository,
+			InterswitchEventsRepository interswitchSubTransactionsRepository) {
 		this.context = context;
 		this.interswitchTransactionsRepository = interswitchTransactionsRepository;
 		this.interswitchAuthorizationRequestRepository = interswitchAuthorizationRequestRepository;
@@ -80,6 +84,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		this.fromApiJsonHelper = fromApiJsonHelper;
 		this.accountTransfersWritePlatformService = accountTransfersWritePlatformService;
 		this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
+		this.interswitchSubTransactionsRepository=interswitchSubTransactionsRepository;
 	}
 
 	@Override
@@ -242,6 +247,8 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		
 		boolean isCredit=false;
 		
+		boolean isPurchase=false;
+		
 		
 		//determine the transaction
 		String processingType=command.stringValueOfParameterNamed("processing_type");
@@ -259,11 +266,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		
 		case "payment_and_transfers":
 		isTransferTransaction=true;
-		System.out.println("is transfer");
 		break;
 		
 		case "purchase":
-			isDebit=true;
+			isPurchase=true;
 			break;
 		}
 			
@@ -307,7 +313,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 			}
 
-		} else if (isDebit) {
+		} else if (isDebit || isPurchase) {
 			
 			accountNumberDebit = command.stringValueOfParameterNamed("account_debit");
 			
@@ -399,9 +405,25 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
 
 			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, true);
+					transactionDateDep, settlementAmount, null, transactionBooleanValues, true,false);
 
-		} else {
+		}else if(isPurchase)
+		{
+			checkClientOrGroupActive(savingsAccountDebit);
+
+			final boolean isAccountTransfer = false;
+			final boolean isRegularTransaction = true;
+			final boolean isApplyWithdrawFee = true;
+			final boolean isInterestTransfer = false;
+			final boolean isWithdrawBalance = false;
+			final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(
+					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
+
+			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
+					transactionDateDep, settlementAmount, null, transactionBooleanValues, false,true);
+		}
+		
+		else {
 			checkClientOrGroupActive(savingsAccountCredit);
 
 			boolean isAccountTransfer = false;
@@ -420,7 +442,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		// responseCode = String.format("%02d",
 		// ResponseCodes.APPROVED.getValue());
 
-		InterswitchTransactions transaction = InterswitchTransactions.getInstance(sessionId, stan, authorizationNumber,
+		InterswitchEvents transaction = InterswitchEvents.getInstance(sessionId, stan, authorizationNumber,
 				applicationTransaction, settlementAmount, settlementDate, time, isReversed, isAdviced, isDebit);
 
 		this.interswitchTransactionsRepository.save(transaction);

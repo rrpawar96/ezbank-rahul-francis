@@ -43,7 +43,8 @@ import javax.persistence.UniqueConstraint;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchTransactions;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvents;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -140,7 +141,10 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
     private List<RetailAccountEntry> retailEntries;
     
     @OneToOne(mappedBy="applicationTransaction")
-    private InterswitchTransactions interswitchTransactions;
+    private InterswitchEvents interswitchTransactions;
+    
+    @OneToOne(mappedBy="interswitchSubEvent")
+    private InterswitchSubEvents interswitchSubEvents;
 
     protected SavingsAccountTransaction() {
         this.dateOf = null;
@@ -189,6 +193,13 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
         return new SavingsAccountTransaction(savingsAccount, office, paymentDetail, SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue(),
                 date, createdDate, amount, isReversed, appUser, isManualTransaction);
     }
+    public static SavingsAccountTransaction atmPurchase(final SavingsAccount savingsAccount, final Office office,
+            final PaymentDetail paymentDetail, final LocalDate date, final Money amount, Date createdDate, final AppUser appUser) {
+        final boolean isReversed = false;
+        final boolean isManualTransaction = false;
+        return new SavingsAccountTransaction(savingsAccount, office, paymentDetail, SavingsAccountTransactionType.ATM_PURCHASE.getValue(),
+                date, createdDate, amount, isReversed, appUser, isManualTransaction);
+    }
 
     public static SavingsAccountTransaction interestPosting(final SavingsAccount savingsAccount, final Office office, final LocalDate date,
             final Money amount,final boolean isManualTransaction) {
@@ -216,7 +227,34 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
             final Money amount, final AppUser appUser) {
         final boolean isReversed = false;
         final boolean isManualTransaction = false;
-        return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue(), date, amount,
+        return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ATM_WITHDRAWAL_FEE.getValue(), date, amount,
+                isReversed, appUser, isManualTransaction);
+    }
+    
+    
+    public static SavingsAccountTransaction atmPurchaseFee(final SavingsAccount savingsAccount, final Office office, final LocalDate date,
+            final Money amount, final AppUser appUser) {
+        final boolean isReversed = false;
+        final boolean isManualTransaction = false;
+        return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ATM_PURCHASE_FEE.getValue(), date, amount,
+                isReversed, appUser, isManualTransaction);
+    }
+    
+    public static SavingsAccountTransaction atmBalanceEnquiryFee(final SavingsAccount savingsAccount, final Office office, final LocalDate date,
+            final Money amount, final AppUser appUser) {
+        final boolean isReversed = false;
+        final boolean isManualTransaction = false;
+        
+        System.out.println("savings account received for balance enquiry is "+savingsAccount.getId());
+        return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ATM_BALANCE_ENQUIRY_FEE.getValue(), date, amount,
+                isReversed, appUser, isManualTransaction);
+    }
+    
+    public static SavingsAccountTransaction atmMinistatementFee(final SavingsAccount savingsAccount, final Office office, final LocalDate date,
+            final Money amount, final AppUser appUser) {
+        final boolean isReversed = false;
+        final boolean isManualTransaction = false;
+        return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ATM_MINISTATEMENT_FEE.getValue(), date, amount,
                 isReversed, appUser, isManualTransaction);
     }
 
@@ -420,6 +458,14 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
 
     public boolean isWithdrawalFee() {
         return SavingsAccountTransactionType.fromInt(this.typeOf).isWithdrawalFee();
+    }
+    
+    public boolean isATMWithdrawalFee() {
+        return SavingsAccountTransactionType.fromInt(this.typeOf).isATMWithdrawalFee();
+    }
+    
+    public boolean isATMPurchaseFee() {
+        return SavingsAccountTransactionType.fromInt(this.typeOf).isATMPurchaseFee();
     }
 
     public boolean isAnnualFeeAndNotReversed() {

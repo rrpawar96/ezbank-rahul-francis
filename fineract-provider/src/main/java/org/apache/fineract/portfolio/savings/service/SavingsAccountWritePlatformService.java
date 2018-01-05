@@ -112,4 +112,6 @@ public interface SavingsAccountWritePlatformService {
 	CommandProcessingResult bulkGSIMClose(Long gsimId, JsonCommand command);
 
 	CommandProcessingResult undoTransaction(JsonCommand command);
+	
+	void applyCustomChargeDue(final Long savingsAccountChargeId, final Long accountId);
 }

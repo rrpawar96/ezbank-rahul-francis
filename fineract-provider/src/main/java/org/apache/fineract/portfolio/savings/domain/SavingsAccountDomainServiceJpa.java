@@ -87,7 +87,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
             final SavingsTransactionBooleanValues transactionBooleanValues){
     	
     	return handleWithdrawal( account,fmt, transactionDate,transactionAmount,paymentDetail,
-                transactionBooleanValues,false); 
+                transactionBooleanValues,false,false); 
     }
 
    
@@ -95,7 +95,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     @Override
     public SavingsAccountTransaction handleWithdrawal(final SavingsAccount account, final DateTimeFormatter fmt,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
-            final SavingsTransactionBooleanValues transactionBooleanValues,boolean isATMWithdrawal) {
+            final SavingsTransactionBooleanValues transactionBooleanValues,boolean isATMWithdrawal,boolean isATMPurchase) {
 
         AppUser user = getAppUserIfPresent();
         account.validateForAccountBlock();
@@ -115,7 +115,11 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
          SavingsAccountTransaction withdrawal;
         if(isATMWithdrawal)
         {
-        	withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee(),true);	
+        	withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee(),true,false);	
+        }
+        else if(isATMPurchase)
+        {
+        	withdrawal = account.withdraw(transactionDTO, transactionBooleanValues.isApplyWithdrawFee(),false,true);	
         }
         else
         {
@@ -277,7 +281,9 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         return transaction.getId();
     }
 
-    private void updateExistingTransactionsDetails(SavingsAccount account, Set<Long> existingTransactionIds,
+    @Transactional
+    @Override
+    public void updateExistingTransactionsDetails(SavingsAccount account, Set<Long> existingTransactionIds,
             Set<Long> existingReversedTransactionIds) {
         existingTransactionIds.addAll(account.findExistingTransactionIds());
         existingReversedTransactionIds.addAll(account.findExistingReversedTransactionIds());

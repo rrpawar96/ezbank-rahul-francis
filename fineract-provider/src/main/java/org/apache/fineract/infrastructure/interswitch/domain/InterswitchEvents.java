@@ -2,22 +2,27 @@ package org.apache.fineract.infrastructure.interswitch.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.creditbureau.domain.CreditBureauLoanProductMapping;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 
 @Entity
-@Table(name = "idt_interswitch_transactions")
-public class InterswitchTransactions extends AbstractPersistableCustom<Long>
+@Table(name = "idt_interswitch_events")
+public class InterswitchEvents extends AbstractPersistableCustom<Long>
 {
 
 	@Column(name="session_id")
@@ -52,7 +57,10 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 	@Column(name="is_debit")
 	private boolean isDebit;
 	
-	public InterswitchTransactions(String sessionId,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
+	@OneToMany(mappedBy = "interswitchEvents", cascade = CascadeType.ALL)
+	private List<InterswitchSubEvents> interSwitchSubEvents;
+	
+	public InterswitchEvents(String sessionId,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
 			BigDecimal settlementAmount,Date settlementDate,String transactionTime,
 			boolean isReversed,boolean isAdviced,boolean isDebit)
 	{
@@ -68,11 +76,11 @@ public class InterswitchTransactions extends AbstractPersistableCustom<Long>
 		this.isDebit=isDebit;
 	}
 	
-	public static InterswitchTransactions getInstance(String sessionId,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
+	public static InterswitchEvents getInstance(String sessionId,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
 			BigDecimal settlementAmount,Date settlementDate,String transactionTime,
 			boolean isReversed,boolean isAdviced,boolean isDebit)
 	{
-		return new InterswitchTransactions(sessionId,stan,authorizationNumber,applicationTransaction,
+		return new InterswitchEvents(sessionId,stan,authorizationNumber,applicationTransaction,
 				settlementAmount,settlementDate,transactionTime,isReversed,isAdviced,isDebit);
 	}
 

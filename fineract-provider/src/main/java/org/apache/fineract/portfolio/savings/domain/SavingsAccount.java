@@ -1065,10 +1065,11 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     
     public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee)
     {
-    	return withdraw(transactionDTO,applyWithdrawFee,false);
+    	return withdraw(transactionDTO,applyWithdrawFee,false,false);
     }
 
-    public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee,final boolean isATMWithdrawal) {
+    public SavingsAccountTransaction withdraw(final SavingsAccountTransactionDTO transactionDTO, final boolean applyWithdrawFee,
+    		final boolean isATMWithdrawal,final boolean isATMPurchase) {
 
         if (!isTransactionsAllowed()) {
 
@@ -1128,10 +1129,18 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         	transaction = SavingsAccountTransaction.atmWithdrawal(this, office(),
                     transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
                     transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        	
         	payATMWithdrawalFee(transactionDTO.getTransactionAmount(), transactionDTO.getTransactionDate(), transactionDTO.getAppUser());
         	
+        }else if(isATMPurchase)
+        {
+        	transaction = SavingsAccountTransaction.atmPurchase(this, office(),
+                    transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
+                    transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
+        	
+        	payATMPurchaseFee(transactionDTO.getTransactionAmount(), transactionDTO.getTransactionDate(), transactionDTO.getAppUser());
         }
-        else
+         else
         {
         	transaction = SavingsAccountTransaction.withdrawal(this, office(),
                     transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
@@ -1163,19 +1172,39 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     
     private void payATMWithdrawalFee(final BigDecimal transactionAmoount, final LocalDate transactionDate, final AppUser user) {
     	
-    	System.out.println("Charges are "+this.charges());
-    	
         for (SavingsAccountCharge charge : this.charges()) {
             if (charge.isATMWithdrawalFee() && charge.isActive()) {
-            	System.out.println("atm withdrawal charge found");
                 charge.updateWithdralFeeAmount(transactionAmoount);
                 this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, user);
-                System.out.println("pay charge triggereds"+charge.getAmountOutstanding(this.getCurrency()));
             }
         }
     }
-
-    public boolean isBeforeLastPostingPeriod(final LocalDate transactionDate) {
+    
+  private void payATMPurchaseFee(final BigDecimal transactionAmoount, final LocalDate transactionDate, final AppUser user) {
+    	
+        for (SavingsAccountCharge charge : this.charges()) {
+            if (charge.isATMPurchaseFee() && charge.isActive()) {
+                charge.updateWithdralFeeAmount(transactionAmoount);
+                this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, user);
+            }
+        }
+    }
+  
+  public void payATMBalanceEnquiryFee(SavingsAccountCharge charge, final LocalDate transactionDate, final AppUser user) {
+  	
+    /*  for (SavingsAccountCharge charge : this.charges()) {
+          if (charge.isATMBalanceEnquiryFee() && charge.isActive()) {
+        	  System.out.println("balance enquiry charge found");
+        	  charge.updateWithdralFeeAmount(BigDecimal.ONE);
+              this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, user);
+          }
+      }*/
+      
+      charge.updateWithdralFeeAmount(BigDecimal.ONE);
+      this.payCharge(charge, charge.getAmountOutstanding(this.getCurrency()), transactionDate, user);
+  }
+  
+     public boolean isBeforeLastPostingPeriod(final LocalDate transactionDate) {
 
         boolean transactionBeforeLastInterestPosting = false;
 
@@ -2721,20 +2750,34 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             chargeTransaction = SavingsAccountTransaction.annualFee(this, office(), transactionDate, transactionAmount, user);
         } else if(savingsAccountCharge.isATMWithdrawalFee())
         {
-        	System.out.println("atm charge with amount "+transactionAmount+"triggered");
         chargeTransaction = SavingsAccountTransaction.atmWithdrawalFee(this, office(), transactionDate, transactionAmount, user);
-        }	
+        }
+        else if(savingsAccountCharge.isATMPurchaseFee())
+        {
+        chargeTransaction = SavingsAccountTransaction.atmPurchaseFee(this, office(), transactionDate, transactionAmount, user);
+        }
+        else if(savingsAccountCharge.isATMBalanceEnquiryFee())
+        {
+        	System.out.println("balance enuiry fee charged is "+transactionAmount);
+        	chargeTransaction = SavingsAccountTransaction.atmBalanceEnquiryFee(this, office(), transactionDate, transactionAmount, user);	
+        }
         else {
         
             chargeTransaction = SavingsAccountTransaction.charge(this, office(), transactionDate, transactionAmount, user);
         }
-
+        	
+       
+        	System.out.println("bal enquiry fee transaction id is "+chargeTransaction.getId());	
+      
+        
         handleChargeTransactions(savingsAccountCharge, chargeTransaction);
     }
 
     private void handleWaiverChargeTransactions(SavingsAccountCharge savingsAccountCharge, Money transactionAmount, AppUser user) {
         final SavingsAccountTransaction chargeTransaction = SavingsAccountTransaction.waiver(this, office(),
                 DateUtils.getLocalDateOfTenant(), transactionAmount, user);
+       
+        	
         handleChargeTransactions(savingsAccountCharge, chargeTransaction);
     }
 
@@ -2744,7 +2787,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         final SavingsAccountChargePaidBy chargePaidBy = SavingsAccountChargePaidBy.instance(transaction, savingsAccountCharge, transaction
                 .getAmount(this.getCurrency()).getAmount());
         transaction.getSavingsAccountChargesPaid().add(chargePaidBy);
-        this.transactions.add(transaction);
+       this.transactions.add(transaction);
     }
 
     private SavingsAccountCharge getCharge(final Long savingsAccountChargeId) {

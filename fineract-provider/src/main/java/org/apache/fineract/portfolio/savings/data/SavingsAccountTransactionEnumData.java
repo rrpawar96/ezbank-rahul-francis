@@ -56,11 +56,16 @@ public class SavingsAccountTransactionEnumData {
         		Long.valueOf(SavingsAccountTransactionType.ATM_DEPOSIT.getValue()).equals(this.id);
         this.dividendPayout = Long.valueOf(SavingsAccountTransactionType.DIVIDEND_PAYOUT.getValue()).equals(this.id);
         this.withdrawal = Long.valueOf(SavingsAccountTransactionType.WITHDRAWAL.getValue()).equals(this.id) || 
-        		Long.valueOf(SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue()).equals(this.id);
+        		Long.valueOf(SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue()).equals(this.id)
+        		|| Long.valueOf(SavingsAccountTransactionType.ATM_PURCHASE.getValue()).equals(this.id);
         this.interestPosting = Long.valueOf(SavingsAccountTransactionType.INTEREST_POSTING.getValue()).equals(this.id);
         this.feeDeduction = Long.valueOf(SavingsAccountTransactionType.ANNUAL_FEE.getValue()).equals(this.id)
                 || Long.valueOf(SavingsAccountTransactionType.WITHDRAWAL_FEE.getValue()).equals(this.id)
-                || Long.valueOf(SavingsAccountTransactionType.PAY_CHARGE.getValue()).equals(this.id);
+                || Long.valueOf(SavingsAccountTransactionType.PAY_CHARGE.getValue()).equals(this.id)
+                || Long.valueOf(SavingsAccountTransactionType.ATM_WITHDRAWAL_FEE.getValue()).equals(this.id)
+                || Long.valueOf(SavingsAccountTransactionType.ATM_PURCHASE_FEE.getValue()).equals(this.id)
+                || Long.valueOf(SavingsAccountTransactionType.ATM_BALANCE_ENQUIRY_FEE.getValue()).equals(this.id)
+                || Long.valueOf(SavingsAccountTransactionType.ATM_MINISTATEMENT_FEE.getValue()).equals(this.id);
         this.initiateTransfer = Long.valueOf(SavingsAccountTransactionType.INITIATE_TRANSFER.getValue()).equals(this.id);
         this.approveTransfer = Long.valueOf(SavingsAccountTransactionType.APPROVE_TRANSFER.getValue()).equals(this.id);
         this.withdrawTransfer = Long.valueOf(SavingsAccountTransactionType.WITHDRAW_TRANSFER.getValue()).equals(this.id);

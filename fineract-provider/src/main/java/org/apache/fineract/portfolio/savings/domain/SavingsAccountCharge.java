@@ -672,6 +672,18 @@ public class SavingsAccountCharge extends AbstractPersistableCustom<Long> {
     public boolean isATMWithdrawalFee() {
         return ChargeTimeType.fromInt(this.chargeTime).isATMWithdrawalFee();
     }
+    
+    public boolean isATMPurchaseFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).isATMPurchaseFee();
+    }
+    
+    public boolean isATMBalanceEnquiryFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).isATMBalanceEnquiryFee();
+    }
+    
+    public boolean isATMMinistatementFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).isATMMinistatementFee();
+    }
 
     public boolean isOverdraftFee() {
         return ChargeTimeType.fromInt(this.chargeTime).isOverdraftFee();
