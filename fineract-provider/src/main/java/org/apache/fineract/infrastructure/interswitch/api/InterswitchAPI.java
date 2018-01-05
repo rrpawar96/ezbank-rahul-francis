@@ -96,7 +96,7 @@ public class InterswitchAPI
 	           
 	           
 	           InterswitchBalanceWrapper interswitchBalanceEnquiryData = this.interswitchReadPlatformServiceImpl
-						.retrieveBalance(apiRequestBodyAsJson);
+						.retrieveBalance(apiRequestBodyAsJson,true);
 	           
 	           String authorizationNumber=null;
 	           if(result.getAuthorizationNumber()!="")
@@ -160,7 +160,7 @@ public class InterswitchAPI
 			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
 
 			final InterswitchBalanceWrapper interswitchBalanceEnquiryData = this.interswitchReadPlatformServiceImpl
-					.retrieveBalance(apiRequestBodyAsJson);
+					.retrieveBalance(apiRequestBodyAsJson,false);
 			
 			return this.toApiJsonSerializer.serialize(interswitchBalanceEnquiryData);
 		}

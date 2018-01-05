@@ -6,10 +6,10 @@ import org.apache.fineract.infrastructure.interswitch.data.MinistatementDataWrap
 public interface InterswitchReadPlatformService
 {
 
-	InterswitchBalanceWrapper retrieveBalance(String json);
-
 	MinistatementDataWrapper getMinistatement(String json);
 
 	InterswitchBalanceWrapper retrieveBalanceForUndoTransaction(long transactionId);
+
+	InterswitchBalanceWrapper retrieveBalance(String json, boolean isInternalRequest);
 	
 }
