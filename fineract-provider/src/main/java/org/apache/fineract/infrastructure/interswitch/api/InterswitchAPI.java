@@ -21,6 +21,7 @@ import org.apache.fineract.infrastructure.interswitch.data.InterswitchAuthorizat
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWrapper;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchTransactionData;
 import org.apache.fineract.infrastructure.interswitch.data.MinistatementDataWrapper;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRepository;
 import org.apache.fineract.infrastructure.interswitch.service.InterswitchReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
@@ -44,6 +45,7 @@ public class InterswitchAPI
 	private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
 	private final InterswitchReadPlatformServiceImpl interswitchReadPlatformServiceImpl;
 	private final FromJsonHelper fromApiJsonHelper;
+	private final InterswitchEventsRepository interswitchEventsRepository;
 	
 	 @Autowired
 	 public InterswitchAPI(PlatformSecurityContext context,ApiRequestParameterHelper apiRequestParameterHelper,
@@ -52,15 +54,17 @@ public class InterswitchAPI
 			 DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> authorizationToApiJsonSerializer,
 			 SavingsAccountTransactionRepository savingsAccountTransactionRepository,
 			 InterswitchReadPlatformServiceImpl interswitchReadPlatformServiceImpl,
-			 FromJsonHelper fromApiJsonHelper)
+			 FromJsonHelper fromApiJsonHelper,
+			 InterswitchEventsRepository interswitchEventsRepository)
 	 {
-		 this.context=context;
-		 this.apiRequestParameterHelper=apiRequestParameterHelper;
+		this.context=context;
+		this.apiRequestParameterHelper=apiRequestParameterHelper;
 		this.commandsSourceWritePlatformService=commandsSourceWritePlatformService;
 		this.toApiJsonSerializer=toApiJsonSerializer;
 		this.savingsAccountTransactionRepository=savingsAccountTransactionRepository;
 		this.interswitchReadPlatformServiceImpl=interswitchReadPlatformServiceImpl;
 		this.fromApiJsonHelper=fromApiJsonHelper;
+		this.interswitchEventsRepository=interswitchEventsRepository;
 		
 	 }
 	 	

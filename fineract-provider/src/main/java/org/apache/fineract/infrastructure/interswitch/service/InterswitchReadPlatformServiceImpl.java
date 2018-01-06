@@ -18,6 +18,10 @@ import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceEnquiryData;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceWrapper;
 import org.apache.fineract.infrastructure.interswitch.data.MinistatementDataWrapper;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRepository;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEventsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -59,6 +63,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	private final JournalEntryWritePlatformService journalEntryWritePlatformService;
 	private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper;
 	private final BusinessEventNotifierService businessEventNotifierService;
+	private final InterswitchEventsRepository interswitchTransactionsRepository;
+	private final InterswitchSubEventsRepository interswitchSubEventsRepository;
 
 	@Autowired
 	public InterswitchReadPlatformServiceImpl(final PlatformSecurityContext context, final RoutingDataSource dataSource,
@@ -69,7 +75,9 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
 			final JournalEntryWritePlatformService journalEntryWritePlatformService,
 			final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper,
-			final BusinessEventNotifierService businessEventNotifierService) {
+			final BusinessEventNotifierService businessEventNotifierService,
+			final InterswitchEventsRepository interswitchTransactionsRepository,
+			final InterswitchSubEventsRepository interswitchSubEventsRepository) {
 		this.context = context;
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 		this.fromApiJsonHelper = fromApiJsonHelper;
@@ -82,6 +90,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		this.journalEntryWritePlatformService = journalEntryWritePlatformService;
 		this.applicationCurrencyRepositoryWrapper = applicationCurrencyRepositoryWrapper;
 		this.businessEventNotifierService = businessEventNotifierService;
+		this.interswitchTransactionsRepository=interswitchTransactionsRepository;
+		this.interswitchSubEventsRepository=interswitchSubEventsRepository;
 
 	}
 
@@ -116,7 +126,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		final String amountSign = "C"; // hard code
 
 		List<InterswitchBalanceEnquiryData> balances;
-		String responseCode = "";
+		String responseCode = ResponseCodes.ERROR.getValue()+"";
+		int authorizationNumber=(int) (100000 + Math.random() * 999999) ;
 
 		// try{
 		final JsonElement element = this.fromApiJsonHelper.parse(json);
@@ -124,29 +135,50 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 
 		//
 
-		String accountNumber = "";
+		String accountNumber = null;
 		SavingsAccount savingsAccount = null;
 
 		///
+		String sessionId="";
+		if(requestBody.get("session_id") !=null)
+		{
+			 sessionId =requestBody.get("session_id").getAsString();
+		}
+		
+		String stan="";
+		if(requestBody.get("stan")!=null)
+		{
+			stan =requestBody.get("stan").getAsString();
+		}
+	
+		
+		String processingType=null;
+		if(requestBody.get("processing_type")!=null)
+		{
+			processingType = requestBody.get("processing_type").getAsString();
+		}
+	 
 
-		String processingType = requestBody.get("processing_type").getAsString();
-
-		if (requestBody.get("processing_type") != null) {
+		if (processingType != null) {
 			switch (processingType) {
 
 			case "cash_withdrawal":
+				if(requestBody.get("account_debit")!=null)
 				accountNumber = requestBody.get("account_debit").getAsString();
 				break;
 
 			case "deposit":
+				if(requestBody.get("account_credit")!=null)
 				accountNumber = requestBody.get("account_credit").getAsString();
 				break;
 
 			case "payment_and_transfers":
+				if(requestBody.get("account_debit")!=null)
 				accountNumber = requestBody.get("account_debit").getAsString();
 				break;
 
 			case "purchase":
+				if(requestBody.get("account_debit")!=null)
 				accountNumber = requestBody.get("account_debit").getAsString();
 				break;
 			}
@@ -167,14 +199,38 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			}
 
 		}
+		
 
 		///
+		
+	/*	InterswitchEvents(String sessionId,int eventType,int transactionProcessingType,
+				int transactionAmountType,int responseCode,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
+				BigDecimal settlementAmount,Date settlementDate,String transactionTime)*/
+		
+		
+		InterswitchEvents event=InterswitchEvents.getInstance(sessionId, InterswitchEventType.BALANCE_ENQUIRY.getValue(),0,
+				0, Integer.parseInt(responseCode), stan, authorizationNumber+"",null,
+				null, null, "");
+		
+		if(!isInternalRequest)
+		{
+
+			this.interswitchTransactionsRepository.save(event);
+		}
+		
+		
+		
 
 		if (savingsAccount == null) {
 			responseCode = ResponseCodes.NOSAVINGSACCOUNT.getValue() + "";
-
-			return InterswitchBalanceWrapper.getInstance(null, ResponseCodes.ERROR.getValue() + "",
-					(int) (100000 + Math.random() * 999999) + "");
+			if(!isInternalRequest)
+			{
+			event.setResponseCode(Integer.parseInt(responseCode));
+			this.interswitchTransactionsRepository.save(event);
+			}
+			
+			return InterswitchBalanceWrapper.getInstance(null, responseCode,
+					authorizationNumber + "");
 		}
 
 		final BigDecimal amount = savingsAccount.getWithdrawableBalance();
@@ -208,10 +264,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		charges = this.repository.findBySavingsAccountId(savingsAccount.getId());
 
 		for (SavingsAccountCharge charge : charges) {
-			System.out.println("charge is" + charge.getId());
+			
 			if (charge.isActive() && charge.isATMBalanceEnquiryFee()) {
-
-				System.out.println("charge found");
 
 				AppUser user = getAppUserIfPresent();
 
@@ -261,16 +315,26 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				 * 
 				 * this.savingsAccountRepository.save(savingsAccount);
 				 */
+				
+				InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), event, null);
+				this.interswitchSubEventsRepository.save(subEvent);
+				
 
 			}
 		}
 		
 		}
-
-		System.out.println("return from balance enquiry");
+		
+	
+		event.setResponseCode(ResponseCodes.APPROVED.getValue());
+		
+		if(!isInternalRequest)
+		{
+			this.interswitchTransactionsRepository.save(event);
+		}
 
 		return InterswitchBalanceWrapper.getInstance(balances, String.format("%02d", ResponseCodes.APPROVED.getValue()),
-				(int) (100000 + Math.random() * 999999) + "");
+				authorizationNumber+"" );
 
 		// return transactionMap;
 		// }
@@ -326,6 +390,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		final String amountType_ledger = "01";
 		final String currency = "800"; // need to find better method
 		final String amountSign = "C"; // hard code
+	
 
 		List<InterswitchBalanceEnquiryData> balances;
 
@@ -372,6 +437,9 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	public MinistatementDataWrapper getMinistatement(String json) {
 		List<HashMap<String, Object>> miniStatement = new ArrayList<HashMap<String, Object>>();
 		HashMap<String, Object> transactionMap;
+		int authorizationNumber=(int) (100000 + Math.random() * 999999);
+		String responseCode = ResponseCodes.ERROR.getValue()+"";
+		
 
 		InterswitchBalanceWrapper balance = retrieveBalance(json,true);
 
@@ -379,35 +447,98 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		JsonObject requestBody = element.getAsJsonObject();
 
 		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+	
+		String accountNumber = null;
+			if(requestBody.get("account_debit") !=null)
+			{
+				accountNumber=requestBody.get("account_debit").getAsString();
+			}
+		
+		///
+		String sessionId="";
+		if(requestBody.get("session_id") !=null)
+		{
+			 sessionId =requestBody.get("session_id").getAsString();
+		}
+		
+		String stan="";
+		if(requestBody.get("stan")!=null)
+		{
+			stan =requestBody.get("stan").getAsString();
+		}
 
-		try {
-
-			String accountNumber = requestBody.get("account_debit").getAsString();
-
-			SavingsAccount savingsAccount = this.savingsAccountRepository
-					.findNonClosedAccountByAccountNumber(accountNumber);
+		SavingsAccount savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
+			
+			
+			InterswitchEvents event=InterswitchEvents.getInstance(sessionId, InterswitchEventType.STATEMENT.getValue(),0,
+					0, Integer.parseInt(responseCode), stan, authorizationNumber+"",null,
+					null, null, "");
+			 this.interswitchTransactionsRepository.save(event);
+			 
+			
+		
+			 
+			if(savingsAccount==null )
+			{
+				responseCode=ResponseCodes.NOSAVINGSACCOUNT.getValue()+"";
+				event.setResponseCode(Integer.parseInt(responseCode));
+				this.interswitchTransactionsRepository.save(event);
+				
+				return MinistatementDataWrapper.getInstance(null, null,   responseCode,
+						authorizationNumber + "");	
+			}
+			
+			 
+			
 
 			List<SavingsAccountTransaction> transactions = this.savingsAccountTransactionRepository
 					.findBySavingsAccountId(savingsAccount.getId());
 			// savingsAccount.getTransactions();
+			
+			
+			
+			if(transactions==null)
+			{
+				
+				responseCode=ResponseCodes.ERROR.getValue()+"";
+				event.setResponseCode(Integer.parseInt(responseCode));
+				this.interswitchTransactionsRepository.save(event);
+				
+				return MinistatementDataWrapper.getInstance(null, null, ResponseCodes.ERROR.getValue() + "",
+						authorizationNumber + "");	
+			}
+			
+			
 
 			String transactionType = "";
 
 			int numberOfTransactions = transactions.size() - 1;
 
 			int i = 5;
+			try {
 			SavingsAccountTransaction transaction;
 			while (i > 0 && numberOfTransactions >= 0) {
 				transaction = transactions.get(numberOfTransactions);
 				transactionMap = new HashMap<String, Object>();
+				
 				transactionMap.put("seq_nr", transaction.getId() + "");
 				transactionMap.put("date_time", dateFormat.format(transaction.getDateOf()) + "");
-
-				transactionType = SavingsEnumerations.transactionType(transaction.getTypeOf()).getValue().substring(0,
-						10);
-
+				
+				
+				if(SavingsEnumerations.transactionType(transaction.getTypeOf()).getValue().length()>=10)
+				{
+					transactionType = SavingsEnumerations.transactionType(transaction.getTypeOf()).getValue().substring(0,9);	
+				}
+				else
+				{
+					transactionType = SavingsEnumerations.transactionType(transaction.getTypeOf()).getValue();
+				}
+				
+				
+				System.out.println("transactionType"+transactionType);
 				transactionMap.put("tran_type", transactionType);
 				transactionMap.put("curr_code", 800);
+				System.out.println("transaction.getAmount()"+transaction.getAmount());
 				transactionMap.put("tran_amount", transaction.getAmount());
 
 				miniStatement.add(transactionMap);
@@ -415,14 +546,24 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				numberOfTransactions--;
 
 			}
+			
+			responseCode=ResponseCodes.APPROVED.getValue()+"";
+			event.setResponseCode(Integer.parseInt(responseCode));
+			this.interswitchTransactionsRepository.save(event);
 
 			return MinistatementDataWrapper.getInstance(miniStatement, balance.getAdditional_amount(),
 					String.format("%02d", ResponseCodes.APPROVED.getValue()),
-					(int) (100000 + Math.random() * 999999) + "");
+					authorizationNumber + "");
 
 		} catch (Exception e) {
+			
+			
+			event.setResponseCode(Integer.parseInt(responseCode));
+			this.interswitchTransactionsRepository.save(event);
+			
+			
 			return MinistatementDataWrapper.getInstance(null, null, ResponseCodes.ERROR.getValue() + "",
-					(int) (100000 + Math.random() * 999999) + "");
+					authorizationNumber + "");
 		}
 
 	}

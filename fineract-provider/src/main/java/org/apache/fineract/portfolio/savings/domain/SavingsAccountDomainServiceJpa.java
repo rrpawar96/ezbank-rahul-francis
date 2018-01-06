@@ -21,6 +21,9 @@ package org.apache.fineract.portfolio.savings.domain;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEventsRepository;
+import org.apache.fineract.infrastructure.interswitch.service.InterswitchEventType;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
@@ -60,6 +63,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     private final ConfigurationDomainService configurationDomainService;
     private final DepositAccountOnHoldTransactionRepository depositAccountOnHoldTransactionRepository;
     private final BusinessEventNotifierService businessEventNotifierService;
+    private final InterswitchSubEventsRepository interswitchSubEventsRepository;
 
     @Autowired
     public SavingsAccountDomainServiceJpa(final SavingsAccountRepositoryWrapper savingsAccountRepository,
@@ -68,7 +72,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
             final JournalEntryWritePlatformService journalEntryWritePlatformService,
             final ConfigurationDomainService configurationDomainService, final PlatformSecurityContext context,
             final DepositAccountOnHoldTransactionRepository depositAccountOnHoldTransactionRepository, 
-            final BusinessEventNotifierService businessEventNotifierService) {
+            final BusinessEventNotifierService businessEventNotifierService,
+            final InterswitchSubEventsRepository interswitchSubEventsRepository) {
         this.savingsAccountRepository = savingsAccountRepository;
         this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
         this.applicationCurrencyRepositoryWrapper = applicationCurrencyRepositoryWrapper;
@@ -77,6 +82,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         this.context = context;
         this.depositAccountOnHoldTransactionRepository = depositAccountOnHoldTransactionRepository;
         this.businessEventNotifierService = businessEventNotifierService;
+        this.interswitchSubEventsRepository=interswitchSubEventsRepository;
     }
     
     
@@ -146,6 +152,9 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
                 depositAccountOnHoldTransactions);
         saveTransactionToGenerateTransactionId(withdrawal);
         this.savingsAccountRepository.save(account);
+        
+        InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.TRANSACTION.getValue(), null, withdrawal);
+		this.interswitchSubEventsRepository.save(subEvent);
 
         postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds, transactionBooleanValues.isAccountTransfer());
         this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.SAVINGS_WITHDRAWAL,
@@ -257,6 +266,9 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         saveTransactionToGenerateTransactionId(deposit);
 
         this.savingsAccountRepository.saveAndFlush(account);
+        
+        InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.TRANSACTION.getValue(), null, deposit);
+      		this.interswitchSubEventsRepository.save(subEvent);
 
         postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer);
         this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.SAVINGS_DEPOSIT,

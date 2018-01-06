@@ -28,6 +28,18 @@ public class InterswitchEvents extends AbstractPersistableCustom<Long>
 	@Column(name="session_id")
 	private String sessionId;
 	
+	@Column(name="event_type")
+	private int eventType;
+	
+	@Column(name="transaction_processing_type")
+	private int transactionProcessingType;
+	
+	@Column(name="transaction_amount_type")
+	private int transactionAmountType;
+	
+	@Column(name="response_code")
+	private int responseCode;
+	
 	@Column(name="stan")
 	private String stan;
 	
@@ -48,68 +60,102 @@ public class InterswitchEvents extends AbstractPersistableCustom<Long>
 	@Column(name="local_transaction_time")
 	private String transactionTime;
 	
-	@Column(name="is_reversed")
-	private boolean isReversed;
-	
-	@Column(name="is_adviced")
-	private boolean isAdviced;
-	
-	@Column(name="is_debit")
-	private boolean isDebit;
-	
 	@OneToMany(mappedBy = "interswitchEvents", cascade = CascadeType.ALL)
 	private List<InterswitchSubEvents> interSwitchSubEvents;
 	
-	public InterswitchEvents(String sessionId,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
-			BigDecimal settlementAmount,Date settlementDate,String transactionTime,
-			boolean isReversed,boolean isAdviced,boolean isDebit)
+	public InterswitchEvents(String sessionId,int eventType,int transactionProcessingType,
+			int transactionAmountType,int responseCode,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
+			BigDecimal settlementAmount,Date settlementDate,String transactionTime)
 	{
 		this.sessionId=sessionId;
+		this.eventType=eventType;
+		this.transactionProcessingType=transactionProcessingType;
+		this.transactionAmountType=transactionAmountType;
+		this.responseCode=responseCode;
 		this.stan=stan;
 		this.authorizationNumber=authorizationNumber;
 		this.applicationTransaction=applicationTransaction;
 		this.settlementAmount=settlementAmount;
 		this.settlementDate=settlementDate;
 		this.transactionTime=transactionTime;
-		this.isReversed=isReversed;
-		this.isAdviced=isAdviced;
-		this.isDebit=isDebit;
 	}
 	
-	public static InterswitchEvents getInstance(String sessionId,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
-			BigDecimal settlementAmount,Date settlementDate,String transactionTime,
-			boolean isReversed,boolean isAdviced,boolean isDebit)
+	public static InterswitchEvents getInstance(String sessionId,int eventType,int transactionProcessingType,
+			int transactionAmountType,int responseCode,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
+			BigDecimal settlementAmount,Date settlementDate,String transactionTime)
 	{
-		return new InterswitchEvents(sessionId,stan,authorizationNumber,applicationTransaction,
-				settlementAmount,settlementDate,transactionTime,isReversed,isAdviced,isDebit);
+		return new InterswitchEvents(sessionId, eventType, transactionProcessingType,
+				 transactionAmountType, responseCode, stan, authorizationNumber, applicationTransaction,
+				 settlementAmount, settlementDate, transactionTime);
 	}
-
 
 	public String getSessionId() {
 		return sessionId;
 	}
 
-
 	public void setSessionId(String sessionId) {
 		this.sessionId = sessionId;
 	}
 
+	public int getEventType() {
+		return eventType;
+	}
 
+	public void setEventType(int eventType) {
+		this.eventType = eventType;
+	}
+
+	public int getTransactionProcessingType() {
+		return transactionProcessingType;
+	}
+
+	public void setTransactionProcessingType(int transactionProcessingType) {
+		this.transactionProcessingType = transactionProcessingType;
+	}
+
+	public int getTransactionAmountType() {
+		return transactionAmountType;
+	}
+
+	public void setTransactionAmountType(int transactionAmountType) {
+		this.transactionAmountType = transactionAmountType;
+	}
+
+	public int getResponseCode() {
+		return responseCode;
+	}
+
+	public void setResponseCode(int responseCode) {
+		this.responseCode = responseCode;
+	}
+
+	public String getStan() {
+		return stan;
+	}
+
+	public void setStan(String stan) {
+		this.stan = stan;
+	}
+
+	public String getAuthorizationNumber() {
+		return authorizationNumber;
+	}
+
+	public void setAuthorizationNumber(String authorizationNumber) {
+		this.authorizationNumber = authorizationNumber;
+	}
 
 	public SavingsAccountTransaction getApplicationTransaction() {
 		return applicationTransaction;
 	}
 
-
 	public void setApplicationTransaction(SavingsAccountTransaction applicationTransaction) {
 		this.applicationTransaction = applicationTransaction;
 	}
 
-
 	public BigDecimal getSettlementAmount() {
 		return settlementAmount;
 	}
-
 
 	public void setSettlementAmount(BigDecimal settlementAmount) {
 		this.settlementAmount = settlementAmount;
@@ -123,33 +169,25 @@ public class InterswitchEvents extends AbstractPersistableCustom<Long>
 		this.settlementDate = settlementDate;
 	}
 
-	public boolean isReversed() {
-		return isReversed;
+	public String getTransactionTime() {
+		return transactionTime;
+	}
+
+	public void setTransactionTime(String transactionTime) {
+		this.transactionTime = transactionTime;
+	}
+
+	public List<InterswitchSubEvents> getInterSwitchSubEvents() {
+		return interSwitchSubEvents;
+	}
+
+	public void setInterSwitchSubEvents(List<InterswitchSubEvents> interSwitchSubEvents) {
+		this.interSwitchSubEvents = interSwitchSubEvents;
 	}
 
 
-	public void setReversed(boolean isReversed) {
-		this.isReversed = isReversed;
-	}
 
 
-	public boolean isAdviced() {
-		return isAdviced;
-	}
-
-
-	public void setAdviced(boolean isAdviced) {
-		this.isAdviced = isAdviced;
-	}
-
-
-	public boolean isDebit() {
-		return isDebit;
-	}
-
-	public void setDebit(boolean isDebit) {
-		this.isDebit = isDebit;
-	}
 	
 	
 	

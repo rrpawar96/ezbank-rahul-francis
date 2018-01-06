@@ -53,7 +53,10 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
+import org.apache.fineract.infrastructure.interswitch.service.InterswitchEventType;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -164,6 +167,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final GSIMRepositoy gsimRepository;
     private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
     private final RetailAccountEntryRepository retailAccountEntryRepository;
+    private final InterswitchEventsRepository interswitchEventsRepository;
  
 
     @Autowired
@@ -190,8 +194,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final BusinessEventNotifierService businessEventNotifierService,
             final GSIMRepositoy gsimRepository,
             final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository,
-            final RetailAccountEntryRepository retailAccountEntryRepository
-        
+            final RetailAccountEntryRepository retailAccountEntryRepository,
+            final InterswitchEventsRepository interswitchEventsRepository
             ) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
@@ -221,6 +225,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.gsimRepository=gsimRepository;
         this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
         this.retailAccountEntryRepository=retailAccountEntryRepository;
+        this.interswitchEventsRepository=interswitchEventsRepository;
      
     }
     
@@ -717,6 +722,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     {
     	
     	String authorizationNumber= command.stringValueOfParameterNamed("authorization_number");
+    	String stan=command.stringValueOfParameterNamed("stan");
+    	String sessionId=command.stringValueOfParameterNamed("session_id");
     	Long transactionId=Long.parseLong(authorizationNumber);
     	SavingsAccountTransaction transaction=this.savingsAccountTransactionRepository.findOne(transactionId);
     	
@@ -725,6 +732,12 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     	String errorResponse=String.format("%02d",ResponseCodes.ERROR.getValue() );
     	
     	String successResponse=String.format("%02d",ResponseCodes.APPROVED.getValue() );
+    	
+    	InterswitchEvents event=InterswitchEvents.getInstance(sessionId, InterswitchEventType.REVERSAL.getValue(),0,
+				0, Integer.parseInt(errorResponse), stan, authorizationNumber+"",null,
+				null, null, "");
+    	
+        this.interswitchEventsRepository.save(event);
   		
 		if((transaction)==null)
 		{
@@ -743,10 +756,13 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 				
 		    	if(result.getOfficeId()==null)
 		    	{
+		    		
 		    		return CommandProcessingResult.interswitchResponse(authorizationNumber, errorResponse);
 		    	}
 		    	else
-		    	{
+		    	{		
+		    		event.setResponseCode(Integer.parseInt(successResponse));
+		    		 this.interswitchEventsRepository.save(event);
 		    		// send the response code
 		    		return CommandProcessingResult.interswitchResponse(authorizationNumber, successResponse);	
 		    	}	
