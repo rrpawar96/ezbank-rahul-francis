@@ -318,10 +318,10 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				 * 
 				 * this.savingsAccountRepository.save(savingsAccount);
 				 */
-				InterswitchEvents tempEvent=this.interswitchTransactionsRepository.findOne(event.getId());
+			/*	InterswitchEvents tempEvent=this.interswitchTransactionsRepository.findOne(event.getId());
 				System.out.println("event fetched "+tempEvent.getId());
 				InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), tempEvent, chargeTransaction);
-				this.interswitchSubEventsRepository.save(subEvent);
+				this.interswitchSubEventsRepository.save(subEvent);*/
 				
 
 			}

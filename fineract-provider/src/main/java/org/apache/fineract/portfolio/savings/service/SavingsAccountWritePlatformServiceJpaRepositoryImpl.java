@@ -1553,7 +1553,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         		{
         			if(	charge.getSavingsAccountCharge().getCharge().getChargeTimeType()==savingsAccountCharge.getCharge().getChargeTimeType())
         			{
-        				InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), event, account.getTransactions().get(lastElement));
+        				InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), event, currentTransaction);
             			this.interswitchSubEventsRepository.save(subEvent);	
             			
             			//stop the iteration else you will create havoc

@@ -23,6 +23,7 @@ import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.data.AccountTransferDTO;
 import org.apache.fineract.portfolio.account.domain.AccountTransferType;
 import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatformService;
+import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.group.domain.Group;
@@ -444,7 +445,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
 
 			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, true, false,event);
+					transactionDateDep, settlementAmount, null, transactionBooleanValues, true, false,event,ChargeTimeType.ATM_WITHDRAWAL_FEE);
 			
 	
 
@@ -460,7 +461,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
 
 			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, false, true,event);
+					transactionDateDep, settlementAmount, null, transactionBooleanValues, false, true,event,ChargeTimeType.ATM_PURCHASE_FEE);
 			
 		
 		}

@@ -38,6 +38,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_ENTITY;
 import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_EVENTS;
 import org.apache.fineract.portfolio.common.service.BusinessEventNotifierService;
@@ -65,6 +66,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     private final DepositAccountOnHoldTransactionRepository depositAccountOnHoldTransactionRepository;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final InterswitchSubEventsRepository interswitchSubEventsRepository;
+    private final SavingsAccountChargePaidByRepository savingsAccountChargePaidByRepository;
 
     @Autowired
     public SavingsAccountDomainServiceJpa(final SavingsAccountRepositoryWrapper savingsAccountRepository,
@@ -74,7 +76,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
             final ConfigurationDomainService configurationDomainService, final PlatformSecurityContext context,
             final DepositAccountOnHoldTransactionRepository depositAccountOnHoldTransactionRepository, 
             final BusinessEventNotifierService businessEventNotifierService,
-            final InterswitchSubEventsRepository interswitchSubEventsRepository) {
+            final InterswitchSubEventsRepository interswitchSubEventsRepository,
+            final SavingsAccountChargePaidByRepository savingsAccountChargePaidByRepository) {
         this.savingsAccountRepository = savingsAccountRepository;
         this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
         this.applicationCurrencyRepositoryWrapper = applicationCurrencyRepositoryWrapper;
@@ -84,6 +87,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         this.depositAccountOnHoldTransactionRepository = depositAccountOnHoldTransactionRepository;
         this.businessEventNotifierService = businessEventNotifierService;
         this.interswitchSubEventsRepository=interswitchSubEventsRepository;
+        this.savingsAccountChargePaidByRepository=savingsAccountChargePaidByRepository;
     }
     
     
@@ -94,7 +98,7 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
             final SavingsTransactionBooleanValues transactionBooleanValues){
     	
     	return handleWithdrawal( account,fmt, transactionDate,transactionAmount,paymentDetail,
-                transactionBooleanValues,false,false,null); 
+                transactionBooleanValues,false,false,null,null); 
     }
 
    
@@ -102,7 +106,8 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
     @Override
     public SavingsAccountTransaction handleWithdrawal(final SavingsAccount account, final DateTimeFormatter fmt,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail,
-            final SavingsTransactionBooleanValues transactionBooleanValues,boolean isATMWithdrawal,boolean isATMPurchase,InterswitchEvents parentEvent) {
+            final SavingsTransactionBooleanValues transactionBooleanValues,boolean isATMWithdrawal,boolean isATMPurchase,InterswitchEvents parentEvent,
+            ChargeTimeType chargeTimeType) {
 
         AppUser user = getAppUserIfPresent();
         account.validateForAccountBlock();
@@ -158,6 +163,45 @@ public class SavingsAccountDomainServiceJpa implements SavingsAccountDomainServi
         {
         	InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.TRANSACTION.getValue(), parentEvent, withdrawal);
        		this.interswitchSubEventsRepository.save(subEvent);	
+       		
+       		///
+       		
+       	 SavingsAccountChargePaidBy charge=null;
+     	SavingsAccountTransaction currentTransaction=null;
+         
+     	
+         	int lastElement=  account.getTransactions().size()-1;
+    
+         
+         	List<SavingsAccountTransaction> chargeTransactions=account.getTransactions();
+         	
+         	
+         	for(int i=lastElement;i>=0;i--)
+         	{	
+         		//fetch charge out of each transaction of account in reverse order
+         		currentTransaction=chargeTransactions.get(i);
+         		charge=this.savingsAccountChargePaidByRepository.findOneBySavingsAccountTransactionId(currentTransaction.getId());
+         		//not necessary each transaction might be a charge.. hence if charge found, verify its the one we need
+         		if(charge!=null)
+         		{
+         			if(	charge.getSavingsAccountCharge().getCharge().getChargeTimeType()==chargeTimeType.getValue())
+         			{
+         				InterswitchSubEvents subEvent2=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), parentEvent, currentTransaction);
+             			this.interswitchSubEventsRepository.save(subEvent2);	
+             			
+             			//stop the iteration else you will create havoc
+             			break;
+         			}
+         		}
+         	
+         	}
+ 		
+        
+       		
+       		
+       		
+       		///
+       		
         }
         
      
