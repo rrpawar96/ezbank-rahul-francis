@@ -294,7 +294,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				 * existingReversedTransactionIds);
 				 */
 
-				this.savingsAccountWritePlatformService.applyInterswitchChargeDue(charge.getId(), savingsAccount.getId(),event);
+				SavingsAccountTransaction chargeTransaction=this.savingsAccountWritePlatformService.applyInterswitchChargeDue(charge.getId(), savingsAccount.getId(),event);
 				/*
 				 * savingsAccount.payATMPurchaseFee(transactionAmoount,
 				 * transactionDate, user);
@@ -320,7 +320,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				 */
 				InterswitchEvents tempEvent=this.interswitchTransactionsRepository.findOne(event.getId());
 				System.out.println("event fetched "+tempEvent.getId());
-				InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), tempEvent, null);
+				InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), tempEvent, chargeTransaction);
 				this.interswitchSubEventsRepository.save(subEvent);
 				
 
