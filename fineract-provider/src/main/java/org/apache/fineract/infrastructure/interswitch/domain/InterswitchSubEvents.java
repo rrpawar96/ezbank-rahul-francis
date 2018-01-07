@@ -19,24 +19,24 @@ public class InterswitchSubEvents
 	private int transactionType;
 	
 	@ManyToOne
-	@JoinColumn(name="interswitch_events_id")
+	@JoinColumn(name="interswitch_events_id",nullable=true)
 	private InterswitchEvents interswitchEvents;
 	
 	
 	@OneToOne
-	@JoinColumn(name="interswitch_events_id")
-	private SavingsAccountTransaction interswitchSubEvent;
+	@JoinColumn(name="interswitch_subevent_id",nullable=true)
+	private SavingsAccountTransaction interswitchSubTransactions;
 	
-	public InterswitchSubEvents(int transactionType,InterswitchEvents interswitchEvents,SavingsAccountTransaction interswitchSubEvent)
+	public InterswitchSubEvents(int transactionType,InterswitchEvents interswitchEvents,SavingsAccountTransaction interswitchSubTransactions)
 	{	
 		this.transactionType=transactionType;
 		this.interswitchEvents=interswitchEvents;
-		this.interswitchEvents=interswitchEvents;
+		this.interswitchSubTransactions=interswitchSubTransactions;
 	}
 	
-	public static InterswitchSubEvents getInstance(int transactionType,InterswitchEvents interswitchEvents,SavingsAccountTransaction interswitchSubEvent)
+	public static InterswitchSubEvents getInstance(int transactionType,InterswitchEvents interswitchEvents,SavingsAccountTransaction interswitchSubTransactions)
 	{
-		return new InterswitchSubEvents(transactionType,interswitchEvents,interswitchSubEvent);
+		return new InterswitchSubEvents(transactionType,interswitchEvents,interswitchSubTransactions);
 	}
 	
 	
@@ -57,13 +57,15 @@ public class InterswitchSubEvents
 		this.interswitchEvents = interswitchEvents;
 	}
 
-	public SavingsAccountTransaction getInterswitchSubEvent() {
-		return interswitchSubEvent;
+	public SavingsAccountTransaction getInterswitchSubTransactions() {
+		return interswitchSubTransactions;
 	}
 
-	public void setInterswitchSubEvent(SavingsAccountTransaction interswitchSubEvent) {
-		this.interswitchSubEvent = interswitchSubEvent;
+	public void setInterswitchSubTransactions(SavingsAccountTransaction interswitchSubTransactions) {
+		this.interswitchSubTransactions = interswitchSubTransactions;
 	}
+
+
 
 	
 }

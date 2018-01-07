@@ -143,7 +143,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
     @OneToOne(mappedBy="applicationTransaction")
     private InterswitchEvents interswitchTransactions;
     
-    @OneToOne(mappedBy="interswitchSubEvent")
+    @OneToOne(mappedBy="interswitchSubTransactions")
     private InterswitchSubEvents interswitchSubEvents;
 
     protected SavingsAccountTransaction() {
@@ -244,8 +244,7 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
             final Money amount, final AppUser appUser) {
         final boolean isReversed = false;
         final boolean isManualTransaction = false;
-        
-        System.out.println("savings account received for balance enquiry is "+savingsAccount.getId());
+
         return new SavingsAccountTransaction(savingsAccount, office, SavingsAccountTransactionType.ATM_BALANCE_ENQUIRY_FEE.getValue(), date, amount,
                 isReversed, appUser, isManualTransaction);
     }

@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.EntityTransaction;
+
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
@@ -191,7 +193,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				savingsAccount = this.savingsAccountRepository.findNonClosedAccountByAccountNumber(accountNumber);
 			}
 
-			if (requestBody.get("account_credit") != null || savingsAccount == null) {
+			if (requestBody.get("account_credit") != null ) {
 
 				accountNumber = requestBody.get("account_credit").getAsString();
 
@@ -215,7 +217,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		if(!isInternalRequest)
 		{
 
-			this.interswitchTransactionsRepository.save(event);
+			this.interswitchTransactionsRepository.saveAndFlush(event);
+			
 		}
 		
 		
@@ -315,8 +318,9 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				 * 
 				 * this.savingsAccountRepository.save(savingsAccount);
 				 */
-				
-				InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), event, null);
+				InterswitchEvents tempEvent=this.interswitchTransactionsRepository.findOne(event.getId());
+				System.out.println("event fetched "+tempEvent.getId());
+				InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), tempEvent, null);
 				this.interswitchSubEventsRepository.save(subEvent);
 				
 
@@ -326,10 +330,11 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		}
 		
 	
-		event.setResponseCode(ResponseCodes.APPROVED.getValue());
+		
 		
 		if(!isInternalRequest)
 		{
+			event.setResponseCode(ResponseCodes.APPROVED.getValue());
 			this.interswitchTransactionsRepository.save(event);
 		}
 
@@ -534,11 +539,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 					transactionType = SavingsEnumerations.transactionType(transaction.getTypeOf()).getValue();
 				}
 				
-				
-				System.out.println("transactionType"+transactionType);
 				transactionMap.put("tran_type", transactionType);
 				transactionMap.put("curr_code", 800);
-				System.out.println("transaction.getAmount()"+transaction.getAmount());
 				transactionMap.put("tran_amount", transaction.getAmount());
 
 				miniStatement.add(transactionMap);

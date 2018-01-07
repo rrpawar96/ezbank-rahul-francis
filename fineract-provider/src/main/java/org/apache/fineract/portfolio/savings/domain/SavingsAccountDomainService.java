@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.savings.domain;
 import java.math.BigDecimal;
 import java.util.Set;
 
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.joda.time.LocalDate;
@@ -46,14 +47,15 @@ public interface SavingsAccountDomainService {
 			LocalDate transactionDate, BigDecimal transactionAmount, PaymentDetail paymentDetail,
 			boolean isAccountTransfer, boolean isRegularTransaction,String transactionExternalId);
 
-	SavingsAccountTransaction handleWithdrawal(SavingsAccount account, DateTimeFormatter fmt, LocalDate transactionDate,
-			BigDecimal transactionAmount, PaymentDetail paymentDetail,
-			SavingsTransactionBooleanValues transactionBooleanValues, boolean isATMWithdrawal,boolean isATMPurchase);
-
 	SavingsAccountTransaction handleInterswitchDeposit(SavingsAccount account, DateTimeFormatter fmt,
 			LocalDate transactionDate, BigDecimal transactionAmount, PaymentDetail paymentDetail,
 			boolean isAccountTransfer, boolean isRegularTransaction);
 	
 	void updateExistingTransactionsDetails(SavingsAccount account, Set<Long> existingTransactionIds,
             Set<Long> existingReversedTransactionIds);
+
+	SavingsAccountTransaction handleWithdrawal(SavingsAccount account, DateTimeFormatter fmt, LocalDate transactionDate,
+			BigDecimal transactionAmount, PaymentDetail paymentDetail,
+			SavingsTransactionBooleanValues transactionBooleanValues, boolean isATMWithdrawal, boolean isATMPurchase,
+			InterswitchEvents parentEvent);
 }

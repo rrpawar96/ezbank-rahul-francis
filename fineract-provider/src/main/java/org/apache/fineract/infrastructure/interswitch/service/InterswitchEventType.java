@@ -8,8 +8,8 @@ public enum InterswitchEventType
 	REVERSAL(2, "interswitchEventType.reversal"),
 	TRANSACTION(3, "interswitchEventType.transaction"),
 	STATEMENT(4, "interswitchEventType.statement"),
-	CHARGE(4, "interswitchEventType.charge"),
-	FEES(4, "interswitchEventType.fees");
+	CHARGE(5, "interswitchEventType.charge"),
+	FEES(6, "interswitchEventType.fees");
 	
 	
 

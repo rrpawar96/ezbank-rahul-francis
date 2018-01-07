@@ -60,7 +60,7 @@ public class InterswitchEvents extends AbstractPersistableCustom<Long>
 	@Column(name="local_transaction_time")
 	private String transactionTime;
 	
-	@OneToMany(mappedBy = "interswitchEvents", cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "interswitchEvents")
 	private List<InterswitchSubEvents> interSwitchSubEvents;
 	
 	public InterswitchEvents(String sessionId,int eventType,int transactionProcessingType,
@@ -78,6 +78,7 @@ public class InterswitchEvents extends AbstractPersistableCustom<Long>
 		this.settlementAmount=settlementAmount;
 		this.settlementDate=settlementDate;
 		this.transactionTime=transactionTime;
+		
 	}
 	
 	public static InterswitchEvents getInstance(String sessionId,int eventType,int transactionProcessingType,

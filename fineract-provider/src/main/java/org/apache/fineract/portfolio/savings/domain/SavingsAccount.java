@@ -2758,7 +2758,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         }
         else if(savingsAccountCharge.isATMBalanceEnquiryFee())
         {
-        	System.out.println("balance enuiry fee charged is "+transactionAmount);
+        	
         	chargeTransaction = SavingsAccountTransaction.atmBalanceEnquiryFee(this, office(), transactionDate, transactionAmount, user);	
         }
         else {

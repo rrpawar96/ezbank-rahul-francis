@@ -444,7 +444,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
 
 			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, true, false);
+					transactionDateDep, settlementAmount, null, transactionBooleanValues, true, false,event);
 			
 	
 
@@ -460,7 +460,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
 
 			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, false, true);
+					transactionDateDep, settlementAmount, null, transactionBooleanValues, false, true,event);
 			
 		
 		}
