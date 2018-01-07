@@ -29,5 +29,6 @@ public interface SavingsAccountTransactionRepository extends JpaRepository<Savin
     SavingsAccountTransaction findOneByIdAndSavingsAccountId(Long transactionId, Long savingsId);
     
     List<SavingsAccountTransaction> findBySavingsAccountId( Long savingsId);
+    
 
 }

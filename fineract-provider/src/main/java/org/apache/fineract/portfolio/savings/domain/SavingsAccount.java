@@ -2765,10 +2765,6 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         
             chargeTransaction = SavingsAccountTransaction.charge(this, office(), transactionDate, transactionAmount, user);
         }
-        	
-       
-        	System.out.println("bal enquiry fee transaction id is "+chargeTransaction.getId());	
-      
         
         handleChargeTransactions(savingsAccountCharge, chargeTransaction);
     }
@@ -2787,6 +2783,8 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         final SavingsAccountChargePaidBy chargePaidBy = SavingsAccountChargePaidBy.instance(transaction, savingsAccountCharge, transaction
                 .getAmount(this.getCurrency()).getAmount());
         transaction.getSavingsAccountChargesPaid().add(chargePaidBy);
+        
+        System.out.println("transaction"+transaction.toString());
        this.transactions.add(transaction);
     }
 

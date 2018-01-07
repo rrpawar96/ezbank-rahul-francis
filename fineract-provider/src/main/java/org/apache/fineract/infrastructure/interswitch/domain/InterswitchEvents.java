@@ -1,12 +1,9 @@
 package org.apache.fineract.infrastructure.interswitch.domain;
 
 import java.math.BigDecimal;
-import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -17,8 +14,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.infrastructure.creditbureau.domain.CreditBureauLoanProductMapping;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
+
 
 @Entity
 @Table(name = "idt_interswitch_events")

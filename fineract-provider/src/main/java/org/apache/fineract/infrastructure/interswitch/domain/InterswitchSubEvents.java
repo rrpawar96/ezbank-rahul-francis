@@ -7,14 +7,17 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 
 
 @Entity
-@Table(name ="idt_interswitch_subevents")
-public class InterswitchSubEvents 
+@Table(name = "idt_interswitch_subevents")
+public class InterswitchSubEvents extends AbstractPersistableCustom<Long>
 {	
 	
+
+
 	@Column(name="transaction_type")
 	private int transactionType;
 	

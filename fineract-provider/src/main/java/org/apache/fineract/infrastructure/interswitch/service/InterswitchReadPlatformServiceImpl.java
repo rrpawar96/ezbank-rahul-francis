@@ -294,7 +294,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 				 * existingReversedTransactionIds);
 				 */
 
-				this.savingsAccountWritePlatformService.applyCustomChargeDue(charge.getId(), savingsAccount.getId());
+				this.savingsAccountWritePlatformService.applyInterswitchChargeDue(charge.getId(), savingsAccount.getId(),event);
 				/*
 				 * savingsAccount.payATMPurchaseFee(transactionAmoount,
 				 * transactionDate, user);

@@ -55,6 +55,8 @@ import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRepository;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEventsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.interswitch.service.InterswitchEventType;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -168,6 +170,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
     private final RetailAccountEntryRepository retailAccountEntryRepository;
     private final InterswitchEventsRepository interswitchEventsRepository;
+    private final InterswitchSubEventsRepository interswitchSubEventsRepository;
  
 
     @Autowired
@@ -195,7 +198,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final GSIMRepositoy gsimRepository,
             final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository,
             final RetailAccountEntryRepository retailAccountEntryRepository,
-            final InterswitchEventsRepository interswitchEventsRepository
+            final InterswitchEventsRepository interswitchEventsRepository,
+            final InterswitchSubEventsRepository interswitchSubEventsRepository
             ) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
@@ -226,6 +230,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
         this.retailAccountEntryRepository=retailAccountEntryRepository;
         this.interswitchEventsRepository=interswitchEventsRepository;
+        this.interswitchSubEventsRepository=interswitchSubEventsRepository;
      
     }
     
@@ -1456,10 +1461,36 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         payCharge(savingsAccountCharge, transactionDate, savingsAccountCharge.amount(), fmt, user);
 
     }
+    
+    @Transactional
+    @Override
+    public void applyInterswitchChargeDue(final Long savingsAccountChargeId, final Long accountId,InterswitchEvents event) {
+        // always use current date as transaction date for batch job
+        AppUser user = null;
+
+        final LocalDate transactionDate = DateUtils.getLocalDateOfTenant();
+        final SavingsAccountCharge savingsAccountCharge = this.savingsAccountChargeRepository.findOneWithNotFoundDetection(
+                savingsAccountChargeId, accountId);
+
+        final DateTimeFormatter fmt = DateTimeFormat.forPattern("dd MM yyyy");
+        fmt.withZone(DateUtils.getDateTimeZoneOfTenant());
+        
+        payCharge(savingsAccountCharge, transactionDate, savingsAccountCharge.amount(), fmt, user,true,event);
+
+    }
+    
+    @Transactional
+    private void payCharge(final SavingsAccountCharge savingsAccountCharge, final LocalDate transactionDate, final BigDecimal amountPaid,
+            final DateTimeFormatter formatter, final AppUser user)
+    {
+    	 payCharge(savingsAccountCharge,transactionDate, amountPaid,
+    	             formatter, user,false,null);
+    }
+    
 
     @Transactional
     private void payCharge(final SavingsAccountCharge savingsAccountCharge, final LocalDate transactionDate, final BigDecimal amountPaid,
-            final DateTimeFormatter formatter, final AppUser user) {
+            final DateTimeFormatter formatter, final AppUser user,final boolean logSubEvent,InterswitchEvents event) {
 
         final boolean isSavingsInterestPostingAtCurrentPeriodEnd = this.configurationDomainService
                 .isSavingsInterestPostingAtCurrentPeriodEnd();
@@ -1492,9 +1523,27 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
         account.validateAccountBalanceDoesNotBecomeNegative("." + SavingsAccountTransactionType.PAY_CHARGE.getCode(),
                 depositAccountOnHoldTransactions);
+   
 
         this.savingAccountRepositoryWrapper.saveAndFlush(account);
-
+        
+        if(logSubEvent)
+        {
+        	int lastElement=  account.getTransactions().size()-1;
+        	
+        	SavingsAccountTransaction chargeTransaction=account.getTransactions().get(lastElement);
+        	if(chargeTransaction.getTypeOf()==28)
+        	{
+        		InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.CHARGE.getValue(), event, account.getTransactions().get(lastElement));
+    			this.interswitchSubEventsRepository.save(subEvent);	
+        	}
+        		
+		
+        }
+        
+   
+      
+      
         postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds);
     }
 
