@@ -486,12 +486,15 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		authorizationNumber = applicationTransaction.getId() + "";
 		// responseCode = String.format("%02d",
 		// ResponseCodes.APPROVED.getValue());
-
+		
+		
+		event=this.interswitchTransactionsRepository.getOne(event.getId());
 		event.setResponseCode(ResponseCodes.APPROVED.getValue());
 		event.setApplicationTransaction(applicationTransaction);
 		event.setAuthorizationNumber(authorizationNumber);
 		this.interswitchTransactionsRepository.save(event);
 		
+	
 		InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.TRANSACTION.getValue(), event, applicationTransaction);
 		this.interswitchSubEventsRepository.save(subEvent);
 

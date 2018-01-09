@@ -731,13 +731,13 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     public CommandProcessingResult undoTransaction(final JsonCommand command)
     {
     	
-    	String authorizationNumber= command.stringValueOfParameterNamed("authorization_number");
+    	String inputAuthorizationNumber= command.stringValueOfParameterNamed("authorization_number");
     	String stan=command.stringValueOfParameterNamed("stan");
     	String sessionId=command.stringValueOfParameterNamed("session_id");
-    	Long transactionId=Long.parseLong(authorizationNumber);
-    	SavingsAccountTransaction transaction=this.savingsAccountTransactionRepository.findOne(transactionId);
+    	//Long transactionId=Long.parseLong(inputAuthorizationNumber);
     	
-    	authorizationNumber= String.format("%06d",((int)(100000 + Math.random() * 999999)) );
+    	
+    	String authorizationNumber= String.format("%06d",((int)(100000 + Math.random() * 999999)) );
     	
     	String errorResponse=String.format("%02d",ResponseCodes.ERROR.getValue() );
     	
@@ -748,44 +748,78 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 				null, null, "");
     	
         this.interswitchEventsRepository.save(event);
+        
+        SavingsAccountTransaction transaction;
+        
+        InterswitchEvents mainEvent=this.interswitchEventsRepository.findByAuthorizationNumber(inputAuthorizationNumber);
+        
+        List<InterswitchSubEvents> subEvents=  this.interswitchSubEventsRepository.findByInterswitchEvents(mainEvent);
+        
+        boolean isCorrectlyReversed=false;
+        
+  		for(InterswitchSubEvents subEvent:subEvents)
+  		{	
+  			transaction=subEvent.getInterswitchSubTransactions();
+  			
+  			if((transaction)==null)
+  			{
+  				isCorrectlyReversed=false;
+  				break;
+  			}
+  			else
+  			{
+  				
+  				try
+  				{
+  					long savingsAccountId=transaction.getSavingsAccount().getId();
+  					
+  					//InterswitchBalanceWrapper balance=interswitchReadPlatformService.retrieveBalanceForUndoTransaction(savingsAccountId);
+  					
+  					CommandProcessingResult result=undoTransaction(savingsAccountId,transaction.getId(),false);
+  			
+  					
+  			    	if(result.getOfficeId()==null)
+  			    	{
+  			    		isCorrectlyReversed=false;
+  			    		break;
+  			    	}
+  			    	else
+  			    	{		
+  			    		isCorrectlyReversed=true;
+  			    		
+  			    	}	
+  				}
+  				catch(Exception e)
+  				{
+  					
+  					System.out.println("reversing encountered exception");
+  					e.printStackTrace();
+  					isCorrectlyReversed=false;
+			    	break;
+  				}
+  				
+  			}
+  		}
   		
-		if((transaction)==null)
-		{
-			return CommandProcessingResult.interswitchResponse(authorizationNumber, errorResponse);	
+  		
+	
+		if(isCorrectlyReversed)
+		{		
+			
+			event=this.interswitchEventsRepository.getOne(event.getId());
+			event.setResponseCode(Integer.parseInt(successResponse));
+	    	this.interswitchEventsRepository.save(event);
+			return CommandProcessingResult.interswitchResponse(authorizationNumber, successResponse);
 		}
 		else
-		{
-			
-			try
-			{
-				long savingsAccountId=transaction.getSavingsAccount().getId();
-				
-			//	InterswitchBalanceWrapper balance=interswitchReadPlatformService.retrieveBalanceForUndoTransaction(savingsAccountId);
-				
-				CommandProcessingResult result=undoTransaction(savingsAccountId,transactionId,false);
-				
-		    	if(result.getOfficeId()==null)
-		    	{
-		    		
-		    		return CommandProcessingResult.interswitchResponse(authorizationNumber, errorResponse);
-		    	}
-		    	else
-		    	{		
-		    		event.setResponseCode(Integer.parseInt(successResponse));
-		    		 this.interswitchEventsRepository.save(event);
-		    		// send the response code
-		    		return CommandProcessingResult.interswitchResponse(authorizationNumber, successResponse);	
-		    	}	
-			}
-			catch(Exception e)
-			{
-				return CommandProcessingResult.interswitchResponse(authorizationNumber,errorResponse);
-			}
-			
+		{	
+			event=this.interswitchEventsRepository.getOne(event.getId());
+			event.setResponseCode(Integer.parseInt(errorResponse));
+			this.interswitchEventsRepository.save(event);
+			return CommandProcessingResult.interswitchResponse(authorizationNumber,errorResponse);
 		}
-		
 	
-		
+  		
 		
 		
     }

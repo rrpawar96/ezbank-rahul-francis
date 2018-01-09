@@ -2783,8 +2783,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         final SavingsAccountChargePaidBy chargePaidBy = SavingsAccountChargePaidBy.instance(transaction, savingsAccountCharge, transaction
                 .getAmount(this.getCurrency()).getAmount());
         transaction.getSavingsAccountChargesPaid().add(chargePaidBy);
-        
-        System.out.println("transaction"+transaction.toString());
+
        this.transactions.add(transaction);
     }
 
