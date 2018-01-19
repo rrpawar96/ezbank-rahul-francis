@@ -44,7 +44,7 @@ AUTO_INCREMENT=1;
 
 	-- create new table to record  interswitch sub events
 
-	CREATE TABLE `idt_interswitch_subevents` (
+CREATE TABLE `idt_interswitch_subevents` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT,
 	`transaction_type` INT(11) NULL DEFAULT NULL,
 	`interswitch_events_id` BIGINT(20) NULL DEFAULT NULL,
@@ -54,9 +54,9 @@ AUTO_INCREMENT=1;
 	INDEX `FK_idt_interswitch_subevents_m_savings_account_transaction` (`interswitch_subevent_id`),
 	CONSTRAINT `FK_idt_interswitch_subevents_idt_interswitch_events` FOREIGN KEY (`interswitch_events_id`) REFERENCES `idt_interswitch_events` (`id`),
 	CONSTRAINT `FK_idt_interswitch_subevents_m_savings_account_transaction` FOREIGN KEY (`interswitch_subevent_id`) REFERENCES `m_savings_account_transaction` (`id`)
-	)
-	COLLATE='utf8_general_ci'
-	ENGINE=InnoDB
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
 	AUTO_INCREMENT=1;
 
 -- create new table to record  interswitch authorization messages

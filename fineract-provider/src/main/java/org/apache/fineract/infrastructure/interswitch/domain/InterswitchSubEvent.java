@@ -13,7 +13,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 
 @Entity
 @Table(name = "idt_interswitch_subevents")
-public class InterswitchSubEvents extends AbstractPersistableCustom<Long>
+public class InterswitchSubEvent extends AbstractPersistableCustom<Long>
 {	
 	
 
@@ -23,23 +23,23 @@ public class InterswitchSubEvents extends AbstractPersistableCustom<Long>
 	
 	@ManyToOne
 	@JoinColumn(name="interswitch_events_id",nullable=true)
-	private InterswitchEvents interswitchEvents;
+	private InterswitchEvent interswitchEvents;
 	
 	
 	@OneToOne
 	@JoinColumn(name="interswitch_subevent_id",nullable=true)
-	private SavingsAccountTransaction interswitchSubTransactions;
+	private SavingsAccountTransaction interswitchSubTransaction;
 	
-	public InterswitchSubEvents(int transactionType,InterswitchEvents interswitchEvents,SavingsAccountTransaction interswitchSubTransactions)
+	public InterswitchSubEvent(int transactionType,InterswitchEvent interswitchEvents,SavingsAccountTransaction interswitchSubTransactions)
 	{	
 		this.transactionType=transactionType;
 		this.interswitchEvents=interswitchEvents;
-		this.interswitchSubTransactions=interswitchSubTransactions;
+		this.interswitchSubTransaction=interswitchSubTransactions;
 	}
 	
-	public static InterswitchSubEvents getInstance(int transactionType,InterswitchEvents interswitchEvents,SavingsAccountTransaction interswitchSubTransactions)
+	public static InterswitchSubEvent getInstance(int transactionType,InterswitchEvent interswitchEvents,SavingsAccountTransaction interswitchSubTransactions)
 	{
-		return new InterswitchSubEvents(transactionType,interswitchEvents,interswitchSubTransactions);
+		return new InterswitchSubEvent(transactionType,interswitchEvents,interswitchSubTransactions);
 	}
 	
 	
@@ -52,20 +52,20 @@ public class InterswitchSubEvents extends AbstractPersistableCustom<Long>
 		this.transactionType = transactionType;
 	}
 
-	public InterswitchEvents getInterswitchEvents() {
+	public InterswitchEvent getInterswitchEvents() {
 		return interswitchEvents;
 	}
 
-	public void setInterswitchEvents(InterswitchEvents interswitchEvents) {
+	public void setInterswitchEvents(InterswitchEvent interswitchEvents) {
 		this.interswitchEvents = interswitchEvents;
 	}
 
 	public SavingsAccountTransaction getInterswitchSubTransactions() {
-		return interswitchSubTransactions;
+		return interswitchSubTransaction;
 	}
 
 	public void setInterswitchSubTransactions(SavingsAccountTransaction interswitchSubTransactions) {
-		this.interswitchSubTransactions = interswitchSubTransactions;
+		this.interswitchSubTransaction = interswitchSubTransactions;
 	}
 
 

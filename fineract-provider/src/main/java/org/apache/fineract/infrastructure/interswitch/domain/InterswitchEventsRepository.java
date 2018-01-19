@@ -5,11 +5,11 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface InterswitchEventsRepository  extends JpaRepository<InterswitchEvents, Long>, JpaSpecificationExecutor<InterswitchEvents>
+public interface InterswitchEventsRepository  extends JpaRepository<InterswitchEvent, Long>, JpaSpecificationExecutor<InterswitchEvent>
 {
 
-	InterswitchEvents findOneBySessionIdAndAuthorizationNumber(String sessionId,String authorizationNumber);
+	InterswitchEvent findOneBySessionIdAndAuthorizationNumber(String sessionId,String authorizationNumber);
 	
-	InterswitchEvents findByAuthorizationNumber(String authorizationNumber);
+	InterswitchEvent findByAuthorizationNumber(String authorizationNumber);
 	
 }

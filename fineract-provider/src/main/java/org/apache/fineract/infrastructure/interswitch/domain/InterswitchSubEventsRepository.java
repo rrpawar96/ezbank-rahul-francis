@@ -6,10 +6,10 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface InterswitchSubEventsRepository extends JpaRepository<InterswitchSubEvents, Long>, JpaSpecificationExecutor<InterswitchSubEvents>
+public interface InterswitchSubEventsRepository extends JpaRepository<InterswitchSubEvent, Long>, JpaSpecificationExecutor<InterswitchSubEvent>
 {
 
-List<InterswitchSubEvents>  findByInterswitchEvents(InterswitchEvents transaction);
+List<InterswitchSubEvent>  findByInterswitchEvents(InterswitchEvent transaction);
 	
 }
 

@@ -22,6 +22,7 @@ import java.util.Collection;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvent;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.data.AccountTransferDTO;
 import org.apache.fineract.portfolio.account.domain.AccountTransferDetails;
@@ -44,4 +45,6 @@ public interface AccountTransfersWritePlatformService {
     void reverseTransfersWithFromAccountTransactions(Collection<Long> fromTransactionIds, PortfolioAccountType accountTypeId);
 
     AccountTransferDetails repayLoanWithTopup(AccountTransferDTO accountTransferDTO);
+
+	Long transferFunds(AccountTransferDTO accountTransferDTO, boolean isInterswitch, InterswitchEvent event);
 }

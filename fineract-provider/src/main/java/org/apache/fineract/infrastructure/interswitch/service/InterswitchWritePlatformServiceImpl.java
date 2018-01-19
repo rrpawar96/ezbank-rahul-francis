@@ -5,17 +5,19 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.interswitch.data.SavingsProductChargesData;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchAuthorizationRequestRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchAuthorizationRequests;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvent;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRepository;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvent;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEventsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -23,6 +25,8 @@ import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.data.AccountTransferDTO;
 import org.apache.fineract.portfolio.account.domain.AccountTransferType;
 import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatformService;
+import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepository;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
@@ -32,11 +36,14 @@ import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountChargeRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
 import org.apache.fineract.portfolio.savings.exception.InsufficientAccountBalanceException;
+import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -44,6 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 @Service
 public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlatformService {
@@ -68,6 +76,14 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 	private final InterswitchSubEventsRepository interswitchSubEventsRepository;
 
+	private final ChargeRepository chargeRepository;
+
+	private final SavingsAccountChargeRepository savingsAccountChargeRepository;
+
+	private final InterswitchReadPlatformService interswitchReadPlatformService;
+
+	private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+
 	@Autowired
 	public InterswitchWritePlatformServiceImpl(PlatformSecurityContext context,
 			InterswitchEventsRepository interswitchTransactionsRepository,
@@ -76,7 +92,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			SavingsAccountAssembler savingAccountAssembler, FromJsonHelper fromApiJsonHelper,
 			AccountTransfersWritePlatformService accountTransfersWritePlatformService,
 			SavingsAccountTransactionRepository savingsAccountTransactionRepository,
-			InterswitchSubEventsRepository interswitchSubEventsRepository) {
+			InterswitchSubEventsRepository interswitchSubEventsRepository, ChargeRepository chargeRepository,
+			SavingsAccountChargeRepository savingsAccountChargeRepository,
+			InterswitchReadPlatformService interswitchReadPlatformService,
+			SavingsAccountWritePlatformService savingsAccountWritePlatformService) {
 		this.context = context;
 		this.interswitchTransactionsRepository = interswitchTransactionsRepository;
 		this.interswitchAuthorizationRequestRepository = interswitchAuthorizationRequestRepository;
@@ -87,6 +106,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		this.accountTransfersWritePlatformService = accountTransfersWritePlatformService;
 		this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
 		this.interswitchSubEventsRepository = interswitchSubEventsRepository;
+		this.chargeRepository = chargeRepository;
+		this.savingsAccountChargeRepository = savingsAccountChargeRepository;
+		this.interswitchReadPlatformService = interswitchReadPlatformService;
+		this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
 	}
 
 	@Override
@@ -235,6 +258,21 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					"local_transaction_time missing", "local_transaction_time missing");
 		}
 
+		BigDecimal surCharge = BigDecimal.ZERO;
+		if (command.bigDecimalValueOfParameterNamed("surcharge", Locale.ENGLISH) != null) {
+			surCharge = command.bigDecimalValueOfParameterNamed("surcharge", Locale.ENGLISH);
+		}
+
+		if (command.jsonElement("transaction_fee") != null) {
+			JsonObject transactionfee = command.jsonElement("transaction_fee").getAsJsonObject();
+
+			System.out.println("surcharge is " + transactionfee.get("amount").getAsString());
+			if (transactionfee.get("amount") != null) {
+				surCharge = BigDecimal.valueOf(Double.parseDouble(transactionfee.get("amount").getAsString()));
+			}
+
+		}
+
 		final DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
 
 		LocalDate transactionDateDep = this.fromApiJsonHelper.extractLocalDateNamed("local_transaction_date", element,
@@ -282,13 +320,11 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			break;
 		}
 
-		InterswitchEvents event = InterswitchEvents.getInstance(sessionId, InterswitchEventType.TRANSACTION.getValue(),
+		InterswitchEvent event = InterswitchEvent.getInstance(sessionId, InterswitchEventType.TRANSACTION.getValue(),
 				transactionProcessingType, transactionAmountType, Integer.parseInt(responseCode), stan,
 				authorizationNumber, null, settlementAmount, settlementDate, time);
 
-		this.interswitchTransactionsRepository.save(event);
-		
-		
+		event = this.interswitchTransactionsRepository.save(event);
 
 		// get savings account
 
@@ -311,6 +347,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				authorizationNumber = ""; // because we did not execute
 				// transaction???
 
+				// event=this.interswitchTransactionsRepository.findOne(event.getId());
 				event.setResponseCode(ResponseCodes.NOSAVINGSACCOUNT.getValue());
 				this.interswitchTransactionsRepository.save(event);
 
@@ -327,6 +364,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				authorizationNumber = ""; // because we did not execute
 				// transaction???
 
+				// event=this.interswitchTransactionsRepository.findOne(event.getId());
 				event.setResponseCode(ResponseCodes.NOTSUFFICIENTFUNDS.getValue());
 				this.interswitchTransactionsRepository.save(event);
 
@@ -345,6 +383,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				authorizationNumber = ""; // because we did not execute
 				// transaction???
 
+				// event=this.interswitchTransactionsRepository.findOne(event.getId());
 				event.setResponseCode(ResponseCodes.NOSAVINGSACCOUNT.getValue());
 				this.interswitchTransactionsRepository.save(event);
 
@@ -359,6 +398,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				authorizationNumber = ""; // because we did not execute
 				// transaction???
 
+				// event=this.interswitchTransactionsRepository.findOne(event.getId());
 				event.setResponseCode(ResponseCodes.NOTSUFFICIENTFUNDS.getValue());
 				this.interswitchTransactionsRepository.save(event);
 
@@ -367,16 +407,16 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			}
 		} else if (isCredit) {
 			accountNumberCredit = command.stringValueOfParameterNamed("account_credit");
-		
+
 			savingsAccountCredit = this.savingsAccountRepository
 					.findNonClosedAccountByAccountNumber(accountNumberCredit);
-			
 
 			if (savingsAccountCredit == null) {
 				responseCode = ResponseCodes.NOSAVINGSACCOUNT.getValue() + "";
 				authorizationNumber = ""; // because we did not execute
 				// transaction???
 
+				// event=this.interswitchTransactionsRepository.findOne(event.getId());
 				event.setResponseCode(ResponseCodes.NOSAVINGSACCOUNT.getValue());
 				this.interswitchTransactionsRepository.save(event);
 
@@ -389,6 +429,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			authorizationNumber = ""; // because we did not execute
 			// transaction???
 
+			// event=this.interswitchTransactionsRepository.findOne(event.getId());
 			event.setResponseCode(ResponseCodes.ERROR.getValue());
 			this.interswitchTransactionsRepository.save(event);
 
@@ -397,7 +438,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 		// if everything goes well
 
-		SavingsAccountTransaction applicationTransaction;
+		SavingsAccountTransaction applicationTransaction = null;
 
 		if (isTransferTransaction) {
 
@@ -413,10 +454,11 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 			long transferTransactionId = 0;
 			try {
-				transferTransactionId = this.accountTransfersWritePlatformService.transferFunds(accountTransferDTO)
-						.longValue();
+
+				// event=this.interswitchTransactionsRepository.findOne(event.getId());
+				transferTransactionId = this.accountTransfersWritePlatformService
+						.transferFunds(accountTransferDTO, true, event).longValue();
 				applicationTransaction = this.savingsAccountTransactionRepository.getOne(transferTransactionId);
-				
 
 			} catch (InsufficientAccountBalanceException e) {
 
@@ -424,6 +466,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				authorizationNumber = ""; // because we did not execute
 				// transaction???
 
+				// event=this.interswitchTransactionsRepository.findOne(event.getId());
 				event.setResponseCode(ResponseCodes.NOTSUFFICIENTFUNDS.getValue());
 				this.interswitchTransactionsRepository.save(event);
 
@@ -445,9 +488,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
 
 			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, true, false,event,ChargeTimeType.ATM_WITHDRAWAL_FEE);
-			
-	
+					transactionDateDep, settlementAmount, null, transactionBooleanValues, true, false);
+
+			// apply charge
+			applyCharge(savingsAccountDebit, event, ChargeTimeType.ATM_WITHDRAWAL_FEE, surCharge);
 
 		} else if (isPurchase) {
 			checkClientOrGroupActive(savingsAccountDebit);
@@ -461,12 +505,14 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
 
 			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, false, true,event,ChargeTimeType.ATM_PURCHASE_FEE);
-			
-		
+					transactionDateDep, settlementAmount, null, transactionBooleanValues, false, true);
+
+			// apply charge
+			applyCharge(savingsAccountDebit, event, ChargeTimeType.ATM_PURCHASE_FEE, surCharge);
+
 		}
 
-		else {
+		else if (isCredit) {
 			checkClientOrGroupActive(savingsAccountCredit);
 
 			boolean isAccountTransfer = false;
@@ -474,32 +520,76 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 			applicationTransaction = this.savingsAccountDomainService.handleInterswitchDeposit(savingsAccountCredit,
 					fmt, transactionDateDep, settlementAmount, null, isAccountTransfer, isRegularTransaction);
-			
-			
 
 		}
 
-		// very imp: we are returning transaction id as authorization number,
-		// this is to facilitate undo of transaction, as ezbank would need
-		// savings account and transaction id
-		// of the transaction to be undoed
+		// if transaction did not execute successfully, return error
+		if (applicationTransaction == null) {
+			// to do: if transaction fails do we log a sub event?
+			return CommandProcessingResult.interswitchResponse(authorizationNumber,
+					ResponseCodes.ERROR.getValue() + "");
+		}
+
 		authorizationNumber = applicationTransaction.getId() + "";
-		// responseCode = String.format("%02d",
-		// ResponseCodes.APPROVED.getValue());
-		
-		
-		event=this.interswitchTransactionsRepository.getOne(event.getId());
+
+		// event=this.interswitchTransactionsRepository.getOne(event.getId());
 		event.setResponseCode(ResponseCodes.APPROVED.getValue());
 		event.setApplicationTransaction(applicationTransaction);
 		event.setAuthorizationNumber(authorizationNumber);
-		this.interswitchTransactionsRepository.save(event);
-		
-	
-		InterswitchSubEvents subEvent=InterswitchSubEvents.getInstance(InterswitchEventType.TRANSACTION.getValue(), event, applicationTransaction);
-		this.interswitchSubEventsRepository.save(subEvent);
+		event = this.interswitchTransactionsRepository.save(event);
+
+		// event=this.interswitchTransactionsRepository.getOne(event.getId());
+		// we do not want a third subevent other than credit debit in
+		// interswitch transactions
+		if (!isTransferTransaction) {
+			InterswitchSubEvent subEvent = InterswitchSubEvent
+					.getInstance(InterswitchEventType.TRANSACTION.getValue(), event, applicationTransaction);
+			this.interswitchSubEventsRepository.save(subEvent);
+		}
 
 		// send the response code
 		return CommandProcessingResult.interswitchResponse(authorizationNumber, ResponseCodes.APPROVED.getValue() + "");
+
+	}
+
+	private void applyCharge(SavingsAccount savingsAccount, InterswitchEvent parentEvent, ChargeTimeType chargeTime,
+			BigDecimal surcharge) {
+
+		int chargeType = 0;
+		ChargeTimeType chargeTimeType;
+		SavingsAccountCharge savingsAccountCharge;
+		Charge charge;
+		savingsAccount = savingAccountAssembler.assembleFrom(savingsAccount.getId());
+
+		List<SavingsProductChargesData> chargeData = (List<SavingsProductChargesData>) this.interswitchReadPlatformService
+				.retrieveSavingsProductChargesMapping(savingsAccount.getProduct().getId());
+
+		for (SavingsProductChargesData productCharge : chargeData) {
+
+			charge = this.chargeRepository.findOne(productCharge.getChargesId());
+
+			chargeType = charge.getChargeTimeType();
+
+			chargeTimeType = ChargeTimeType.fromInt(chargeType);
+
+			if (chargeTimeType.getValue() == chargeTime.getValue()) {
+
+				if (this.savingsAccountChargeRepository.findByChargeAndSavingsAccountId(charge,
+						savingsAccount.getId()) == null) {
+					savingsAccountCharge = SavingsAccountCharge.createNewFromJson(savingsAccount, charge);
+					this.savingsAccountChargeRepository.save(savingsAccountCharge);
+					savingsAccount.charges().add(savingsAccountCharge);
+					this.savingsAccountRepository.save(savingsAccount);
+				} else {
+					savingsAccountCharge = this.savingsAccountChargeRepository.findByChargeAndSavingsAccountId(charge,
+							savingsAccount.getId());
+				}
+
+				this.savingsAccountWritePlatformService.applyInterswitchChargeDue(savingsAccountCharge.getId(),
+						savingsAccount.getId(), parentEvent, surcharge);
+
+			}
+		}
 
 	}
 

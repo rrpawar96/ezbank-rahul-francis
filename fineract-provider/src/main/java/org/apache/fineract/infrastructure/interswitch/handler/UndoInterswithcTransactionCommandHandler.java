@@ -22,7 +22,7 @@ import org.apache.fineract.commands.annotation.CommandType;
 import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvent;
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.interswitch.service.InterswitchEventType;

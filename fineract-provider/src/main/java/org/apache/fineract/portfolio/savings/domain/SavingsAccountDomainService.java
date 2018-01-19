@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.savings.domain;
 import java.math.BigDecimal;
 import java.util.Set;
 
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvent;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
@@ -58,6 +58,5 @@ public interface SavingsAccountDomainService {
 
 	SavingsAccountTransaction handleWithdrawal(SavingsAccount account, DateTimeFormatter fmt, LocalDate transactionDate,
 			BigDecimal transactionAmount, PaymentDetail paymentDetail,
-			SavingsTransactionBooleanValues transactionBooleanValues, boolean isATMWithdrawal, boolean isATMPurchase,
-			InterswitchEvents parentEvent, ChargeTimeType chargeTimeType);
+			SavingsTransactionBooleanValues transactionBooleanValues, boolean isATMWithdrawal, boolean isATMPurchase);
 }

@@ -19,7 +19,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 
 @Entity
 @Table(name = "idt_interswitch_events")
-public class InterswitchEvents extends AbstractPersistableCustom<Long>
+public class InterswitchEvent extends AbstractPersistableCustom<Long>
 {
 
 	@Column(name="session_id")
@@ -58,9 +58,9 @@ public class InterswitchEvents extends AbstractPersistableCustom<Long>
 	private String transactionTime;
 	
 	@OneToMany(mappedBy = "interswitchEvents")
-	private List<InterswitchSubEvents> interSwitchSubEvents;
+	private List<InterswitchSubEvent> interSwitchSubEvents;
 	
-	public InterswitchEvents(String sessionId,int eventType,int transactionProcessingType,
+	public InterswitchEvent(String sessionId,int eventType,int transactionProcessingType,
 			int transactionAmountType,int responseCode,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
 			BigDecimal settlementAmount,Date settlementDate,String transactionTime)
 	{
@@ -78,11 +78,11 @@ public class InterswitchEvents extends AbstractPersistableCustom<Long>
 		
 	}
 	
-	public static InterswitchEvents getInstance(String sessionId,int eventType,int transactionProcessingType,
+	public static InterswitchEvent getInstance(String sessionId,int eventType,int transactionProcessingType,
 			int transactionAmountType,int responseCode,String stan,String authorizationNumber,SavingsAccountTransaction applicationTransaction,
 			BigDecimal settlementAmount,Date settlementDate,String transactionTime)
 	{
-		return new InterswitchEvents(sessionId, eventType, transactionProcessingType,
+		return new InterswitchEvent(sessionId, eventType, transactionProcessingType,
 				 transactionAmountType, responseCode, stan, authorizationNumber, applicationTransaction,
 				 settlementAmount, settlementDate, transactionTime);
 	}
@@ -175,11 +175,11 @@ public class InterswitchEvents extends AbstractPersistableCustom<Long>
 		this.transactionTime = transactionTime;
 	}
 
-	public List<InterswitchSubEvents> getInterSwitchSubEvents() {
+	public List<InterswitchSubEvent> getInterSwitchSubEvents() {
 		return interSwitchSubEvents;
 	}
 
-	public void setInterSwitchSubEvents(List<InterswitchSubEvents> interSwitchSubEvents) {
+	public void setInterSwitchSubEvents(List<InterswitchSubEvent> interSwitchSubEvents) {
 		this.interSwitchSubEvents = interSwitchSubEvents;
 	}
 

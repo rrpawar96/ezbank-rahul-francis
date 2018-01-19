@@ -43,8 +43,8 @@ import javax.persistence.UniqueConstraint;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvent;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvent;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -141,10 +141,10 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom<L
     private List<RetailAccountEntry> retailEntries;
     
     @OneToOne(mappedBy="applicationTransaction")
-    private InterswitchEvents interswitchTransactions;
+    private InterswitchEvent interswitchTransactions;
     
     @OneToOne(mappedBy="interswitchSubTransactions")
-    private InterswitchSubEvents interswitchSubEvents;
+    private InterswitchSubEvent interswitchSubEvents;
 
     protected SavingsAccountTransaction() {
         this.dateOf = null;

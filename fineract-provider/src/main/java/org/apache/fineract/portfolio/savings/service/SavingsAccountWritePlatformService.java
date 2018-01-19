@@ -18,15 +18,17 @@
  */
 package org.apache.fineract.portfolio.savings.service;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvents;
-import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvents;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvent;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvent;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormatter;
@@ -114,8 +116,8 @@ public interface SavingsAccountWritePlatformService {
 	CommandProcessingResult bulkGSIMClose(Long gsimId, JsonCommand command);
 
 	CommandProcessingResult undoTransaction(JsonCommand command);
-	
-	void applyCustomChargeDue(final Long savingsAccountChargeId, final Long accountId);
 
-	SavingsAccountTransaction applyInterswitchChargeDue(Long savingsAccountChargeId, Long accountId, InterswitchEvents event);
+	SavingsAccountTransaction applyInterswitchChargeDue(Long savingsAccountChargeId, Long accountId,
+			InterswitchEvent event, BigDecimal surcharge);
+
 }
