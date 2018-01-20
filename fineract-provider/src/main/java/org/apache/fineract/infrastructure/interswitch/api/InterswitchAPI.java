@@ -46,6 +46,7 @@ public class InterswitchAPI
 	private final InterswitchReadPlatformServiceImpl interswitchReadPlatformServiceImpl;
 	private final FromJsonHelper fromApiJsonHelper;
 	private final InterswitchEventsRepository interswitchEventsRepository;
+	private final String resourceNameForPermissions = "InterSwitch";
 	
 	 @Autowired
 	 public InterswitchAPI(PlatformSecurityContext context,ApiRequestParameterHelper apiRequestParameterHelper,
@@ -75,8 +76,8 @@ public class InterswitchAPI
 	    @Produces({ MediaType.APPLICATION_JSON })
 	    public String authorizeTransaction(final String apiRequestBodyAsJson) {
 	    	
-	    	// to do: check for permissions here after creating one in backend
-	    	//this.context.authenticatedUser().validateHasPermissionTo();
+	    	
+	    	this.context.authenticatedUser().validateHasPermissionTo(this.resourceNameForPermissions);
 	    	
 	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().authorizeTransaction().withJson(apiRequestBodyAsJson).build();
 
@@ -91,8 +92,8 @@ public class InterswitchAPI
 	    @Produces({ MediaType.APPLICATION_JSON })
 	    public String executeTransaction(final String apiRequestBodyAsJson) {
 	    	
-	    	// to do: check for permissions here after creating one in backend
-	    	//this.context.authenticatedUser().validateHasPermissionTo();
+	    
+	  		this.context.authenticatedUser().validateHasPermissionTo(this.resourceNameForPermissions);
 	    	
 	    	   final CommandWrapper commandRequest = new CommandWrapperBuilder().executeTransaction().withJson(apiRequestBodyAsJson).build();
 
@@ -122,8 +123,7 @@ public class InterswitchAPI
 	    @Produces({ MediaType.APPLICATION_JSON })
 	    public String undoTransaction(final String apiRequestBodyAsJson) {
 	    	
-	    	// to do: check for permissions here after creating one in backend
-	    	//this.context.authenticatedUser().validateHasPermissionTo();
+	  		this.context.authenticatedUser().validateHasPermissionTo(this.resourceNameForPermissions);
 	  		
 	  		// get savingsAccountId from authorisation, note session is not required, but its there
 	  		// for future forward compatibility
@@ -161,7 +161,7 @@ public class InterswitchAPI
 		@Produces({ MediaType.APPLICATION_JSON })
 		public String serveBalanceEnquiry(final String apiRequestBodyAsJson) {
 			
-			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+			this.context.authenticatedUser().validateHasPermissionTo(this.resourceNameForPermissions);
 
 			final InterswitchBalanceWrapper interswitchBalanceEnquiryData = this.interswitchReadPlatformServiceImpl
 					.retrieveBalance(apiRequestBodyAsJson,false);
@@ -176,7 +176,7 @@ public class InterswitchAPI
 		@Produces({ MediaType.APPLICATION_JSON })
 		public String getMinistatement(final String apiRequestBodyAsJson) {
 			
-			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+			this.context.authenticatedUser().validateHasPermissionTo(this.resourceNameForPermissions);
 
 			final MinistatementDataWrapper miniStatement = this.interswitchReadPlatformServiceImpl
 					.getMinistatement(apiRequestBodyAsJson);
@@ -190,7 +190,7 @@ public class InterswitchAPI
 		@Produces({ MediaType.APPLICATION_JSON })
 		public String handleTransfer(final String apiRequestBodyAsJson) {
 			
-			//this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+			this.context.authenticatedUser().validateHasPermissionTo(this.resourceNameForPermissions);
 
 			 final CommandWrapper commandRequest = new CommandWrapperBuilder().executeTransaction().withJson(apiRequestBodyAsJson).build();
 
