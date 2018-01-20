@@ -259,10 +259,6 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		}
 
 		BigDecimal surCharge = BigDecimal.ZERO;
-		if (command.bigDecimalValueOfParameterNamed("surcharge", Locale.ENGLISH) != null) {
-			surCharge = command.bigDecimalValueOfParameterNamed("surcharge", Locale.ENGLISH);
-		}
-
 		if (command.jsonElement("transaction_fee") != null) {
 			JsonObject transactionfee = command.jsonElement("transaction_fee").getAsJsonObject();
 

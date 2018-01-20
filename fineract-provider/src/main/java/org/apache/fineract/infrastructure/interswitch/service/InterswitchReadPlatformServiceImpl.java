@@ -188,10 +188,16 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		}
 
 		BigDecimal surCharge = BigDecimal.ZERO;
-		if (requestBody.get("surcharge") != null) {
-			surCharge = requestBody.get("surcharge").getAsBigDecimal();
-		}
+		if (requestBody.get("transaction_fee") != null) {
+			JsonObject transactionfee = requestBody.get("transaction_fee").getAsJsonObject();
 
+			System.out.println("surcharge is " + transactionfee.get("amount").getAsString());
+			if (transactionfee.get("amount") != null) {
+				surCharge = BigDecimal.valueOf(Double.parseDouble(transactionfee.get("amount").getAsString()));
+			}
+
+		}
+		
 		if (processingType != null) {
 			switch (processingType) {
 
