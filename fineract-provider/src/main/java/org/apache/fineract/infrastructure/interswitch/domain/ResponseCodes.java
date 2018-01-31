@@ -12,6 +12,7 @@ public enum ResponseCodes
 	LOSTCARD_CAPTURE(41,"responsecode.lostcard_capture"),
 	STOLENCARD_CAPTURE(43,"responsecode.stolencard_capture"),
 	NOTSUFFICIENTFUNDS(51,"responsecode.notsufficientfunds"),
+	NOSAVINGSACCOUNT(53,"responsecode.nosavingsaccount"),
 	EXPIREDCARD(54,"responsecode.expiredcard"),
 	INCORRECTPIN(55,"responsecode.incorrectpin");
 	
@@ -57,6 +58,8 @@ public enum ResponseCodes
 	            break;
 	            case 51:
 	            	responseCodesType = ResponseCodes.NOTSUFFICIENTFUNDS;
+	            case 53:
+	            	responseCodesType = ResponseCodes.NOSAVINGSACCOUNT;
 	            break;
 	            case 54:
 	            	responseCodesType = ResponseCodes.EXPIREDCARD;

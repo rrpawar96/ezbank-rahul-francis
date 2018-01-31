@@ -37,7 +37,14 @@ public enum ChargeTimeType {
     SHARE_PURCHASE(14, "chargeTimeType.sharespurchase"), 
     SHARE_REDEEM(15, "chargeTimeType.sharesredeem"),
     
-    SAVINGS_NOACTIVITY_FEE(16,"chargeTimeType.savingsNoActivityFee");
+    SAVINGS_NOACTIVITY_FEE(16,"chargeTimeType.savingsNoActivityFee"),
+    
+    
+    
+    ATM_BALANCE_ENQUIRY_FEE(17,"chargeTimeType.atmBalanceEnquiryFee"),
+    ATM_MINISTATEMENT_FEE(18,"chargeTimeType.atmMinistatementFee"),
+    ATM_WITHDRAWAL_FEE(19,"chargeTimeType.atmWithdrawalFee"),
+    ATM_PURCHASE_FEE(20,"chargeTimeType.atmPurchaseFee");
 
     private final Integer value;
     private final String code;
@@ -70,7 +77,9 @@ public enum ChargeTimeType {
         return new Integer[] { ChargeTimeType.SPECIFIED_DUE_DATE.getValue(), ChargeTimeType.SAVINGS_ACTIVATION.getValue(),
                 ChargeTimeType.SAVINGS_CLOSURE.getValue(), ChargeTimeType.WITHDRAWAL_FEE.getValue(), ChargeTimeType.ANNUAL_FEE.getValue(),
                 ChargeTimeType.MONTHLY_FEE.getValue(), ChargeTimeType.OVERDRAFT_FEE.getValue(), ChargeTimeType.WEEKLY_FEE.getValue(),
-                ChargeTimeType.SAVINGS_NOACTIVITY_FEE.getValue()};
+                ChargeTimeType.SAVINGS_NOACTIVITY_FEE.getValue(),
+                ChargeTimeType.ATM_BALANCE_ENQUIRY_FEE.getValue(),ChargeTimeType.ATM_MINISTATEMENT_FEE.getValue(),ChargeTimeType.ATM_PURCHASE_FEE.getValue(),
+                ChargeTimeType.ATM_WITHDRAWAL_FEE.getValue()};
     }
 
     public static Object[] validClientValues() {
@@ -132,6 +141,18 @@ public enum ChargeTimeType {
                 break;
                 case 16:
                 	chargeTimeType = SAVINGS_NOACTIVITY_FEE;
+                break;
+                case 17:
+                	chargeTimeType = ATM_BALANCE_ENQUIRY_FEE;
+                break;
+                case 18:
+                	chargeTimeType = ATM_MINISTATEMENT_FEE;
+                break;
+                case 19:
+                	chargeTimeType = ATM_WITHDRAWAL_FEE;
+                break;
+                case 20:
+                	chargeTimeType = ATM_PURCHASE_FEE;
                 break;
                 default:
                     chargeTimeType = INVALID;
@@ -195,7 +216,8 @@ public enum ChargeTimeType {
 
     public boolean isAllowedSavingsChargeTime() {
         return isOnSpecifiedDueDate() || isSavingsActivation() || isSavingsClosure() || isWithdrawalFee() || isAnnualFee()
-                || isMonthlyFee() || isWeeklyFee() || isOverdraftFee() || isSavingsNoActivityFee();
+                || isMonthlyFee() || isWeeklyFee() || isOverdraftFee() || isSavingsNoActivityFee()
+                ||isATMBalanceEnquiryFee() || isATMMinistatementFee() || isATMWithdrawalFee() || isATMPurchaseFee();
     }
 
     public boolean isOverdraftFee() {
@@ -217,4 +239,21 @@ public enum ChargeTimeType {
     public boolean isSharesRedeem() {
         return this.value.equals(ChargeTimeType.SHARE_REDEEM.getValue());
     }
+    
+    public boolean isATMBalanceEnquiryFee(){
+    	return this.value.equals(ChargeTimeType.ATM_BALANCE_ENQUIRY_FEE.getValue());
+    }
+    
+    public boolean isATMMinistatementFee(){
+    	return this.value.equals(ChargeTimeType.ATM_MINISTATEMENT_FEE.getValue());
+    }
+    
+    public boolean isATMWithdrawalFee(){
+    	return this.value.equals(ChargeTimeType.ATM_WITHDRAWAL_FEE.getValue());
+    }
+    
+    public boolean isATMPurchaseFee(){
+    	return this.value.equals(ChargeTimeType.ATM_PURCHASE_FEE.getValue());
+    }
+    
 }

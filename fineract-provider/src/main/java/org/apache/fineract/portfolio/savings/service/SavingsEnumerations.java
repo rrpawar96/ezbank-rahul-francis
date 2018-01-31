@@ -144,6 +144,10 @@ public class SavingsEnumerations {
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.WITHDRAWAL_FEE.getValue().longValue(),
                         SavingsAccountTransactionType.WITHDRAWAL_FEE.getCode(), "Withdrawal fee");
             break;
+            case ATM_WITHDRAWAL_FEE:
+                optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ATM_WITHDRAWAL_FEE.getValue().longValue(),
+                        SavingsAccountTransactionType.ATM_WITHDRAWAL_FEE.getCode(), "ATM Withdrawal fee");
+            break;
             case ANNUAL_FEE:
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ANNUAL_FEE.getValue().longValue(),
                         SavingsAccountTransactionType.ANNUAL_FEE.getCode(), "Annual fee");
@@ -164,7 +168,6 @@ public class SavingsEnumerations {
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.WITHDRAW_TRANSFER.getValue().longValue(),
                         SavingsAccountTransactionType.WITHDRAW_TRANSFER.getCode(), "Transfer Withdrawn");
             break;
-            default:
             case PAY_CHARGE:
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.PAY_CHARGE.getValue().longValue(),
                         SavingsAccountTransactionType.PAY_CHARGE.getCode(), "Pay Charge");
@@ -212,6 +215,22 @@ public class SavingsEnumerations {
             case ATM_DEPOSIT:
             	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.DEPOSIT.getValue().longValue(),
 					SavingsAccountTransactionType.DEPOSIT.getCode(), "ATM Deposit");
+				break;
+            case ATM_PURCHASE:
+            	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ATM_PURCHASE.getValue().longValue(),
+					SavingsAccountTransactionType.ATM_PURCHASE.getCode(), "ATM Purchase");
+				break;
+            case ATM_PURCHASE_FEE:
+            	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ATM_PURCHASE_FEE.getValue().longValue(),
+					SavingsAccountTransactionType.ATM_PURCHASE_FEE.getCode(), "ATM Purchase Fee");
+				break;
+            case ATM_BALANCE_ENQUIRY_FEE:
+            	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ATM_BALANCE_ENQUIRY_FEE.getValue().longValue(),
+					SavingsAccountTransactionType.ATM_BALANCE_ENQUIRY_FEE.getCode(), "ATM Balance Enquiry Fee");
+				break;
+            case ATM_MINISTATEMENT_FEE:
+            	optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.ATM_MINISTATEMENT_FEE.getValue().longValue(),
+					SavingsAccountTransactionType.ATM_MINISTATEMENT_FEE.getCode(), "ATM Ministatement Fee");
 				break;
         }
         return optionData;

@@ -34,6 +34,10 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvent;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvent;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEventsRepository;
+import org.apache.fineract.infrastructure.interswitch.service.InterswitchEventType;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.data.AccountTransferDTO;
 import org.apache.fineract.portfolio.account.data.AccountTransfersDataValidator;
@@ -81,6 +85,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
     private final AccountTransferDetailRepository accountTransferDetailRepository;
     private final LoanReadPlatformService loanReadPlatformService;
     private final GSIMRepositoy gsimRepository;
+    private final InterswitchSubEventsRepository interswitchSubEventsRepository;
 
     @Autowired
     public AccountTransfersWritePlatformServiceImpl(final AccountTransfersDataValidator accountTransfersDataValidator,
@@ -90,7 +95,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
             final AccountTransferDetailRepository accountTransferDetailRepository,
             final LoanReadPlatformService loanReadPlatformService,
-            final GSIMRepositoy gsimRepository) {
+            final GSIMRepositoy gsimRepository,final InterswitchSubEventsRepository interswitchSubEventsRepository) {
         this.accountTransfersDataValidator = accountTransfersDataValidator;
         this.accountTransferAssembler = accountTransferAssembler;
         this.accountTransferRepository = accountTransferRepository;
@@ -102,6 +107,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
         this.accountTransferDetailRepository = accountTransferDetailRepository;
         this.loanReadPlatformService = loanReadPlatformService;
         this.gsimRepository=gsimRepository;
+        this.interswitchSubEventsRepository=interswitchSubEventsRepository;
     }
 
     @Transactional
@@ -276,10 +282,17 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
             this.accountTransferRepository.save(accountTransfer);
         }
     }
-
+    
     @Override
     @Transactional
-    public Long transferFunds(final AccountTransferDTO accountTransferDTO) {
+    public Long transferFunds(final AccountTransferDTO accountTransferDTO)
+    {
+    	return transferFunds(accountTransferDTO,false,null);
+    }
+    
+    @Override
+    @Transactional
+    public Long transferFunds(final AccountTransferDTO accountTransferDTO,boolean isInterswitch,InterswitchEvent event) {
         Long transferTransactionId = null;
         final boolean isAccountTransfer = true;
         final boolean isRegularTransaction = accountTransferDTO.isRegularTransaction();
@@ -369,15 +382,32 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
             final SavingsAccountTransaction withdrawal = this.savingsAccountDomainService.handleWithdrawal(fromSavingsAccount,
                     accountTransferDTO.getFmt(), accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
                     accountTransferDTO.getPaymentDetail(), transactionBooleanValues);
+            
+            
 
             final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(toSavingsAccount,
                     accountTransferDTO.getFmt(), accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
                     accountTransferDTO.getPaymentDetail(), isAccountTransfer, isRegularTransaction);
-
+          
             accountTransferDetails = this.accountTransferAssembler.assembleSavingsToSavingsTransfer(accountTransferDTO, fromSavingsAccount,
                     toSavingsAccount, withdrawal, deposit);
             this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);
             transferTransactionId = accountTransferDetails.getId();
+            
+            // log the sub transactions
+            if(isInterswitch)
+            {
+            	 InterswitchSubEvent subEventWithdrawal=InterswitchSubEvent.getInstance(InterswitchEventType.TRANSACTION.getValue(), event, withdrawal);
+         		this.interswitchSubEventsRepository.save(subEventWithdrawal);
+                 
+                 InterswitchSubEvent subEventDeposit=InterswitchSubEvent.getInstance(InterswitchEventType.TRANSACTION.getValue(), event, deposit);
+                 subEventDeposit=this.interswitchSubEventsRepository.save(subEventDeposit);	
+         		
+         		// if transfer is interswitch transfer return either debit or credit transaction id, this is to avoid
+         		//collusion with trasfer table id
+         		transferTransactionId=deposit.getId();
+            }
+            
 
         } else if (isLoanToSavingsAccountTransfer(accountTransferDTO.getFromAccountType(), accountTransferDTO.getToAccountType())) {
 

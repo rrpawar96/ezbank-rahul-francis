@@ -53,6 +53,12 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEvent;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRepository;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEvent;
+import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEventsRepository;
+import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
+import org.apache.fineract.infrastructure.interswitch.service.InterswitchEventType;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -103,6 +109,8 @@ import org.apache.fineract.portfolio.savings.domain.RetailAccountEntryTypeReposi
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountChargePaidBy;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountChargePaidByRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
@@ -163,6 +171,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final GSIMRepositoy gsimRepository;
     private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
     private final RetailAccountEntryRepository retailAccountEntryRepository;
+    private final InterswitchEventsRepository interswitchEventsRepository;
+    private final InterswitchSubEventsRepository interswitchSubEventsRepository;
+    private final SavingsAccountChargePaidByRepository savingsAccountChargePaidByRepository;
+ 
 
     @Autowired
     public SavingsAccountWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
@@ -188,7 +200,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final BusinessEventNotifierService businessEventNotifierService,
             final GSIMRepositoy gsimRepository,
             final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository,
-            final RetailAccountEntryRepository retailAccountEntryRepository
+            final RetailAccountEntryRepository retailAccountEntryRepository,
+            final InterswitchEventsRepository interswitchEventsRepository,
+            final InterswitchSubEventsRepository interswitchSubEventsRepository,
+            final SavingsAccountChargePaidByRepository savingsAccountChargePaidByRepository
             ) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
@@ -218,6 +233,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.gsimRepository=gsimRepository;
         this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
         this.retailAccountEntryRepository=retailAccountEntryRepository;
+        this.interswitchEventsRepository=interswitchEventsRepository;
+        this.interswitchSubEventsRepository=interswitchSubEventsRepository;
+        this.savingsAccountChargePaidByRepository=savingsAccountChargePaidByRepository;
+     
     }
     
     
@@ -712,14 +731,101 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     public CommandProcessingResult undoTransaction(final JsonCommand command)
     {
     	
-    	String authorizationNumber= command.stringValueOfParameterNamed("authorization_number");
-    	Long transactionId=Long.parseLong(authorizationNumber);
-    	SavingsAccountTransaction transaction=this.savingsAccountTransactionRepository.findOne(transactionId);
+    	String inputAuthorizationNumber= command.stringValueOfParameterNamed("authorization_number");
+    	String stan=command.stringValueOfParameterNamed("stan");
+    	String sessionId=command.stringValueOfParameterNamed("session_id");
+    	//Long transactionId=Long.parseLong(inputAuthorizationNumber);
+    	
+    	
+    	String authorizationNumber= String.format("%06d",((int)(100000 + Math.random() * 999999)) );
+    	
+    	String errorResponse=String.format("%02d",ResponseCodes.ERROR.getValue() );
+    	
+    	String successResponse=String.format("%02d",ResponseCodes.APPROVED.getValue() );
+    	
+    	InterswitchEvent event=InterswitchEvent.getInstance(sessionId, InterswitchEventType.REVERSAL.getValue(),0,
+				0, Integer.parseInt(errorResponse), stan, authorizationNumber,null,
+				null, null, "");
+    	
+    	event= this.interswitchEventsRepository.save(event);
+        
+        SavingsAccountTransaction transaction;
+        
+        long tempAuth=Long.parseLong(inputAuthorizationNumber);
+        
+        InterswitchEvent mainEvent=this.interswitchEventsRepository.findByAuthorizationNumber(tempAuth+"");
+      
+      
+        List<InterswitchSubEvent> subEvents=  this.interswitchSubEventsRepository.findByInterswitchEvents(mainEvent);
+        
+        boolean isCorrectlyReversed=false;
+        
+       
+        
+  		for(InterswitchSubEvent subEvent:subEvents)
+  		{	
+  			transaction=subEvent.getInterswitchSubTransactions();
+  			
+  			if((transaction)==null)
+  			{
+  				isCorrectlyReversed=false;
+  				break;
+  			}
+  			else
+  			{
+  				
+  				try
+  				{
+  					long savingsAccountId=transaction.getSavingsAccount().getId();
+  					
+  					//InterswitchBalanceWrapper balance=interswitchReadPlatformService.retrieveBalanceForUndoTransaction(savingsAccountId);
+  					
+  					CommandProcessingResult result=undoTransaction(savingsAccountId,transaction.getId(),true);
+  			
+  					
+  			    	if( result.getSavingsId()==null || result.getOfficeId()==null || result.getClientId()==null)
+  			    	{
+  			    		isCorrectlyReversed=false;
+  			    		break;
+  			    	}
+  			    	else
+  			    	{		
+  			    		isCorrectlyReversed=true;
+  			    		
+  			    	}	
+  				}
+  				catch(Exception e)
+  				{
+  				
+  					e.printStackTrace();
+  					isCorrectlyReversed=false;
+			    	break;
+  				}
+  				
+  			}
+  		}
   		
-		long savingsAccountId=transaction.getSavingsAccount().getId();
+  		
+	
+		if(isCorrectlyReversed)
+		{		
+			
+			event=this.interswitchEventsRepository.getOne(event.getId());
+			event.setResponseCode(Integer.parseInt(successResponse));
+	    	this.interswitchEventsRepository.save(event);
+			return CommandProcessingResult.interswitchResponse(authorizationNumber, successResponse);
+		}
+		else
+		{	
+			event=this.interswitchEventsRepository.getOne(event.getId());
+			event.setResponseCode(Integer.parseInt(errorResponse));
+			this.interswitchEventsRepository.save(event);
+			return CommandProcessingResult.interswitchResponse(authorizationNumber,errorResponse);
+		}
+	
+  		
 		
-    	return undoTransaction(savingsAccountId,  transactionId,
-                false);
+		
     }
     
     
@@ -1381,10 +1487,75 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             payCharge(savingsAccountCharge, transactionDate, savingsAccountCharge.amoutOutstanding(), fmt, user);
         }
     }
+    
+    @Transactional
+    @Override
+    public SavingsAccountTransaction applyInterswitchChargeDue(final Long savingsAccountChargeId, final Long accountId,InterswitchEvent event,
+    		BigDecimal surcharge ) {
+        // always use current date as transaction date for batch job
+        AppUser user = null;
+
+        final LocalDate transactionDate = DateUtils.getLocalDateOfTenant();
+        final SavingsAccountCharge savingsAccountCharge = this.savingsAccountChargeRepository.findOneWithNotFoundDetection(
+                savingsAccountChargeId, accountId);
+
+        final DateTimeFormatter fmt = DateTimeFormat.forPattern("dd MM yyyy");
+        fmt.withZone(DateUtils.getDateTimeZoneOfTenant());
+        
+        if(surcharge.compareTo(BigDecimal.ZERO)==1)
+        {
+        	  payCharge(savingsAccountCharge, transactionDate,savingsAccountCharge.amount().add(surcharge), fmt, user,true);	
+        }
+        else
+        {
+        	payCharge(savingsAccountCharge, transactionDate,savingsAccountCharge.amount(), fmt, user,true);	
+        }
+     
+        // log sub event
+        final SavingsAccount account = savingsAccountCharge.savingsAccount();
+        SavingsAccountChargePaidBy charge=null;
+    	SavingsAccountTransaction currentTransaction=null;
+        
+        int lastElement=  account.getTransactions().size()-1;
+    	
+    	List<SavingsAccountTransaction> chargeTransactions=account.getTransactions();
+    	
+    	for(int i=lastElement;i>=0;i--)
+    	{	
+    		//fetch charge out of each transaction of account in reverse order
+    		currentTransaction=chargeTransactions.get(i);
+    		charge=this.savingsAccountChargePaidByRepository.findOneBySavingsAccountTransactionId(currentTransaction.getId());
+    		//not necessary each transaction might be a charge.. hence if charge found, verify its the one we need
+    		if(charge!=null)
+    		{
+    			if(	charge.getSavingsAccountCharge().getCharge().getChargeTimeType()==savingsAccountCharge.getCharge().getChargeTimeType())
+    			{
+    				InterswitchSubEvent subEvent=InterswitchSubEvent.getInstance(InterswitchEventType.CHARGE.getValue(), event, currentTransaction);
+        			this.interswitchSubEventsRepository.save(subEvent);	
+        			
+        			//stop the iteration else you will create havoc
+        			break;
+    			}
+    		}
+    	
+    	}
+    	
+    	return currentTransaction;
+
+    }
+    
+    @Transactional
+    private void payCharge(final SavingsAccountCharge savingsAccountCharge, final LocalDate transactionDate, final BigDecimal amountPaid,
+            final DateTimeFormatter formatter, final AppUser user)
+    {
+    	 payCharge(savingsAccountCharge,transactionDate, amountPaid,
+    	             formatter, user,false);
+    }
+    
 
     @Transactional
     private void payCharge(final SavingsAccountCharge savingsAccountCharge, final LocalDate transactionDate, final BigDecimal amountPaid,
-            final DateTimeFormatter formatter, final AppUser user) {
+            final DateTimeFormatter formatter, final AppUser user,final boolean logSubEvent) {
 
         final boolean isSavingsInterestPostingAtCurrentPeriodEnd = this.configurationDomainService
                 .isSavingsInterestPostingAtCurrentPeriodEnd();
@@ -1396,7 +1567,15 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         final Set<Long> existingTransactionIds = new HashSet<>();
         final Set<Long> existingReversedTransactionIds = new HashSet<>();
         updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
-        account.payCharge(savingsAccountCharge, amountPaid, transactionDate, formatter, user);
+        if(logSubEvent)
+        {
+        	 account.payCharge(savingsAccountCharge, amountPaid, transactionDate, formatter, user,true);	
+        }
+        else
+        {
+        	account.payCharge(savingsAccountCharge, amountPaid, transactionDate, formatter, user);
+        }
+       
         boolean isInterestTransfer = false;
         LocalDate postInterestOnDate = null;
         final MathContext mc = MathContext.DECIMAL64;
@@ -1417,10 +1596,13 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
         account.validateAccountBalanceDoesNotBecomeNegative("." + SavingsAccountTransactionType.PAY_CHARGE.getCode(),
                 depositAccountOnHoldTransactions);
+   
 
         this.savingAccountRepositoryWrapper.saveAndFlush(account);
 
         postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds);
+        
+       
     }
 
     private void updateExistingTransactionsDetails(SavingsAccount account, Set<Long> existingTransactionIds,

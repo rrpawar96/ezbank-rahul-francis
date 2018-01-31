@@ -77,8 +77,8 @@ import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
-import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.charge.domain.Charge;
@@ -165,7 +165,7 @@ public class SavingsProduct extends AbstractPersistableCustom<Long> {
 
     @ManyToMany
     @JoinTable(name = "m_savings_product_charge", joinColumns = @JoinColumn(name = "savings_product_id"), inverseJoinColumns = @JoinColumn(name = "charge_id"))
-    protected Set<Charge> charges;
+    private Set<Charge> charges;
 
     @Column(name = "allow_overdraft")
     private boolean allowOverdraft;
@@ -696,7 +696,21 @@ public class SavingsProduct extends AbstractPersistableCustom<Long> {
         return this.charges;
     }
 
-    public InterestRateChart applicableChart(@SuppressWarnings("unused") final LocalDate target) {
+    public Set<Charge> getCharges() {
+    	if(charges==null)
+    	{
+    		System.out.println("charges were null");
+    		
+    		return new HashSet<>();
+    	}
+    	else
+    	{
+    		return this.charges;
+    	}
+		
+	}
+
+	public InterestRateChart applicableChart(@SuppressWarnings("unused") final LocalDate target) {
         return null;
     }
 

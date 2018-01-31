@@ -125,11 +125,32 @@ public class SavingsAccountCharge extends AbstractPersistableCustom<Long> {
     @Temporal(TemporalType.DATE)
     @Column(name = "inactivated_on_date")
     private Date inactivationDate;
+    
+    
+    public static SavingsAccountCharge createNewFromJson(final SavingsAccount savingsAccount, final Charge chargeDefinition) {
+    	
+    	BigDecimal amount = chargeDefinition.getAmount();
+        final LocalDate dueDate = null;
+        MonthDay feeOnMonthDay = chargeDefinition.getFeeOnMonthDay();
+        Integer feeInterval = chargeDefinition.feeInterval();
+        final ChargeTimeType chargeTime = null;
+        final ChargeCalculationType chargeCalculation = null;
+        final boolean status = true;
 
+        // If these values is not sent as parameter, then derive from Charge
+        // definition
+        amount = (amount == null) ? chargeDefinition.getAmount() : amount;
+        feeOnMonthDay = (feeOnMonthDay == null) ? chargeDefinition.getFeeOnMonthDay() : feeOnMonthDay;
+        feeInterval = (feeInterval == null) ? chargeDefinition.getFeeInterval() : feeInterval;
+
+        return new SavingsAccountCharge(savingsAccount, chargeDefinition, amount, chargeTime, chargeCalculation, dueDate, status,
+                feeOnMonthDay, feeInterval);
+    }
+    
     public static SavingsAccountCharge createNewFromJson(final SavingsAccount savingsAccount, final Charge chargeDefinition,
             final JsonCommand command) {
-
-        BigDecimal amount = command.bigDecimalValueOfParameterNamed(amountParamName);
+    	
+    	BigDecimal amount = command.bigDecimalValueOfParameterNamed(amountParamName);
         final LocalDate dueDate = command.localDateValueOfParameterNamed(dueAsOfDateParamName);
         MonthDay feeOnMonthDay = command.extractMonthDayNamed(feeOnMonthDayParamName);
         Integer feeInterval = command.integerValueOfParameterNamed(feeIntervalParamName);
@@ -667,6 +688,22 @@ public class SavingsAccountCharge extends AbstractPersistableCustom<Long> {
 
     public boolean isWithdrawalFee() {
         return ChargeTimeType.fromInt(this.chargeTime).isWithdrawalFee();
+    }
+    
+    public boolean isATMWithdrawalFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).isATMWithdrawalFee();
+    }
+    
+    public boolean isATMPurchaseFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).isATMPurchaseFee();
+    }
+    
+    public boolean isATMBalanceEnquiryFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).isATMBalanceEnquiryFee();
+    }
+    
+    public boolean isATMMinistatementFee() {
+        return ChargeTimeType.fromInt(this.chargeTime).isATMMinistatementFee();
     }
 
     public boolean isOverdraftFee() {

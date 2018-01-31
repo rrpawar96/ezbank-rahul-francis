@@ -16,24 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.core.data;
+package org.apache.fineract.portfolio.client;
 
-import java.util.Arrays; 
 import java.util.ArrayList;
-import java.util.List; 
-import java.lang.Math; 
-import java.util.Random;
+import java.util.List;
 
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
-
-
-import org.joda.time.LocalDate; 
-import org.junit.Test;
-import org.junit.Before; 
+import org.joda.time.LocalDate;
 import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Test for data validation builder method for checking whether the minimum age of all new clients is 18

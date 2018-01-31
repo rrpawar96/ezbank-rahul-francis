@@ -46,7 +46,12 @@ public enum SavingsAccountTransactionType {
     AMOUNT_RELEASE(21, "savingsAccountTransactionType.release"),
 	LOAN_DISBURSEMENT(22, "savingsAccountTransactionType.loanDisbursement"),
 	ATM_WITHDRAWAL(23, "savingsAccountTransactionType.atmWithdrawal"),
-	ATM_DEPOSIT(24,"savingsAccountTransactionType.atmDeposit");
+	ATM_DEPOSIT(24,"savingsAccountTransactionType.atmDeposit"),
+	ATM_WITHDRAWAL_FEE(25, "savingsAccountTransactionType.atmWithdrawalFee"),
+	ATM_PURCHASE(26, "savingsAccountTransactionType.atmPurchase"),
+	ATM_PURCHASE_FEE(27, "savingsAccountTransactionType.atmPurchaseFee"),
+	ATM_BALANCE_ENQUIRY_FEE(28, "savingsAccountTransactionType.atmBalanceEnquiryFee"),
+	ATM_MINISTATEMENT_FEE(29, "savingsAccountTransactionType.atmMinistatementFee");
 
     private final Integer value;
     private final String code;
@@ -133,6 +138,21 @@ public enum SavingsAccountTransactionType {
             case 24:
             	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_DEPOSIT;
             break;
+            case 25:
+            	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_WITHDRAWAL_FEE;
+            break;
+            case 26:
+            	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_PURCHASE;
+            break;
+            case 27:
+            	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_PURCHASE_FEE;
+            break;
+            case 28:
+            	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_BALANCE_ENQUIRY_FEE;
+            break;
+            case 29:
+            	savingsAccountTransactionType = SavingsAccountTransactionType.ATM_MINISTATEMENT_FEE;
+            break;
             
         }
         return savingsAccountTransactionType;
@@ -148,11 +168,15 @@ public enum SavingsAccountTransactionType {
     	     }
 
     public boolean isWithdrawal() {
-        return this.value.equals(SavingsAccountTransactionType.WITHDRAWAL.getValue()) || isATMWithdrawal();
+        return this.value.equals(SavingsAccountTransactionType.WITHDRAWAL.getValue()) || isATMWithdrawal() || isATMPurchase();
     }
     
     public boolean isATMWithdrawal() {
         return this.value.equals(SavingsAccountTransactionType.ATM_WITHDRAWAL.getValue()) ;
+    }
+    
+    public boolean isATMPurchase() {
+        return this.value.equals(SavingsAccountTransactionType.ATM_PURCHASE.getValue()) ;
     }
     
     public boolean isATMDeposit() {
@@ -172,9 +196,25 @@ public enum SavingsAccountTransactionType {
     }
 
     public boolean isWithdrawalFee() {
-        return this.value.equals(SavingsAccountTransactionType.WITHDRAWAL_FEE.getValue());
+        return this.value.equals(SavingsAccountTransactionType.WITHDRAWAL_FEE.getValue()) || isATMWithdrawalFee() || isATMPurchaseFee()||isATMBalanceEnquiryFee() ;
     }
-
+    
+    public boolean isATMWithdrawalFee() {
+        return this.value.equals(SavingsAccountTransactionType.ATM_WITHDRAWAL_FEE.getValue()) ;
+    }
+    
+    public boolean isATMPurchaseFee() {
+        return this.value.equals(SavingsAccountTransactionType.ATM_PURCHASE_FEE.getValue()) ;
+    }
+    
+    public boolean isATMBalanceEnquiryFee() {
+        return this.value.equals(SavingsAccountTransactionType.ATM_BALANCE_ENQUIRY_FEE.getValue()) ;
+    }
+    
+    public boolean isATMMinistatementFee() {
+        return this.value.equals(SavingsAccountTransactionType.ATM_MINISTATEMENT_FEE.getValue()) ;
+    }
+    
     public boolean isAnnualFee() {
         return this.value.equals(SavingsAccountTransactionType.ANNUAL_FEE.getValue());
     }
@@ -184,7 +224,8 @@ public enum SavingsAccountTransactionType {
     }
 
     public boolean isChargeTransaction() {
-        return isPayCharge() || isWithdrawalFee() || isAnnualFee();
+        return isPayCharge() || isWithdrawalFee() || isAnnualFee() || isATMWithdrawalFee() || isATMPurchaseFee()
+        		|| isATMBalanceEnquiryFee() || isATMMinistatementFee();
     }
 
     public boolean isWaiveCharge() {
@@ -232,10 +273,13 @@ public enum SavingsAccountTransactionType {
     }
 
     public boolean isDebit() {
-        return isWithdrawal() ||isATMWithdrawal() || isWithdrawalFee() || isAnnualFee() || isPayCharge() || isIncomeFromInterest() || isWithHoldTax() || isEscheat() || isAmountOnHold();
+        return isWithdrawal() ||isATMWithdrawal() || isWithdrawalFee() || isATMWithdrawalFee()|| isATMPurchaseFee() || isATMPurchase() ||
+        		 isATMBalanceEnquiryFee() || isATMMinistatementFee()||
+        		isAnnualFee() || isPayCharge() || isIncomeFromInterest() || isWithHoldTax() || isEscheat() || isAmountOnHold();
     }
 
     public boolean isCredit() {
         return isDeposit() || isInterestPosting() || isDividendPayout() || isAmountRelease()||isATMDeposit();
     }
+    
 }

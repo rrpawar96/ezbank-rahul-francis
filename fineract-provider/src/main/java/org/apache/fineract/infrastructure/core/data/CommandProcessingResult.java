@@ -44,9 +44,9 @@ public class CommandProcessingResult implements Serializable {
     private Boolean rollbackTransaction;
     
     //fields for interswitch
-    private String authorizationNumber;
+    private String authorization_number;
     
-    private  String responseCode;
+    private  String response_code;
 
     public static CommandProcessingResult fromDetails(final Long commandId, final Long officeId, final Long groupId, final Long clientId,
             final Long loanId, final Long savingsId, final String resourceIdentifier, final Long entityId, final String transactionId,
@@ -110,8 +110,8 @@ public class CommandProcessingResult implements Serializable {
         this.changes = new HashMap<>();
         this.productId = null;
         this.subResourceId = null;
-        this.authorizationNumber=null;
-        this.responseCode=null;
+        this.authorization_number=null;
+        this.response_code=null;
     }
 
     private CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
@@ -131,8 +131,8 @@ public class CommandProcessingResult implements Serializable {
         this.productId = productId;
         this.rollbackTransaction = rollbackTransaction;
         this.subResourceId = subResourceId;
-        this.authorizationNumber=authorizationNumber;
-        this.responseCode=responseCode;
+        this.authorization_number=authorizationNumber;
+        this.response_code=responseCode;
     }
 
     private CommandProcessingResult(final Long resourceId, final Long officeId, final Long commandId, final Map<String, Object> changesOnly) {
@@ -152,8 +152,8 @@ public class CommandProcessingResult implements Serializable {
         this.changes = changesOnly;
         this.productId = null;
         this.subResourceId = null;
-        this.authorizationNumber=null;
-        this.responseCode=null;
+        this.authorization_number=null;
+        this.response_code=null;
     }
     
     // for interswitch response
@@ -171,10 +171,8 @@ public class CommandProcessingResult implements Serializable {
     this.changes = null;
     this.productId = null;
     this.subResourceId = null;
-    this.authorizationNumber=null;
-    this.responseCode=null;
-    this.authorizationNumber=authorizationNumber;
-    this.responseCode=responseCode;
+    this.authorization_number=authorizationNumber;
+    this.response_code=responseCode;
     }
 
     public Long commandId() {
@@ -241,4 +239,31 @@ public class CommandProcessingResult implements Serializable {
     public Long getSubResourceId() {
         return subResourceId;
     }
+
+
+
+	public String getAuthorizationNumber() {
+		return authorization_number;
+	}
+
+
+
+	public void setAuthorizationNumber(String authorizationNumber) {
+		this.authorization_number = authorizationNumber;
+	}
+
+
+
+	public String getResponseCode() {
+		return response_code;
+	}
+
+
+
+	public void setResponseCode(String responseCode) {
+		this.response_code = responseCode;
+	}
+    
+    
+    
 }
