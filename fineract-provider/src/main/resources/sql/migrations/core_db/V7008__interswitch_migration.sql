@@ -84,3 +84,6 @@ INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `c
 INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'EXECUTE_TRANSACTION', 'TRANSACTION', 'EXECUTE', 1);
 INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) VALUES ('portfolio', 'UNDO_INTERSWITCHTRANSACTION', 'INTERSWITCHTRANSACTION', 'UNDO', 1);
 
+-- custom payment type
+INSERT INTO `m_payment_type` (`value`, `description`, `is_cash_payment`, `order_position`) VALUES ('ATM', 'interswitch payment type', 0, 2); 
+

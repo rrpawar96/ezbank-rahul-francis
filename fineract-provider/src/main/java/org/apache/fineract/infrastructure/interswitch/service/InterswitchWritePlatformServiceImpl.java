@@ -32,6 +32,10 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetailRepository;
+import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
+import org.apache.fineract.portfolio.paymenttype.domain.PaymentTypeRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
@@ -83,6 +87,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 	private final InterswitchReadPlatformService interswitchReadPlatformService;
 
 	private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+	
+	private final PaymentDetailRepository paymentDetailRepository;
+	
+	private final PaymentTypeRepositoryWrapper PaymentTypeRepositoryWrapper;
 
 	@Autowired
 	public InterswitchWritePlatformServiceImpl(PlatformSecurityContext context,
@@ -95,7 +103,10 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			InterswitchSubEventsRepository interswitchSubEventsRepository, ChargeRepository chargeRepository,
 			SavingsAccountChargeRepository savingsAccountChargeRepository,
 			InterswitchReadPlatformService interswitchReadPlatformService,
-			SavingsAccountWritePlatformService savingsAccountWritePlatformService) {
+			SavingsAccountWritePlatformService savingsAccountWritePlatformService,
+			PaymentDetailRepository paymentDetailRepository,
+			PaymentTypeRepositoryWrapper PaymentTypeRepositoryWrapper
+			) {
 		this.context = context;
 		this.interswitchTransactionsRepository = interswitchTransactionsRepository;
 		this.interswitchAuthorizationRequestRepository = interswitchAuthorizationRequestRepository;
@@ -110,6 +121,8 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		this.savingsAccountChargeRepository = savingsAccountChargeRepository;
 		this.interswitchReadPlatformService = interswitchReadPlatformService;
 		this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
+		this.paymentDetailRepository=paymentDetailRepository;
+		this.PaymentTypeRepositoryWrapper=PaymentTypeRepositoryWrapper;
 	}
 
 	@Override
@@ -435,6 +448,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		// if everything goes well
 
 		SavingsAccountTransaction applicationTransaction = null;
+		
 
 		if (isTransferTransaction) {
 
@@ -514,7 +528,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			boolean isAccountTransfer = false;
 			boolean isRegularTransaction = true;
 
-			applicationTransaction = this.savingsAccountDomainService.handleInterswitchDeposit(savingsAccountCredit,
+			applicationTransaction = this.savingsAccountDomainService.handleDeposit(savingsAccountCredit,
 					fmt, transactionDateDep, settlementAmount, null, isAccountTransfer, isRegularTransaction);
 
 		}
@@ -528,13 +542,20 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 		authorizationNumber = applicationTransaction.getId() + "";
 
-		// event=this.interswitchTransactionsRepository.getOne(event.getId());
+		
 		event.setResponseCode(ResponseCodes.APPROVED.getValue());
 		event.setApplicationTransaction(applicationTransaction);
 		event.setAuthorizationNumber(authorizationNumber);
 		event = this.interswitchTransactionsRepository.save(event);
-
-		// event=this.interswitchTransactionsRepository.getOne(event.getId());
+		
+		
+		PaymentDetail paymentDetail = buildAndPersistPaymentDetails(authorizationNumber,processingType);
+		
+		applicationTransaction=savingsAccountTransactionRepository.getOne(applicationTransaction.getId());
+		applicationTransaction.setPaymentDetail(paymentDetail);
+		savingsAccountTransactionRepository.save(applicationTransaction);
+		
+		
 		// we do not want a third subevent other than credit debit in
 		// interswitch transactions
 		if (!isTransferTransaction) {
@@ -581,8 +602,15 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 							savingsAccount.getId());
 				}
 
-				this.savingsAccountWritePlatformService.applyInterswitchChargeDue(savingsAccountCharge.getId(),
+			SavingsAccountTransaction chargeTransaction=this.savingsAccountWritePlatformService.applyInterswitchChargeDue(savingsAccountCharge.getId(),
 						savingsAccount.getId(), parentEvent, surcharge);
+				
+			chargeTransaction=this.savingsAccountTransactionRepository.findOne(chargeTransaction.getId());
+			
+			PaymentDetail paymentDetail=buildAndPersistPaymentDetails(parentEvent.getAuthorizationNumber(),"charge");
+			chargeTransaction.setPaymentDetail(paymentDetail);
+			this.savingsAccountTransactionRepository.save(chargeTransaction);
+			
 
 			}
 		}
@@ -603,5 +631,41 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			}
 		}
 	}
+	
+	  private PaymentDetail buildAndPersistPaymentDetails(String authorizationNumber,String processingType){
+	        
+		  // add is atm transaction payment detail type
+		  String paymentDescription="";
+		  switch(processingType)
+		  {
+		  
+			case "cash_withdrawal":
+				paymentDescription="Cash Withdrawal Request From InterSwitch";
+				break;
+
+			case "deposit":
+				paymentDescription="Deposit Request From InterSwitch";
+				break;
+
+			case "payment_and_transfers":
+				paymentDescription="Payment Transfer Request From InterSwitch";
+				break;
+
+			case "purchase":
+				paymentDescription="Purchase Request From InterSwitch";
+				break;
+			
+			case "charge":
+			paymentDescription="charge applied for InterSwitch transaction ";
+			break;
+		  }
+		  	
+	        PaymentType paymentType = PaymentTypeRepositoryWrapper.findOneByValueWithNotFoundDetection("ATM");
+	        PaymentDetail paymentDetail =  PaymentDetail.instance(paymentType, null, null, null,
+	        		authorizationNumber, null,null,paymentDescription);
+	        this.paymentDetailRepository.save(paymentDetail);
+	        return paymentDetail;
+
+	    }
 
 }

@@ -1123,35 +1123,15 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         validateActivityNotBeforeClientOrGroupTransferDate(SavingsEvent.SAVINGS_WITHDRAWAL, transactionDTO.getTransactionDate());
 
         final Money transactionAmountMoney = Money.of(this.currency, transactionDTO.getTransactionAmount());
-        SavingsAccountTransaction transaction;
-        if(isATMWithdrawal)
-        {
-        	transaction = SavingsAccountTransaction.atmWithdrawal(this, office(),
+       SavingsAccountTransaction transaction;
+ 
+       transaction = SavingsAccountTransaction.withdrawal(this, office(),
                     transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
                     transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
-        	
-        	// charges taken care in interswitchWrite platform service
-        //	payATMWithdrawalFee(transactionDTO.getTransactionAmount(), transactionDTO.getTransactionDate(), transactionDTO.getAppUser());
-        	
-        }else if(isATMPurchase)
-        {
-        	transaction = SavingsAccountTransaction.atmPurchase(this, office(),
-                    transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
-                    transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
-        	
-        	// charges taken care in interswitchWrite platform service
-        //	payATMPurchaseFee(transactionDTO.getTransactionAmount(), transactionDTO.getTransactionDate(), transactionDTO.getAppUser());
-        }
-         else
-        {
-        	transaction = SavingsAccountTransaction.withdrawal(this, office(),
-                    transactionDTO.getPaymentDetail(), transactionDTO.getTransactionDate(), transactionAmountMoney,
-                    transactionDTO.getCreatedDate(), transactionDTO.getAppUser());
-        }
-         
-        
-        
+      
+   
         addTransaction(transaction);
+        
         if (applyWithdrawFee) {
             // auto pay withdrawal fee
             payWithdrawalFee(transactionDTO.getTransactionAmount(), transactionDTO.getTransactionDate(), transactionDTO.getAppUser());
@@ -2740,18 +2720,6 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             chargeTransaction = SavingsAccountTransaction.withdrawalFee(this, office(), transactionDate, transactionAmount, user);
         } else if (savingsAccountCharge.isAnnualFee()) {
             chargeTransaction = SavingsAccountTransaction.annualFee(this, office(), transactionDate, transactionAmount, user);
-        } else if(savingsAccountCharge.isATMWithdrawalFee())
-        {
-        chargeTransaction = SavingsAccountTransaction.atmWithdrawalFee(this, office(), transactionDate, transactionAmount, user);
-        }
-        else if(savingsAccountCharge.isATMPurchaseFee())
-        {
-        chargeTransaction = SavingsAccountTransaction.atmPurchaseFee(this, office(), transactionDate, transactionAmount, user);
-        }
-        else if(savingsAccountCharge.isATMBalanceEnquiryFee())
-        {
-        	
-        	chargeTransaction = SavingsAccountTransaction.atmBalanceEnquiryFee(this, office(), transactionDate, transactionAmount, user);	
         }
         else {
         

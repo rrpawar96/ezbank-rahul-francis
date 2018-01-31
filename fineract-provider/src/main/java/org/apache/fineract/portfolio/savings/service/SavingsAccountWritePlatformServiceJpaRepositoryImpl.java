@@ -1508,7 +1508,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         }
         else
         {
-        payCharge(savingsAccountCharge, transactionDate,savingsAccountCharge.amount(), fmt, user,true);	
+        	payCharge(savingsAccountCharge, transactionDate,savingsAccountCharge.amount(), fmt, user,true);	
         }
      
         // log sub event
