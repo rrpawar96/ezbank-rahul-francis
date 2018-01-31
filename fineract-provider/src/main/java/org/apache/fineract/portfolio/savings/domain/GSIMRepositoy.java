@@ -27,5 +27,7 @@ public interface GSIMRepositoy extends JpaRepository<GroupSavingsIndividualMonit
 
 	GroupSavingsIndividualMonitoring findOneByIsAcceptingChild(boolean acceptingChild);
 	
+	GroupSavingsIndividualMonitoring findTopByIsAcceptingChildOrderByIdDesc(boolean acceptingChild);
+	
 	GroupSavingsIndividualMonitoring findOneByAccountNumber(String accountNumber);
 }

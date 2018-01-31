@@ -404,7 +404,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 			if(glimRepository.count()!=0)
                 			{
                 				System.out.println("**************Parent-Not an empty table********************");
-                				glimAccountInfoWritePlatformService.resetIsAcceptingChild(glimRepository.findOneByIsAcceptingChild(true));
+                				glimAccountInfoWritePlatformService.resetIsAcceptingChild(glimRepository.findTopByIsAcceptingChildOrderByIdDesc(true));
                 				
                 				accountNumber=this.accountNumberGenerator.generate(newLoanApplication, accountNumberFormat);
                     			newLoanApplication.updateAccountNo(accountNumber+"-1");
@@ -453,14 +453,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             			{
             				System.out.println("**************Child-Not an empty table********************");
             				
-            				glimAccount=glimRepository.findOneByIsAcceptingChild(true);
+            				glimAccount=glimRepository.findTopByIsAcceptingChildOrderByIdDesc(true);
             				accountNumber=glimAccount.getAccountNumber()+"-"+(glimAccount.getChildAccountsCount()+1);
                 			newLoanApplication.updateAccountNo(accountNumber);
                 			
                 		//	glimAccountInfoWritePlatformService.resetIsAcceptingChild(glimAccount);
                 			this.glimAccountInfoWritePlatformService.incrementChildAccountCount(glimAccount);
                 			//this.glimAccountInfoWritePlatformService.addGLIMAccountInfo(glimAccount.getAccountNumber(), glimAccount.getPrincipalAmount(), glimAccount.getChildAccountsCount()+1, true);
-                			newLoanApplication.setGlim(glimRepository.findOneByIsAcceptingChild(true));
+                			newLoanApplication.setGlim(glimRepository.findTopByIsAcceptingChildOrderByIdDesc(true));
                			 	this.loanRepositoryWrapper.save(newLoanApplication);
                 			
             			}
@@ -582,7 +582,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             	
             	
             	
-            	/*GroupLoanIndividualMonitoringAccount currentGlim=glimRepository.findOneByIsAcceptingChild(true);
+            	/*GroupLoanIndividualMonitoringAccount currentGlim=glimRepository.findTopByIsAcceptingChildOrderByIdDesc(true);
             	List<GlimRepaymentTemplate> childGlims=(List)glimAccountInfoReadPlatformService.findglimRepaymentTemplate(currentGlim.getId());
             	for(GlimRepaymentTemplate childGlim:childGlims)
             	{

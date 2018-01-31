@@ -26,6 +26,8 @@ public interface GLIMAccountInfoRepository extends JpaRepository<GroupLoanIndivi
 		
 	GroupLoanIndividualMonitoringAccount findOneByIsAcceptingChild(boolean acceptingChild);
 	
+	GroupLoanIndividualMonitoringAccount findTopByIsAcceptingChildOrderByIdDesc(boolean acceptingChild);
+	
 	GroupLoanIndividualMonitoringAccount findOneByAccountNumber(String accountNumber);
 	
 	

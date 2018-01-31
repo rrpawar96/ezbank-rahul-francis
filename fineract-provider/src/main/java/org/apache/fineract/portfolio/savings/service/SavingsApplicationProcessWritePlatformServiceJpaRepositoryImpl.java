@@ -253,7 +253,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                			if(gsimRepository.count()!=0)
                			{
                				System.out.println("**************Parent-Not an empty table********************");
-               				gsimWritePlatformService.resetIsAcceptingChild(gsimRepository.findOneByIsAcceptingChild(true));
+               				gsimWritePlatformService.resetIsAcceptingChild(gsimRepository.findTopByIsAcceptingChildOrderByIdDesc(true));
                				
                				accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
                    			account.updateAccountNo(accountNumber+"-1");
@@ -298,11 +298,11 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
            			{
            				System.out.println("**************Child-Not an empty table********************");
            				
-           				gsimAccount=gsimRepository.findOneByIsAcceptingChild(true);
+           				gsimAccount=gsimRepository.findTopByIsAcceptingChildOrderByIdDesc(true);
            				accountNumber=gsimAccount.getAccountNumber()+"-"+(gsimAccount.getChildAccountsCount()+1);
                			account.updateAccountNo(accountNumber);
                			this.gsimWritePlatformService.incrementChildAccountCount(gsimAccount);
-               			account.setGsim(gsimRepository.findOneByIsAcceptingChild(true));
+               			account.setGsim(gsimRepository.findTopByIsAcceptingChildOrderByIdDesc(true));
               			this.savingAccountRepository.save(account);
                			
            			}
