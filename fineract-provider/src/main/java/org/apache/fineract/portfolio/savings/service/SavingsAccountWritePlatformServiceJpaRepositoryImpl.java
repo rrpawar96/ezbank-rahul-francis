@@ -117,6 +117,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrap
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
+import org.apache.fineract.portfolio.savings.exception.InsufficientAccountBalanceException;
 import org.apache.fineract.portfolio.savings.exception.PostInterestAsOnDateException;
 import org.apache.fineract.portfolio.savings.exception.PostInterestAsOnDateException.PostInterestAsOnException_TYPE;
 import org.apache.fineract.portfolio.savings.exception.PostInterestClosingDateException;
@@ -1501,18 +1502,26 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
         final DateTimeFormatter fmt = DateTimeFormat.forPattern("dd MM yyyy");
         fmt.withZone(DateUtils.getDateTimeZoneOfTenant());
+        final SavingsAccount account = savingsAccountCharge.savingsAccount();
+        
+        BigDecimal amount=savingsAccountCharge.amount();
+        if(account.getWithdrawableBalance().subtract(amount).compareTo(BigDecimal.ZERO)==-1)
+        {
+        	throw new InsufficientAccountBalanceException(null,account.getWithdrawableBalance(),amount,amount);
+        }
+        
         
         if(surcharge.compareTo(BigDecimal.ZERO)==1)
         {
-        	  payCharge(savingsAccountCharge, transactionDate,savingsAccountCharge.amount().add(surcharge), fmt, user,true);	
+        	payCharge(savingsAccountCharge, transactionDate,savingsAccountCharge.amount(), fmt, user,true);	
+        	 
         }
         else
         {
-        	payCharge(savingsAccountCharge, transactionDate,savingsAccountCharge.amount(), fmt, user,true);	
+        	 payCharge(savingsAccountCharge, transactionDate,savingsAccountCharge.amount().add(surcharge), fmt, user,true);	
         }
      
         // log sub event
-        final SavingsAccount account = savingsAccountCharge.savingsAccount();
         SavingsAccountChargePaidBy charge=null;
     	SavingsAccountTransaction currentTransaction=null;
         
@@ -1567,8 +1576,12 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         final Set<Long> existingTransactionIds = new HashSet<>();
         final Set<Long> existingReversedTransactionIds = new HashSet<>();
         updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
+        
+       
+        
         if(logSubEvent)
         {
+        	
         	 account.payCharge(savingsAccountCharge, amountPaid, transactionDate, formatter, user,true);	
         }
         else

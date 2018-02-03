@@ -44,7 +44,8 @@ public enum ChargeTimeType {
     ATM_BALANCE_ENQUIRY_FEE(17,"chargeTimeType.atmBalanceEnquiryFee"),
     ATM_MINISTATEMENT_FEE(18,"chargeTimeType.atmMinistatementFee"),
     ATM_WITHDRAWAL_FEE(19,"chargeTimeType.atmWithdrawalFee"),
-    ATM_PURCHASE_FEE(20,"chargeTimeType.atmPurchaseFee");
+    ATM_PURCHASE_FEE(20,"chargeTimeType.atmPurchaseFee"),
+    ATM_TRANSFER_FEE(21,"chargeTimeType.atmTransferFee");
 
     private final Integer value;
     private final String code;
@@ -79,7 +80,7 @@ public enum ChargeTimeType {
                 ChargeTimeType.MONTHLY_FEE.getValue(), ChargeTimeType.OVERDRAFT_FEE.getValue(), ChargeTimeType.WEEKLY_FEE.getValue(),
                 ChargeTimeType.SAVINGS_NOACTIVITY_FEE.getValue(),
                 ChargeTimeType.ATM_BALANCE_ENQUIRY_FEE.getValue(),ChargeTimeType.ATM_MINISTATEMENT_FEE.getValue(),ChargeTimeType.ATM_PURCHASE_FEE.getValue(),
-                ChargeTimeType.ATM_WITHDRAWAL_FEE.getValue()};
+                ChargeTimeType.ATM_WITHDRAWAL_FEE.getValue(),ChargeTimeType.ATM_TRANSFER_FEE.getValue()};
     }
 
     public static Object[] validClientValues() {
@@ -154,6 +155,9 @@ public enum ChargeTimeType {
                 case 20:
                 	chargeTimeType = ATM_PURCHASE_FEE;
                 break;
+                case 21:
+                	chargeTimeType = ATM_TRANSFER_FEE;
+                break;
                 default:
                     chargeTimeType = INVALID;
                 break;
@@ -217,7 +221,7 @@ public enum ChargeTimeType {
     public boolean isAllowedSavingsChargeTime() {
         return isOnSpecifiedDueDate() || isSavingsActivation() || isSavingsClosure() || isWithdrawalFee() || isAnnualFee()
                 || isMonthlyFee() || isWeeklyFee() || isOverdraftFee() || isSavingsNoActivityFee()
-                ||isATMBalanceEnquiryFee() || isATMMinistatementFee() || isATMWithdrawalFee() || isATMPurchaseFee();
+                ||isATMBalanceEnquiryFee() || isATMMinistatementFee() || isATMWithdrawalFee() || isATMPurchaseFee() ||isATMTransferFee();
     }
 
     public boolean isOverdraftFee() {
@@ -254,6 +258,10 @@ public enum ChargeTimeType {
     
     public boolean isATMPurchaseFee(){
     	return this.value.equals(ChargeTimeType.ATM_PURCHASE_FEE.getValue());
+    }
+    
+    public boolean isATMTransferFee(){
+    	return this.value.equals(ChargeTimeType.ATM_TRANSFER_FEE.getValue());
     }
     
 }

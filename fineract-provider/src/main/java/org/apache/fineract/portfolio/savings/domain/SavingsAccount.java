@@ -2688,11 +2688,10 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         if (savingsAccountCharge.isWaived()) {
             baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("transaction.invalid.account.charge.is.already.waived");
             if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
-        } else if (savingsAccountCharge.isPaid()) {
-            baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("transaction.invalid.account.charge.is.paid");
-            if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
         }
         
+        
+      
         final Money chargePaid = Money.of(currency, amountPaid);
         if(!isInterswitchCharge)
         {
@@ -2700,6 +2699,12 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
                  baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("transaction.invalid.charge.amount.paid.in.access");
                  if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
              }	
+        	 
+        	  if (savingsAccountCharge.isPaid()) {
+                  baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("transaction.invalid.account.charge.is.paid");
+                  if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
+              }
+              
         }
        
 

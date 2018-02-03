@@ -53,6 +53,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -87,9 +88,9 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 	private final InterswitchReadPlatformService interswitchReadPlatformService;
 
 	private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
-	
+
 	private final PaymentDetailRepository paymentDetailRepository;
-	
+
 	private final PaymentTypeRepositoryWrapper PaymentTypeRepositoryWrapper;
 
 	@Autowired
@@ -105,8 +106,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			InterswitchReadPlatformService interswitchReadPlatformService,
 			SavingsAccountWritePlatformService savingsAccountWritePlatformService,
 			PaymentDetailRepository paymentDetailRepository,
-			PaymentTypeRepositoryWrapper PaymentTypeRepositoryWrapper
-			) {
+			PaymentTypeRepositoryWrapper PaymentTypeRepositoryWrapper) {
 		this.context = context;
 		this.interswitchTransactionsRepository = interswitchTransactionsRepository;
 		this.interswitchAuthorizationRequestRepository = interswitchAuthorizationRequestRepository;
@@ -121,8 +121,8 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		this.savingsAccountChargeRepository = savingsAccountChargeRepository;
 		this.interswitchReadPlatformService = interswitchReadPlatformService;
 		this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
-		this.paymentDetailRepository=paymentDetailRepository;
-		this.PaymentTypeRepositoryWrapper=PaymentTypeRepositoryWrapper;
+		this.paymentDetailRepository = paymentDetailRepository;
+		this.PaymentTypeRepositoryWrapper = PaymentTypeRepositoryWrapper;
 	}
 
 	@Override
@@ -234,6 +234,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 	}
 
 	@Override
+	@Transactional
 	public CommandProcessingResult executeTransaction(JsonCommand command) {
 
 		this.context.authenticatedUser();
@@ -371,9 +372,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 				// return response code as insufficient bal
 				responseCode = ResponseCodes.NOTSUFFICIENTFUNDS.getValue() + "";
 				authorizationNumber = ""; // because we did not execute
-				// transaction???
 
-				// event=this.interswitchTransactionsRepository.findOne(event.getId());
 				event.setResponseCode(ResponseCodes.NOTSUFFICIENTFUNDS.getValue());
 				this.interswitchTransactionsRepository.save(event);
 
@@ -448,89 +447,94 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 		// if everything goes well
 
 		SavingsAccountTransaction applicationTransaction = null;
-		
+		try {
 
-		if (isTransferTransaction) {
+			if (isTransferTransaction) {
 
-			final boolean isExceptionForBalanceCheck = false;
-			final boolean isRegularTransaction = true;
-			final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(transactionDateDep, settlementAmount,
-					PortfolioAccountType.SAVINGS, PortfolioAccountType.SAVINGS, savingsAccountDebit.getId(),
-					savingsAccountCredit.getId(), "Interswitch intra bank transfer", Locale.ENGLISH, fmt, null,
-					SavingsAccountTransactionType.WITHDRAWAL.getValue(),
-					SavingsAccountTransactionType.DEPOSIT.getValue(), null, null,
-					AccountTransferType.ACCOUNT_TRANSFER.getValue(), null, null, null, null, savingsAccountCredit,
-					savingsAccountDebit, isRegularTransaction, isExceptionForBalanceCheck);
+				final boolean isExceptionForBalanceCheck = false;
+				final boolean isRegularTransaction = true;
+				final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(transactionDateDep,
+						settlementAmount, PortfolioAccountType.SAVINGS, PortfolioAccountType.SAVINGS,
+						savingsAccountDebit.getId(), savingsAccountCredit.getId(), "Interswitch intra bank transfer",
+						Locale.ENGLISH, fmt, null, SavingsAccountTransactionType.WITHDRAWAL.getValue(),
+						SavingsAccountTransactionType.DEPOSIT.getValue(), null, null,
+						AccountTransferType.ACCOUNT_TRANSFER.getValue(), null, null, null, null, savingsAccountCredit,
+						savingsAccountDebit, isRegularTransaction, isExceptionForBalanceCheck);
 
-			long transferTransactionId = 0;
-			try {
+				long transferTransactionId = 0;
+				
+				
+				// apply charge
+				applyCharge(savingsAccountDebit, event, ChargeTimeType.ATM_TRANSFER_FEE, surCharge, settlementAmount);
 
 				// event=this.interswitchTransactionsRepository.findOne(event.getId());
 				transferTransactionId = this.accountTransfersWritePlatformService
 						.transferFunds(accountTransferDTO, true, event).longValue();
 				applicationTransaction = this.savingsAccountTransactionRepository.getOne(transferTransactionId);
 
-			} catch (InsufficientAccountBalanceException e) {
-
-				responseCode = ResponseCodes.NOTSUFFICIENTFUNDS.getValue() + "";
-				authorizationNumber = ""; // because we did not execute
-				// transaction???
-
-				// event=this.interswitchTransactionsRepository.findOne(event.getId());
-				event.setResponseCode(ResponseCodes.NOTSUFFICIENTFUNDS.getValue());
-				this.interswitchTransactionsRepository.save(event);
-
-				return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 			}
 
-		}
+			else if (isDebit) {
 
-		else if (isDebit) {
+				checkClientOrGroupActive(savingsAccountDebit);
 
-			checkClientOrGroupActive(savingsAccountDebit);
+				final boolean isAccountTransfer = false;
+				final boolean isRegularTransaction = true;
+				final boolean isApplyWithdrawFee = true;
+				final boolean isInterestTransfer = false;
+				final boolean isWithdrawBalance = false;
+				final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(
+						isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer,
+						isWithdrawBalance);
 
-			final boolean isAccountTransfer = false;
-			final boolean isRegularTransaction = true;
-			final boolean isApplyWithdrawFee = true;
-			final boolean isInterestTransfer = false;
-			final boolean isWithdrawBalance = false;
-			final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(
-					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
+				// apply charge
+				applyCharge(savingsAccountDebit, event, ChargeTimeType.ATM_WITHDRAWAL_FEE, surCharge, settlementAmount);
 
-			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, true, false);
+				applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
+						transactionDateDep, settlementAmount, null, transactionBooleanValues, true, false);
 
-			// apply charge
-			applyCharge(savingsAccountDebit, event, ChargeTimeType.ATM_WITHDRAWAL_FEE, surCharge);
+			} else if (isPurchase) {
+				checkClientOrGroupActive(savingsAccountDebit);
 
-		} else if (isPurchase) {
-			checkClientOrGroupActive(savingsAccountDebit);
+				final boolean isAccountTransfer = false;
+				final boolean isRegularTransaction = true;
+				final boolean isApplyWithdrawFee = true;
+				final boolean isInterestTransfer = false;
+				final boolean isWithdrawBalance = false;
+				final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(
+						isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer,
+						isWithdrawBalance);
 
-			final boolean isAccountTransfer = false;
-			final boolean isRegularTransaction = true;
-			final boolean isApplyWithdrawFee = true;
-			final boolean isInterestTransfer = false;
-			final boolean isWithdrawBalance = false;
-			final SavingsTransactionBooleanValues transactionBooleanValues = new SavingsTransactionBooleanValues(
-					isAccountTransfer, isRegularTransaction, isApplyWithdrawFee, isInterestTransfer, isWithdrawBalance);
+				// apply charge
+				applyCharge(savingsAccountDebit, event, ChargeTimeType.ATM_PURCHASE_FEE, surCharge, settlementAmount);
 
-			applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
-					transactionDateDep, settlementAmount, null, transactionBooleanValues, false, true);
+				applicationTransaction = this.savingsAccountDomainService.handleWithdrawal(savingsAccountDebit, fmt,
+						transactionDateDep, settlementAmount, null, transactionBooleanValues, false, true);
 
-			// apply charge
-			applyCharge(savingsAccountDebit, event, ChargeTimeType.ATM_PURCHASE_FEE, surCharge);
+			}
 
-		}
+			else if (isCredit) {
+				checkClientOrGroupActive(savingsAccountCredit);
 
-		else if (isCredit) {
-			checkClientOrGroupActive(savingsAccountCredit);
+				boolean isAccountTransfer = false;
+				boolean isRegularTransaction = true;
 
-			boolean isAccountTransfer = false;
-			boolean isRegularTransaction = true;
+				applicationTransaction = this.savingsAccountDomainService.handleDeposit(savingsAccountCredit, fmt,
+						transactionDateDep, settlementAmount, null, isAccountTransfer, isRegularTransaction);
 
-			applicationTransaction = this.savingsAccountDomainService.handleDeposit(savingsAccountCredit,
-					fmt, transactionDateDep, settlementAmount, null, isAccountTransfer, isRegularTransaction);
+			}
 
+		} catch (InsufficientAccountBalanceException e) {
+
+			responseCode = ResponseCodes.NOTSUFFICIENTFUNDS.getValue() + "";
+			authorizationNumber = ""; // because we did not execute
+			// transaction???
+
+			// event=this.interswitchTransactionsRepository.findOne(event.getId());
+			event.setResponseCode(ResponseCodes.NOTSUFFICIENTFUNDS.getValue());
+			this.interswitchTransactionsRepository.save(event);
+
+			return CommandProcessingResult.interswitchResponse(authorizationNumber, responseCode);
 		}
 
 		// if transaction did not execute successfully, return error
@@ -542,25 +546,22 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 
 		authorizationNumber = applicationTransaction.getId() + "";
 
-		
 		event.setResponseCode(ResponseCodes.APPROVED.getValue());
 		event.setApplicationTransaction(applicationTransaction);
 		event.setAuthorizationNumber(authorizationNumber);
 		event = this.interswitchTransactionsRepository.save(event);
-		
-		
-		PaymentDetail paymentDetail = buildAndPersistPaymentDetails(authorizationNumber,processingType);
-		
-		applicationTransaction=savingsAccountTransactionRepository.getOne(applicationTransaction.getId());
+
+		PaymentDetail paymentDetail = buildAndPersistPaymentDetails(authorizationNumber, processingType);
+
+		applicationTransaction = savingsAccountTransactionRepository.getOne(applicationTransaction.getId());
 		applicationTransaction.setPaymentDetail(paymentDetail);
 		savingsAccountTransactionRepository.save(applicationTransaction);
-		
-		
+
 		// we do not want a third subevent other than credit debit in
 		// interswitch transactions
 		if (!isTransferTransaction) {
-			InterswitchSubEvent subEvent = InterswitchSubEvent
-					.getInstance(InterswitchEventType.TRANSACTION.getValue(), event, applicationTransaction);
+			InterswitchSubEvent subEvent = InterswitchSubEvent.getInstance(InterswitchEventType.TRANSACTION.getValue(),
+					event, applicationTransaction);
 			this.interswitchSubEventsRepository.save(subEvent);
 		}
 
@@ -570,7 +571,7 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 	}
 
 	private void applyCharge(SavingsAccount savingsAccount, InterswitchEvent parentEvent, ChargeTimeType chargeTime,
-			BigDecimal surcharge) {
+			BigDecimal surcharge, BigDecimal transactionAmount) {
 
 		int chargeType = 0;
 		ChargeTimeType chargeTimeType;
@@ -602,15 +603,25 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 							savingsAccount.getId());
 				}
 
-			SavingsAccountTransaction chargeTransaction=this.savingsAccountWritePlatformService.applyInterswitchChargeDue(savingsAccountCharge.getId(),
-						savingsAccount.getId(), parentEvent, surcharge);
-				
-			chargeTransaction=this.savingsAccountTransactionRepository.findOne(chargeTransaction.getId());
-			
-			PaymentDetail paymentDetail=buildAndPersistPaymentDetails(parentEvent.getAuthorizationNumber(),"charge");
-			chargeTransaction.setPaymentDetail(paymentDetail);
-			this.savingsAccountTransactionRepository.save(chargeTransaction);
-			
+				// check for balance
+				final SavingsAccount account = savingsAccountCharge.savingsAccount();
+
+				BigDecimal amount = savingsAccountCharge.amount().add(transactionAmount);
+				if (account.getWithdrawableBalance().subtract(amount).compareTo(BigDecimal.ZERO) == -1) {
+					throw new InsufficientAccountBalanceException(null, account.getWithdrawableBalance(), amount,
+							amount);
+				}
+
+				SavingsAccountTransaction chargeTransaction = this.savingsAccountWritePlatformService
+						.applyInterswitchChargeDue(savingsAccountCharge.getId(), savingsAccount.getId(), parentEvent,
+								surcharge);
+
+				chargeTransaction = this.savingsAccountTransactionRepository.findOne(chargeTransaction.getId());
+
+				PaymentDetail paymentDetail = buildAndPersistPaymentDetails(parentEvent.getAuthorizationNumber(),
+						chargeTime.name());
+				chargeTransaction.setPaymentDetail(paymentDetail);
+				this.savingsAccountTransactionRepository.save(chargeTransaction);
 
 			}
 		}
@@ -631,41 +642,57 @@ public class InterswitchWritePlatformServiceImpl implements InterswitchWritePlat
 			}
 		}
 	}
-	
-	  private PaymentDetail buildAndPersistPaymentDetails(String authorizationNumber,String processingType){
-	        
-		  // add is atm transaction payment detail type
-		  String paymentDescription="";
-		  switch(processingType)
-		  {
-		  
-			case "cash_withdrawal":
-				paymentDescription="Cash Withdrawal Request From InterSwitch";
-				break;
 
-			case "deposit":
-				paymentDescription="Deposit Request From InterSwitch";
-				break;
+	private PaymentDetail buildAndPersistPaymentDetails(String authorizationNumber, String processingType) {
 
-			case "payment_and_transfers":
-				paymentDescription="Payment Transfer Request From InterSwitch";
-				break;
+		// add is atm transaction payment detail type
+		String paymentDescription = "";
+		switch (processingType) {
 
-			case "purchase":
-				paymentDescription="Purchase Request From InterSwitch";
-				break;
-			
-			case "charge":
-			paymentDescription="charge applied for InterSwitch transaction ";
+		case "cash_withdrawal":
+			paymentDescription = "Cash Withdrawal Request From InterSwitch";
 			break;
-		  }
-		  	
-	        PaymentType paymentType = PaymentTypeRepositoryWrapper.findOneByValueWithNotFoundDetection("ATM");
-	        PaymentDetail paymentDetail =  PaymentDetail.instance(paymentType, null, null, null,
-	        		authorizationNumber, null,null,paymentDescription);
-	        this.paymentDetailRepository.save(paymentDetail);
-	        return paymentDetail;
 
-	    }
+		case "deposit":
+			paymentDescription = "Deposit Request From InterSwitch";
+			break;
+
+		case "payment_and_transfers":
+			paymentDescription = "Payment Transfer Request From InterSwitch";
+			break;
+
+		case "purchase":
+			paymentDescription = "Purchase Request From InterSwitch";
+			break;
+
+		case "ATM_WITHDRAWAL_FEE":
+			paymentDescription = "charge applied for InterSwitch Withdrawal transaction ";
+			break;
+
+		case "ATM_BALANCE_ENQUIRY_FEE":
+			paymentDescription = "charge applied for InterSwitch Balance Enquiry transaction ";
+			break;
+
+		case "ATM_MINISTATEMENT_FEE":
+			paymentDescription = "charge applied for InterSwitch Minitstatement transaction ";
+			break;
+
+		case "ATM_PURCHASE_FEE":
+			paymentDescription = "charge applied for InterSwitch Purchase transaction ";
+			break;
+			
+		case "ATM_TRANSFER_FEE":
+			paymentDescription = "charge applied for InterSwitch Transfer transaction ";
+			break;
+
+		}
+
+		PaymentType paymentType = PaymentTypeRepositoryWrapper.findOneByValueWithNotFoundDetection("ATM");
+		PaymentDetail paymentDetail = PaymentDetail.instance(paymentType, null, null, null, authorizationNumber, null,
+				null, paymentDescription);
+		this.paymentDetailRepository.save(paymentDetail);
+		return paymentDetail;
+
+	}
 
 }

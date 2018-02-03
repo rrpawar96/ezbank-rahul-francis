@@ -8,12 +8,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.interswitch.data.InterswitchBalanceEnquiryData;
@@ -25,14 +23,15 @@ import org.apache.fineract.infrastructure.interswitch.domain.InterswitchEventsRe
 import org.apache.fineract.infrastructure.interswitch.domain.InterswitchSubEventsRepository;
 import org.apache.fineract.infrastructure.interswitch.domain.ResponseCodes;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
-import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepository;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
-import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_ENTITY;
 import org.apache.fineract.portfolio.common.service.BusinessEventNotifierService;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetailRepository;
+import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
+import org.apache.fineract.portfolio.paymenttype.domain.PaymentTypeRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountCharge;
@@ -42,13 +41,11 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
-import org.apache.fineract.portfolio.savings.domain.SavingsProduct;
-import org.apache.fineract.portfolio.savings.domain.SavingsProductCharge;
 import org.apache.fineract.portfolio.savings.domain.SavingsProductChargeRepository;
 import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
+import org.apache.fineract.portfolio.savings.exception.InsufficientAccountBalanceException;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsEnumerations;
-import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -79,6 +76,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	private final SavingsProductChargeRepository savingsProductChargeRepository;
 	private final ChargeRepository chargeRepository;
 	private final SavingsAccountChargeRepository savingsAccountChargeRepository;
+	private final PaymentDetailRepository paymentDetailRepository;
+	private final PaymentTypeRepositoryWrapper PaymentTypeRepositoryWrapper;
 
 	@Autowired
 	public InterswitchReadPlatformServiceImpl(final PlatformSecurityContext context, final RoutingDataSource dataSource,
@@ -96,7 +95,9 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			final SavingsAccountChargeAssembler savingsAccountChargeAssembler,
 			final SavingsProductChargeRepository savingsProductChargeRepository,
 			final ChargeRepository chargeRepository,
-			final SavingsAccountChargeRepository savingsAccountChargeRepository) {
+			final SavingsAccountChargeRepository savingsAccountChargeRepository,
+			final PaymentDetailRepository paymentDetailRepository,
+			final PaymentTypeRepositoryWrapper PaymentTypeRepositoryWrapper) {
 		this.context = context;
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 		this.fromApiJsonHelper = fromApiJsonHelper;
@@ -116,6 +117,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		this.savingsProductChargeRepository = savingsProductChargeRepository;
 		this.chargeRepository = chargeRepository;
 		this.savingsAccountChargeRepository = savingsAccountChargeRepository;
+		this.paymentDetailRepository=paymentDetailRepository;
+		this.PaymentTypeRepositoryWrapper=PaymentTypeRepositoryWrapper;
 
 	}
 
@@ -260,6 +263,7 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		}
 
 		if (!isInternalRequest) {
+			try{
 
 			int chargeType = 0;
 			ChargeTimeType chargeTimeType;
@@ -294,9 +298,14 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 						savingsAccountCharge = this.savingsAccountChargeRepository
 								.findByChargeAndSavingsAccountId(charge, savingsAccount.getId());
 					}
-
-					this.savingsAccountWritePlatformService.applyInterswitchChargeDue(savingsAccountCharge.getId(),
+					
+					SavingsAccountTransaction chargeTransaction=this.savingsAccountWritePlatformService.applyInterswitchChargeDue(savingsAccountCharge.getId(),
 							savingsAccount.getId(), event, surCharge);
+					chargeTransaction=this.savingsAccountTransactionRepository.findOne(chargeTransaction.getId());
+					
+					PaymentDetail paymentDetail=buildAndPersistPaymentDetails(event.getAuthorizationNumber(),chargeTimeType.name());
+					chargeTransaction.setPaymentDetail(paymentDetail);
+					this.savingsAccountTransactionRepository.save(chargeTransaction);
 
 				}
 			}
@@ -304,6 +313,18 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			event = this.interswitchTransactionsRepository.getOne(event.getId());
 			event.setResponseCode(ResponseCodes.APPROVED.getValue());
 			this.interswitchTransactionsRepository.save(event);
+			
+		}
+			catch (InsufficientAccountBalanceException e) {
+
+				responseCode = ResponseCodes.NOTSUFFICIENTFUNDS.getValue() + "";
+			
+				// event=this.interswitchTransactionsRepository.findOne(event.getId());
+				event.setResponseCode(ResponseCodes.NOTSUFFICIENTFUNDS.getValue());
+				this.interswitchTransactionsRepository.save(event);
+
+				return InterswitchBalanceWrapper.getInstance(null, responseCode, authorizationNumber + "");
+			}	
 
 		}
 
@@ -427,6 +448,8 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 
 		// charges
 
+		try
+		{
 		int chargeType = 0;
 		ChargeTimeType chargeTimeType;
 		SavingsAccountCharge savingsAccountCharge;
@@ -458,12 +481,32 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 							savingsAccount.getId());
 				}
 
-				this.savingsAccountWritePlatformService.applyInterswitchChargeDue(savingsAccountCharge.getId(),
+				SavingsAccountTransaction chargeTransaction=this.savingsAccountWritePlatformService.applyInterswitchChargeDue(savingsAccountCharge.getId(),
 						savingsAccount.getId(), event, surCharge);
+				
+				chargeTransaction=this.savingsAccountTransactionRepository.findOne(chargeTransaction.getId());
+				
+				PaymentDetail paymentDetail=buildAndPersistPaymentDetails(event.getAuthorizationNumber(),chargeTimeType.name());
+				
+				chargeTransaction.setPaymentDetail(paymentDetail);
+				this.savingsAccountTransactionRepository.save(chargeTransaction);
 
 			}
 		}
+		
+		}
+		catch (InsufficientAccountBalanceException e) {
 
+			responseCode = ResponseCodes.NOTSUFFICIENTFUNDS.getValue() + "";
+		
+			// event=this.interswitchTransactionsRepository.findOne(event.getId());
+			event.setResponseCode(ResponseCodes.NOTSUFFICIENTFUNDS.getValue());
+			this.interswitchTransactionsRepository.save(event);
+
+			return MinistatementDataWrapper.getInstance(null, null, responseCode,
+					authorizationNumber + "");
+		}	
+		
 		// end of charges
 
 		List<SavingsAccountTransaction> transactions = this.savingsAccountTransactionRepository
@@ -527,6 +570,58 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 			return MinistatementDataWrapper.getInstance(null, null, ResponseCodes.ERROR.getValue() + "",
 					authorizationNumber + "");
 		}
+
+	}
+	
+	private PaymentDetail buildAndPersistPaymentDetails(String authorizationNumber, String processingType) {
+
+		// add is atm transaction payment detail type
+		String paymentDescription = "";
+		switch (processingType) {
+
+		case "cash_withdrawal":
+			paymentDescription = "Cash Withdrawal Request From InterSwitch";
+			break;
+
+		case "deposit":
+			paymentDescription = "Deposit Request From InterSwitch";
+			break;
+
+		case "payment_and_transfers":
+			paymentDescription = "Payment Transfer Request From InterSwitch";
+			break;
+
+		case "purchase":
+			paymentDescription = "Purchase Request From InterSwitch";
+			break;
+
+		case "ATM_WITHDRAWAL_FEE":
+			paymentDescription = "charge applied for InterSwitch Withdrawal transaction ";
+			break;
+
+		case "ATM_BALANCE_ENQUIRY_FEE":
+			paymentDescription = "charge applied for InterSwitch Balance Enquiry transaction ";
+			break;
+
+		case "ATM_MINISTATEMENT_FEE":
+			paymentDescription = "charge applied for InterSwitch Minitstatement transaction ";
+			break;
+
+		case "ATM_PURCHASE_FEE":
+			paymentDescription = "charge applied for InterSwitch Purchase transaction ";
+			break;
+			
+		case "ATM_TRANSFER_FEE":
+			paymentDescription = "charge applied for InterSwitch Transfer transaction ";
+			break;	
+
+		}
+
+		PaymentType paymentType = PaymentTypeRepositoryWrapper.findOneByValueWithNotFoundDetection("ATM");
+		PaymentDetail paymentDetail = PaymentDetail.instance(paymentType, null, null, null, authorizationNumber, null,
+				null, paymentDescription);
+		this.paymentDetailRepository.save(paymentDetail);
+		return paymentDetail;
 
 	}
 
