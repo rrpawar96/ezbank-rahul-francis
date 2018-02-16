@@ -220,8 +220,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         try {
             this.savingsAccountDataValidator.validateForSubmit(command.json());
             final AppUser submittedBy = this.context.authenticatedUser();
-            BigDecimal transactionUpperLimit;
-            BigDecimal transactionLowerLimit;
+           
             final SavingsAccount account = this.savingAccountAssembler.assembleFrom(command, submittedBy);
             this.savingAccountRepository.save(account);
             
@@ -302,7 +301,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
            				accountNumber=gsimAccount.getAccountNumber()+"-"+(gsimAccount.getChildAccountsCount()+1);
                			account.updateAccountNo(accountNumber);
                			this.gsimWritePlatformService.incrementChildAccountCount(gsimAccount);
-               			account.setGsim(gsimRepository.findOneByIsAcceptingChild(true));
+               			account.setGsim(gsimRepository.findOneByAccountNumber(accountNumber));
               			this.savingAccountRepository.save(account);
                			
            			}

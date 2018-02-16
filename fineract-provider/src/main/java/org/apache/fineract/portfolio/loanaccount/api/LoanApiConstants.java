@@ -127,4 +127,8 @@ public interface LoanApiConstants {
     public static final String topupAmount = "topupAmount";
 
     public static final String datatables = "datatables";
+    
+    public static final String applicationId = "applicationId";
+    public static final String lastApplication = "lastApplication";
+    
 }

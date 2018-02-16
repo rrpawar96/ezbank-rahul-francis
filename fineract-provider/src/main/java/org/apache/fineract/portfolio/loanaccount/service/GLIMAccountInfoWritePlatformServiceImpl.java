@@ -20,6 +20,7 @@
 package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.group.domain.Group;
@@ -50,11 +51,11 @@ public class GLIMAccountInfoWritePlatformServiceImpl implements GLIMAccountInfoW
 	
 	@Override
 	public void addGLIMAccountInfo(String accountNumber,Group group,BigDecimal principalAmount,Long childAccountsCount,
-			Boolean isAcceptingChild,Integer loanStatus)
+			Boolean isAcceptingChild,Integer loanStatus,BigDecimal applicationId)
 	{
 		
 		GroupLoanIndividualMonitoringAccount glimAccountInfo=GroupLoanIndividualMonitoringAccount.getInstance(accountNumber,group,principalAmount,childAccountsCount,
-				isAcceptingChild,loanStatus);
+				isAcceptingChild,loanStatus,applicationId);
 		
 		this.glimAccountRepository.save(glimAccountInfo );
 		
@@ -78,7 +79,7 @@ public class GLIMAccountInfoWritePlatformServiceImpl implements GLIMAccountInfoW
 		glimAccountRepository.save(glimAccount);
 		
 	}
-	
+		
 	
 	@Override
 	public void incrementChildAccountCount(GroupLoanIndividualMonitoringAccount glimAccount)
