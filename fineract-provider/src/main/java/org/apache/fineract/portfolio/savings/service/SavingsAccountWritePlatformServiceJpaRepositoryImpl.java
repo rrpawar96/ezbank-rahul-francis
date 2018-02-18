@@ -42,11 +42,13 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.service.ConfigurationReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -71,7 +73,9 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
+import org.apache.fineract.portfolio.account.domain.AccountTransferRepository;
 import org.apache.fineract.portfolio.account.domain.AccountTransferStandingInstruction;
+import org.apache.fineract.portfolio.account.domain.AccountTransferTransaction;
 import org.apache.fineract.portfolio.account.domain.StandingInstructionRepository;
 import org.apache.fineract.portfolio.account.domain.StandingInstructionStatus;
 import org.apache.fineract.portfolio.account.service.AccountAssociationsReadPlatformService;
@@ -175,6 +179,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     private final InterswitchEventsRepository interswitchEventsRepository;
     private final InterswitchSubEventsRepository interswitchSubEventsRepository;
     private final SavingsAccountChargePaidByRepository savingsAccountChargePaidByRepository;
+    private final ConfigurationReadPlatformService configurationReadPlatformService;
+    private final AccountTransferRepository accountTransferRepository;
  
 
     @Autowired
@@ -204,7 +210,9 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             final RetailAccountEntryRepository retailAccountEntryRepository,
             final InterswitchEventsRepository interswitchEventsRepository,
             final InterswitchSubEventsRepository interswitchSubEventsRepository,
-            final SavingsAccountChargePaidByRepository savingsAccountChargePaidByRepository
+            final SavingsAccountChargePaidByRepository savingsAccountChargePaidByRepository,
+            final ConfigurationReadPlatformService configurationReadPlatformService,
+            final AccountTransferRepository accountTransferRepository
             ) {
         this.context = context;
         this.savingAccountRepositoryWrapper = savingAccountRepositoryWrapper;
@@ -237,6 +245,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         this.interswitchEventsRepository=interswitchEventsRepository;
         this.interswitchSubEventsRepository=interswitchSubEventsRepository;
         this.savingsAccountChargePaidByRepository=savingsAccountChargePaidByRepository;
+        this.configurationReadPlatformService=configurationReadPlatformService;
+        this.accountTransferRepository=accountTransferRepository;
      
     }
     
@@ -829,10 +839,61 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 		
     }
     
+    @Override
+    public CommandProcessingResult undoSavingsTransferTransaction(long transferId)
+    {
+    	final boolean allowAccountTransferModification=this.configurationReadPlatformService
+				.retrieveGlobalConfiguration("allow-undo-transfer-transaction").isEnabled();
+    	
+    	AccountTransferTransaction transferTransaction=null;
+    	Long transactionTo=0L;
+    	SavingsAccountTransaction toSavingsAccount=null;
+    	Long transactionFrom=0L;
+    	SavingsAccountTransaction fromSavingsAccount=null;
+    	CommandProcessingResult result=null;
+	    	if(allowAccountTransferModification )
+	    	{
+	    		transferTransaction=this.accountTransferRepository.findOne(transferId);
+	    		
+	    		// get from account
+	    		toSavingsAccount=transferTransaction.getToSavingsTransaction();
+	    		
+	    		fromSavingsAccount=transferTransaction.getFromTransaction();
+	    			
+	    		transactionFrom=fromSavingsAccount.getId();
+	    		
+	    		transactionTo=toSavingsAccount.getId();
+	    	}
+	    	else
+	    	{
+	    		throw new PlatformServiceUnavailableException(
+	                    "error.msg.saving.account.transaction.update.not.allowed", "Savings account transaction:" + transferId
+	                            + " update not allowed for this savings type", transferId); 
+	    		
+	    	}
+	    	
+	    	if( (transactionFrom==null) || (transactionTo==null))
+	    	{
+	    		throw new GeneralPlatformDomainRuleException("Transfer is not savings to savings",
+	    				"Transfer is not savings to savings", "Transfer is not savings to savings");
+	    	}
+	    	else
+	    	{
+	    		undoTransaction(toSavingsAccount.getSavingsAccount().getId(),transactionTo,
+	    	            true);
+	    		
+	    		result=undoTransaction(fromSavingsAccount.getSavingsAccount().getId(),transactionFrom,
+	    	            true);
+	    		
+	    	}
+    	
+    	
+    	return result;
+    }
     
     @Override
     public CommandProcessingResult undoTransaction(final Long savingsId, final Long transactionId,
-            final boolean allowAccountTransferModification) {
+            boolean allowAccountTransferModification) {
 
         final boolean isSavingsInterestPostingAtCurrentPeriodEnd = this.configurationDomainService
                 .isSavingsInterestPostingAtCurrentPeriodEnd();
@@ -846,11 +907,13 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         final SavingsAccountTransaction savingsAccountTransaction = this.savingsAccountTransactionRepository
                 .findOneByIdAndSavingsAccountId(transactionId, savingsId);
         if (savingsAccountTransaction == null) { throw new SavingsAccountTransactionNotFoundException(savingsId, transactionId); }
-
+        
         if (!allowAccountTransferModification
                 && this.accountTransfersReadPlatformService.isAccountTransfer(transactionId, PortfolioAccountType.SAVINGS)) { throw new PlatformServiceUnavailableException(
                 "error.msg.saving.account.transfer.transaction.update.not.allowed", "Savings account transaction:" + transactionId
                         + " update not allowed as it involves in account transfer", transactionId); }
+        
+      
 
         if (!account.allowModify()) { throw new PlatformServiceUnavailableException(
                 "error.msg.saving.account.transaction.update.not.allowed", "Savings account transaction:" + transactionId

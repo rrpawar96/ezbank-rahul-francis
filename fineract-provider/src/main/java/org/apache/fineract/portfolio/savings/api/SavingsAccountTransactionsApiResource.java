@@ -195,12 +195,18 @@ public class SavingsAccountTransactionsApiResource {
         } else if (is(commandParam,SavingsApiConstants.COMMAND_RELEASE_AMOUNT)) {
             final CommandWrapper commandRequest = builder.releaseAmount(savingsId, transactionId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        }else if(is(commandParam,SavingsApiConstants.COMMAND_UNDO_SAVINGS_TRANSFER_TRANSACTION))
+        {		
+        	//transaction is basically transfer id in this case
+        	 final CommandWrapper commandRequest = builder.undoSavingsAccountTransferTransaction(transactionId).build();
+             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
 
         if (result == null) {
             //
             throw new UnrecognizedQueryParamException("command", commandParam, new Object[] { SavingsApiConstants.COMMAND_UNDO_TRANSACTION,
-                    SavingsApiConstants.COMMAND_ADJUST_TRANSACTION, SavingsApiConstants.COMMAND_RELEASE_AMOUNT});
+                    SavingsApiConstants.COMMAND_ADJUST_TRANSACTION, SavingsApiConstants.COMMAND_RELEASE_AMOUNT,
+                    SavingsApiConstants.COMMAND_UNDO_SAVINGS_TRANSFER_TRANSACTION});
         }
 
         return this.toApiJsonSerializer.serialize(result);

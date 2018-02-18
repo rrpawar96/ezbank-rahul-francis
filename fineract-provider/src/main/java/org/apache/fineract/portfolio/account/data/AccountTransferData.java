@@ -134,4 +134,15 @@ public class AccountTransferData {
         this.toAccountTypeOptions = toAccountTypeOptions;
         this.toAccountOptions = toAccountOptions;
     }
+
+	public PortfolioAccountData getFromAccount() {
+		return fromAccount;
+	}
+
+	public PortfolioAccountData getToAccount() {
+		return toAccount;
+	}
+    
+    
+    
 }

@@ -53,6 +53,7 @@ public class    SavingsApiConstants {
 
     // command
     public static final String COMMAND_UNDO_TRANSACTION = "undo";
+    public static final String COMMAND_UNDO_SAVINGS_TRANSFER_TRANSACTION = "undoSavingsTransfer";
     public static final String COMMAND_ADJUST_TRANSACTION = "modify";
     public static final String COMMAND_WAIVE_CHARGE = "waive";
     public static final String COMMAND_PAY_CHARGE = "paycharge";
