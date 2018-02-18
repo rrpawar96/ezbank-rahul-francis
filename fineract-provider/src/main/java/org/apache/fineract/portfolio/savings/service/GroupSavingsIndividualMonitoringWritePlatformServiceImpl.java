@@ -50,11 +50,11 @@ public class GroupSavingsIndividualMonitoringWritePlatformServiceImpl implements
 	
 	@Override
 	public void addGSIMAccountInfo(String accountNumber,Group group,BigDecimal parentDeposit,Long childAccountsCount,
-			Boolean isAcceptingChild,Integer loanStatus)
+			Boolean isAcceptingChild,Integer loanStatus,BigDecimal applicationId)
 	{
 		
 		GroupSavingsIndividualMonitoring glimAccountInfo=GroupSavingsIndividualMonitoring.getInstance(accountNumber,group,parentDeposit,childAccountsCount,
-				isAcceptingChild,loanStatus);
+				isAcceptingChild,loanStatus,applicationId);
 		
 		this.gsimAccountRepository.save(glimAccountInfo );
 		

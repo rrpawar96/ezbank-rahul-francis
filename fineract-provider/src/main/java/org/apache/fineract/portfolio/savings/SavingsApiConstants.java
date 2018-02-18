@@ -88,6 +88,8 @@ public class    SavingsApiConstants {
     public static final String transactionLowerLimitParamName="transactionLowerLimit";
     public static final String retailEntriesParamName="retailEntries";
     public static final String childAccountIdParamName="childAccountId";
+    public static final String gsimApplicationId="applicationId";
+    public static final String gsimLastApplication="lastApplication";
     
     
     public static final String groupIdParamName = "groupId";

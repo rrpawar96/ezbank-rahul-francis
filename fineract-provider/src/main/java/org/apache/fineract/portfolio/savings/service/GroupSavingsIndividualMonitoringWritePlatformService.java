@@ -27,11 +27,12 @@ import org.apache.fineract.portfolio.savings.domain.GroupSavingsIndividualMonito
 public interface GroupSavingsIndividualMonitoringWritePlatformService 
 {
 	void addGSIMAccountInfo(String accountNumber,Group group, BigDecimal parentDeposit, Long childAccountsCount,
-			Boolean isAcceptingChild,Integer savingsAccountStatus);
+			Boolean isAcceptingChild,Integer savingsAccountStatus,BigDecimal applicationId);
 
 	void setIsAcceptingChild(GroupSavingsIndividualMonitoring gsimAccount);
 
 	void resetIsAcceptingChild(GroupSavingsIndividualMonitoring gsimAccount);
 
 	void incrementChildAccountCount(GroupSavingsIndividualMonitoring gsimAccount);
+
 }

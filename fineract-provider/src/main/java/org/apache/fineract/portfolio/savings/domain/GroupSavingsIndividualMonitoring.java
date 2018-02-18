@@ -61,10 +61,13 @@ public class GroupSavingsIndividualMonitoring extends AbstractPersistableCustom<
 	@Column(name = "savings_status_id", nullable = false)
     private Integer savingsStatus;
 	
+	@Column(name = "application_id", nullable = true)
+    private BigDecimal applicationId;
+	
 	
 	
 	private GroupSavingsIndividualMonitoring(String accountNumber,Group group,BigDecimal parentDeposit,Long childAccountsCount,
-			Boolean isAcceptingChild,Integer savingsStatus)
+			Boolean isAcceptingChild,Integer savingsStatus,BigDecimal applicationId)
 	{
 		this.accountNumber=accountNumber;
 		this.group=group;
@@ -72,14 +75,15 @@ public class GroupSavingsIndividualMonitoring extends AbstractPersistableCustom<
 		this.childAccountsCount=childAccountsCount;
 		this.isAcceptingChild=isAcceptingChild;
 		this.savingsStatus=savingsStatus;
+		this.applicationId=applicationId;
 		
 	}
 	
 	public static GroupSavingsIndividualMonitoring getInstance(String accountNumber,Group group,BigDecimal parentDeposit,Long childAccountsCount,
-			Boolean isAcceptingChild,Integer savingsStatus)
+			Boolean isAcceptingChild,Integer savingsStatus,BigDecimal applicationId)
 	{
 		return new GroupSavingsIndividualMonitoring(accountNumber,group,parentDeposit,childAccountsCount,
-				isAcceptingChild,savingsStatus);
+				isAcceptingChild,savingsStatus,applicationId);
 	}
 
 	public Group getGroup() {
@@ -136,6 +140,14 @@ public class GroupSavingsIndividualMonitoring extends AbstractPersistableCustom<
 
 	public void setSavingsStatus(Integer savingsStatus) {
 		this.savingsStatus = savingsStatus;
+	}
+
+	public BigDecimal getApplicationId() {
+		return applicationId;
+	}
+
+	public void setApplicationId(BigDecimal applicationId) {
+		this.applicationId = applicationId;
 	}
 	
 	
