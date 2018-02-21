@@ -120,4 +120,6 @@ public interface SavingsAccountWritePlatformService {
 	SavingsAccountTransaction applyInterswitchChargeDue(Long savingsAccountChargeId, Long accountId,
 			InterswitchEvent event, BigDecimal surcharge);
 
+	CommandProcessingResult undoSavingsTransferTransaction(long transferId);
+
 }

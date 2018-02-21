@@ -20,6 +20,7 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -60,10 +61,13 @@ public class GroupLoanIndividualMonitoringAccount extends AbstractPersistableCus
 	@Column(name = "loan_status_id", nullable = false)
     private Integer loanStatus;
 	
+	@Column(name = "application_id", nullable = true)
+    private BigDecimal applicationId;
+	
 	
 	
 	private GroupLoanIndividualMonitoringAccount(String accountNumber,Group group,BigDecimal principalAmount,Long childAccountsCount,
-			Boolean isAcceptingChild,Integer loanStatus)
+			Boolean isAcceptingChild,Integer loanStatus,BigDecimal applicationId)
 	{
 		this.accountNumber=accountNumber;
 		this.group=group;
@@ -71,14 +75,14 @@ public class GroupLoanIndividualMonitoringAccount extends AbstractPersistableCus
 		this.childAccountsCount=childAccountsCount;
 		this.isAcceptingChild=isAcceptingChild;
 		this.loanStatus=loanStatus;
-		
+		this.applicationId=applicationId;
 	}
 	
 	public static GroupLoanIndividualMonitoringAccount getInstance(String accountNumber,Group group,BigDecimal principalAmount,Long childAccountsCount,
-			Boolean isAcceptingChild,Integer loanStatus)
+			Boolean isAcceptingChild,Integer loanStatus,BigDecimal applicationId)
 	{
 		return new GroupLoanIndividualMonitoringAccount(accountNumber,group,principalAmount,childAccountsCount,
-				isAcceptingChild,loanStatus);
+				isAcceptingChild,loanStatus,applicationId);
 	}
 
 	public String getAccountNumber() {
@@ -136,6 +140,16 @@ public class GroupLoanIndividualMonitoringAccount extends AbstractPersistableCus
 	public void setLoanStatus(Integer loanStatus) {
 		this.loanStatus = loanStatus;
 	}
+
+	public BigDecimal getApplicationId() {
+		return applicationId;
+	}
+
+	public void setApplicationId(BigDecimal applicationId) {
+		this.applicationId = applicationId;
+	}
+	
+	
 	
 	
 	

@@ -53,6 +53,7 @@ public class    SavingsApiConstants {
 
     // command
     public static final String COMMAND_UNDO_TRANSACTION = "undo";
+    public static final String COMMAND_UNDO_SAVINGS_TRANSFER_TRANSACTION = "undoSavingsTransfer";
     public static final String COMMAND_ADJUST_TRANSACTION = "modify";
     public static final String COMMAND_WAIVE_CHARGE = "waive";
     public static final String COMMAND_PAY_CHARGE = "paycharge";
@@ -87,6 +88,8 @@ public class    SavingsApiConstants {
     public static final String transactionLowerLimitParamName="transactionLowerLimit";
     public static final String retailEntriesParamName="retailEntries";
     public static final String childAccountIdParamName="childAccountId";
+    public static final String gsimApplicationId="applicationId";
+    public static final String gsimLastApplication="lastApplication";
     
     
     public static final String groupIdParamName = "groupId";

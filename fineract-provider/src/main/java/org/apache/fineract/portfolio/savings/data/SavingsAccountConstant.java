@@ -43,7 +43,8 @@ public class SavingsAccountConstant extends SavingsApiConstants {
 			allowOverdraftParamName, overdraftLimitParamName, minRequiredBalanceParamName,
 			enforceMinRequiredBalanceParamName, nominalAnnualInterestRateOverdraftParamName,
 			minOverdraftForInterestCalculationParamName, withHoldTaxParamName, datatables,
-			isRetailAccountParamName,autogenerateTransactionIdParamName,transactionUpperLimitParamName,transactionLowerLimitParamName,retailEntriesParamName));
+			isRetailAccountParamName,autogenerateTransactionIdParamName,transactionUpperLimitParamName,transactionLowerLimitParamName,retailEntriesParamName,
+			gsimApplicationId,gsimLastApplication));
 
 	/**
 	 * These parameters will match the class level parameters of

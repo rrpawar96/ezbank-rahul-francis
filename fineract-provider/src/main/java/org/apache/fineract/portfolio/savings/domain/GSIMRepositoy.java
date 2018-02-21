@@ -19,6 +19,8 @@
 
 package org.apache.fineract.portfolio.savings.domain;
 
+import java.math.BigDecimal;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -28,4 +30,7 @@ public interface GSIMRepositoy extends JpaRepository<GroupSavingsIndividualMonit
 	GroupSavingsIndividualMonitoring findOneByIsAcceptingChild(boolean acceptingChild);
 	
 	GroupSavingsIndividualMonitoring findOneByAccountNumber(String accountNumber);
+	
+	GroupSavingsIndividualMonitoring findOneByIsAcceptingChildAndApplicationId(boolean acceptingChild,BigDecimal applicationId);
+	
 }
