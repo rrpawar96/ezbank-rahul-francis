@@ -214,6 +214,7 @@ public class AccountTransfersReadPlatformServiceImpl implements
 						mostRelevantToAccountType, mostRelevantToClientId);
 			}
 		}
+		
 
 		return AccountTransferData.template(fromOffice, fromClient,
 				fromAccountTypeData, fromAccount, transferDate, toOffice,

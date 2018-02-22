@@ -39,33 +39,25 @@ public class InterswitchAPI
 {
 
 	private final PlatformSecurityContext context;
-	private final ApiRequestParameterHelper apiRequestParameterHelper;
 	private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
 	private final DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> toApiJsonSerializer;
-	private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
 	private final InterswitchReadPlatformServiceImpl interswitchReadPlatformServiceImpl;
 	private final FromJsonHelper fromApiJsonHelper;
-	private final InterswitchEventsRepository interswitchEventsRepository;
 	private final String resourceNameForPermissions = "InterSwitch";
 	
 	 @Autowired
-	 public InterswitchAPI(PlatformSecurityContext context,ApiRequestParameterHelper apiRequestParameterHelper,
+	 public InterswitchAPI(PlatformSecurityContext context,
 			 PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
 			 DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> toApiJsonSerializer,
 			 DefaultToApiJsonSerializer<InterswitchAuthorizationMessageData> authorizationToApiJsonSerializer,
-			 SavingsAccountTransactionRepository savingsAccountTransactionRepository,
 			 InterswitchReadPlatformServiceImpl interswitchReadPlatformServiceImpl,
-			 FromJsonHelper fromApiJsonHelper,
-			 InterswitchEventsRepository interswitchEventsRepository)
+			 FromJsonHelper fromApiJsonHelper)
 	 {
 		this.context=context;
-		this.apiRequestParameterHelper=apiRequestParameterHelper;
 		this.commandsSourceWritePlatformService=commandsSourceWritePlatformService;
 		this.toApiJsonSerializer=toApiJsonSerializer;
-		this.savingsAccountTransactionRepository=savingsAccountTransactionRepository;
 		this.interswitchReadPlatformServiceImpl=interswitchReadPlatformServiceImpl;
 		this.fromApiJsonHelper=fromApiJsonHelper;
-		this.interswitchEventsRepository=interswitchEventsRepository;
 		
 	 }
 	 	
