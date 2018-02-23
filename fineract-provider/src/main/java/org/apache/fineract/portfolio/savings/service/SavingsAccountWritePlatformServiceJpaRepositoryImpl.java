@@ -859,10 +859,29 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 	    		toSavingsAccount=transferTransaction.getToSavingsTransaction();
 	    		
 	    		fromSavingsAccount=transferTransaction.getFromTransaction();
-	    			
-	    		transactionFrom=fromSavingsAccount.getId();
 	    		
-	    		transactionTo=toSavingsAccount.getId();
+	    		
+	    		if( (fromSavingsAccount==null) || (toSavingsAccount==null))
+		    	{
+		    		throw new GeneralPlatformDomainRuleException("Transfer is not savings to savings",
+		    				"Transfer is not savings to savings", "Transfer is not savings to savings");
+		    	}
+		    	else
+		    	{
+		    		transactionFrom=fromSavingsAccount.getId();
+		    		
+		    		transactionTo=toSavingsAccount.getId();
+		    		
+		    		
+		    		undoTransaction(toSavingsAccount.getSavingsAccount().getId(),transactionTo,
+		    	            true);
+		    		
+		    		result=undoTransaction(fromSavingsAccount.getSavingsAccount().getId(),transactionFrom,
+		    	            true);
+		    		
+		    	}
+	    			
+	    		
 	    	}
 	    	else
 	    	{
@@ -872,20 +891,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 	    		
 	    	}
 	    	
-	    	if( (transactionFrom==null) || (transactionTo==null))
-	    	{
-	    		throw new GeneralPlatformDomainRuleException("Transfer is not savings to savings",
-	    				"Transfer is not savings to savings", "Transfer is not savings to savings");
-	    	}
-	    	else
-	    	{
-	    		undoTransaction(toSavingsAccount.getSavingsAccount().getId(),transactionTo,
-	    	            true);
-	    		
-	    		result=undoTransaction(fromSavingsAccount.getSavingsAccount().getId(),transactionFrom,
-	    	            true);
-	    		
-	    	}
+	    	
     	
     	
     	return result;

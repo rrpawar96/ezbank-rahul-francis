@@ -62,18 +62,9 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	private final FromJsonHelper fromApiJsonHelper;
 	private final SavingsAccountRepository savingsAccountRepository;
 	private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
-	private final SavingsAccountChargeRepository repository;
 	private final SavingsAccountAssembler savingAccountAssembler;
-	private final SavingsAccountDomainService savingsDomainService;
 	private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
-	private final JournalEntryWritePlatformService journalEntryWritePlatformService;
-	private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper;
-	private final BusinessEventNotifierService businessEventNotifierService;
 	private final InterswitchEventsRepository interswitchTransactionsRepository;
-	private final InterswitchSubEventsRepository interswitchSubEventsRepository;
-	private final SavingsProductRepository savingsProductRepository;
-	private final SavingsAccountChargeAssembler savingsAccountChargeAssembler;
-	private final SavingsProductChargeRepository savingsProductChargeRepository;
 	private final ChargeRepository chargeRepository;
 	private final SavingsAccountChargeRepository savingsAccountChargeRepository;
 	private final PaymentDetailRepository paymentDetailRepository;
@@ -83,17 +74,9 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 	public InterswitchReadPlatformServiceImpl(final PlatformSecurityContext context, final RoutingDataSource dataSource,
 			final FromJsonHelper fromApiJsonHelper, final SavingsAccountRepository savingsAccountRepository,
 			final SavingsAccountTransactionRepository savingsAccountTransactionRepository,
-			final SavingsAccountChargeRepository repository, final SavingsAccountAssembler savingAccountAssembler,
-			final SavingsAccountDomainService savingsDomainService,
+			final SavingsAccountAssembler savingAccountAssembler,
 			final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
-			final JournalEntryWritePlatformService journalEntryWritePlatformService,
-			final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper,
-			final BusinessEventNotifierService businessEventNotifierService,
 			final InterswitchEventsRepository interswitchTransactionsRepository,
-			final InterswitchSubEventsRepository interswitchSubEventsRepository,
-			final SavingsProductRepository savingsProductRepository,
-			final SavingsAccountChargeAssembler savingsAccountChargeAssembler,
-			final SavingsProductChargeRepository savingsProductChargeRepository,
 			final ChargeRepository chargeRepository,
 			final SavingsAccountChargeRepository savingsAccountChargeRepository,
 			final PaymentDetailRepository paymentDetailRepository,
@@ -103,18 +86,9 @@ public class InterswitchReadPlatformServiceImpl implements InterswitchReadPlatfo
 		this.fromApiJsonHelper = fromApiJsonHelper;
 		this.savingsAccountRepository = savingsAccountRepository;
 		this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
-		this.repository = repository;
 		this.savingAccountAssembler = savingAccountAssembler;
-		this.savingsDomainService = savingsDomainService;
 		this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
-		this.journalEntryWritePlatformService = journalEntryWritePlatformService;
-		this.applicationCurrencyRepositoryWrapper = applicationCurrencyRepositoryWrapper;
-		this.businessEventNotifierService = businessEventNotifierService;
 		this.interswitchTransactionsRepository = interswitchTransactionsRepository;
-		this.interswitchSubEventsRepository = interswitchSubEventsRepository;
-		this.savingsProductRepository = savingsProductRepository;
-		this.savingsAccountChargeAssembler = savingsAccountChargeAssembler;
-		this.savingsProductChargeRepository = savingsProductChargeRepository;
 		this.chargeRepository = chargeRepository;
 		this.savingsAccountChargeRepository = savingsAccountChargeRepository;
 		this.paymentDetailRepository=paymentDetailRepository;
