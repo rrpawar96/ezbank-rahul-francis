@@ -70,9 +70,10 @@ public class AccountTransferAssembler {
         final LocalDate transactionDate = command.localDateValueOfParameterNamed(transferDateParamName);
         final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed(transferAmountParamName);
         final Money transactionMonetaryAmount = Money.of(fromSavingsAccount.getCurrency(), transactionAmount);
-
-        final String description = command.stringValueOfParameterNamed(transferDescriptionParamName);
-
+        	
+        // refer ezbank97 for requirement
+      //  final String description = command.stringValueOfParameterNamed(transferDescriptionParamName);
+        final String description="Loan repayment from Savings account "+withdrawal.getSavingsAccount().getAccountNumber()+" to Loan Account "+loanRepaymentTransaction.getLoan().getAccountNumber();			
         AccountTransferTransaction accountTransferTransaction = AccountTransferTransaction.savingsToLoanTransfer(accountTransferDetails,
                 withdrawal, loanRepaymentTransaction, transactionDate, transactionMonetaryAmount, description);
         accountTransferDetails.addAccountTransferTransaction(accountTransferTransaction);
