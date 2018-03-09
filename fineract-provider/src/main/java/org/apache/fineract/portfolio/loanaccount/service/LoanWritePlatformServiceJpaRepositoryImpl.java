@@ -1047,27 +1047,31 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         AccountTransferTransaction transferTransaction=null;
         SavingsAccountTransaction fromAccountTransaction=null;
         
-        if( !allowAccountTransferModification )
+        if (this.accountTransfersReadPlatformService.isAccountTransfer(transactionId, PortfolioAccountType.LOAN))
         {
-        	if (this.accountTransfersReadPlatformService.isAccountTransfer(transactionId, PortfolioAccountType.LOAN)) { throw new PlatformServiceUnavailableException(
-                    "error.msg.loan.transfer.transaction.update.not.allowed", "Loan transaction:" + transactionId
-                            + " update not allowed as it involves in account transfer", transactionId); }
+        	  if( !allowAccountTransferModification )
+              {
+              	if (this.accountTransfersReadPlatformService.isAccountTransfer(transactionId, PortfolioAccountType.LOAN)) { throw new PlatformServiceUnavailableException(
+                          "error.msg.loan.transfer.transaction.update.not.allowed", "Loan transaction:" + transactionId
+                                  + " update not allowed as it involves in account transfer", transactionId); }
+              }
+              else
+              {
+              	Long transferId=command.longValueOfParameterNamed("transferId");
+              	transferTransaction=this.accountTransferRepository.findOne(transferId);
+              	fromAccountTransaction=transferTransaction.getFromTransaction();
+              	if (this.accountTransfersReadPlatformService.isAccountTransfer(transactionId, PortfolioAccountType.LOAN) && fromAccountTransaction==null)
+              	{ throw new PlatformServiceUnavailableException(
+                          "only savings to loan transfer reversals are supported at the moment", "Loan transaction:" + transactionId
+                                  + " only savings to loan transfer reversals are supported at the moment", transactionId); }
+              	
+              	
+              	this.savingsAccountWritePlatformService.undoTransaction(fromAccountTransaction.getSavingsAccount().getId(),
+              			fromAccountTransaction.getId(),true);
+              	
+              }
         }
-        else
-        {
-        	Long transferId=command.longValueOfParameterNamed("transferId");
-        	transferTransaction=this.accountTransferRepository.findOne(transferId);
-        	fromAccountTransaction=transferTransaction.getFromTransaction();
-        	if (this.accountTransfersReadPlatformService.isAccountTransfer(transactionId, PortfolioAccountType.LOAN) && fromAccountTransaction==null)
-        	{ throw new PlatformServiceUnavailableException(
-                    "only savings to loan transfer reversals are supported at the moment", "Loan transaction:" + transactionId
-                            + " only savings to loan transfer reversals are supported at the moment", transactionId); }
-        	
-        	
-        	this.savingsAccountWritePlatformService.undoTransaction(fromAccountTransaction.getSavingsAccount().getId(),
-        			fromAccountTransaction.getId(),true);
-        	
-        }
+      
         
         
         if (loan.isClosedWrittenOff()) { throw new PlatformServiceUnavailableException("error.msg.loan.written.off.update.not.allowed",
