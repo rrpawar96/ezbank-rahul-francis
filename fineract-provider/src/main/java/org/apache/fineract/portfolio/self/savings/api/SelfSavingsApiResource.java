@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.self.savings.api;
 
+import java.util.Collection;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -29,11 +31,20 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
+import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
+import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.savings.DepositAccountType;
 import org.apache.fineract.portfolio.savings.api.SavingsAccountChargesApiResource;
 import org.apache.fineract.portfolio.savings.api.SavingsAccountTransactionsApiResource;
 import org.apache.fineract.portfolio.savings.api.SavingsAccountsApiResource;
+import org.apache.fineract.portfolio.savings.api.SavingsApiSetConstants;
+import org.apache.fineract.portfolio.savings.data.RetailAccountEntryTypeData;
+import org.apache.fineract.portfolio.savings.data.RetailSavingsAccountTransactionData;
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountNotFoundException;
+import org.apache.fineract.portfolio.savings.service.RetailAccountReadPlatformService;
+import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformService;
 import org.apache.fineract.portfolio.self.savings.data.SelfSavingsDataValidator;
 import org.apache.fineract.portfolio.self.savings.service.AppuserSavingsMapperReadService;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -52,6 +63,11 @@ public class SelfSavingsApiResource {
 	private final SavingsAccountTransactionsApiResource savingsAccountTransactionsApiResource;
 	private final AppuserSavingsMapperReadService appuserSavingsMapperReadService;
 	private final SelfSavingsDataValidator dataValidator;
+	private final SavingsAccountReadPlatformService savingsAccountReadPlatformService;
+	private final DefaultToApiJsonSerializer<RetailSavingsAccountTransactionData> retailToApiJsonSerializer;
+	private final DefaultToApiJsonSerializer<RetailAccountEntryTypeData> toApiJsonSerializer;
+	private final ApiRequestParameterHelper apiRequestParameterHelper;
+	private final RetailAccountReadPlatformService retailAccountReadPlatformService;
 
 	@Autowired
 	public SelfSavingsApiResource(
@@ -60,13 +76,23 @@ public class SelfSavingsApiResource {
 			final SavingsAccountChargesApiResource savingsAccountChargesApiResource,
 			final SavingsAccountTransactionsApiResource savingsAccountTransactionsApiResource,
 			final AppuserSavingsMapperReadService appuserSavingsMapperReadService,
-			final SelfSavingsDataValidator dataValidator) {
+			final SelfSavingsDataValidator dataValidator,
+			final SavingsAccountReadPlatformService savingsAccountReadPlatformService,
+			final DefaultToApiJsonSerializer<RetailSavingsAccountTransactionData> retailToApiJsonSerializer,
+			final DefaultToApiJsonSerializer<RetailAccountEntryTypeData> toApiJsonSerializer,
+			final ApiRequestParameterHelper apiRequestParameterHelper,
+			final RetailAccountReadPlatformService retailAccountReadPlatformService) {
 		this.context = context;
 		this.savingsAccountsApiResource = savingsAccountsApiResource;
 		this.savingsAccountChargesApiResource = savingsAccountChargesApiResource;
 		this.savingsAccountTransactionsApiResource = savingsAccountTransactionsApiResource;
 		this.appuserSavingsMapperReadService = appuserSavingsMapperReadService;
 		this.dataValidator = dataValidator;
+		this.savingsAccountReadPlatformService=savingsAccountReadPlatformService;
+		this.retailToApiJsonSerializer=retailToApiJsonSerializer;
+		this.toApiJsonSerializer=toApiJsonSerializer;
+		this.apiRequestParameterHelper=apiRequestParameterHelper;
+		this.retailAccountReadPlatformService=retailAccountReadPlatformService;
 	}
 
 	@GET
@@ -135,6 +161,40 @@ public class SelfSavingsApiResource {
 				.retrieveSavingsAccountCharge(accountId,
 						savingsAccountChargeId, uriInfo);
 	}
+	
+	   @GET
+	    @Path("{retailAccountId}/retailentries")
+	    @Consumes({ MediaType.APPLICATION_JSON })
+	    @Produces({ MediaType.APPLICATION_JSON })
+	    public String retrieveAll(@Context final UriInfo uriInfo,@PathParam("retailAccountId") final Long retailAccountId) {
+
+			validateAppuserSavingsAccountMapping(retailAccountId);
+
+	        final Collection<RetailAccountEntryTypeData> retailEntries= this.savingsAccountReadPlatformService.findEntriesByRetailAccountId(retailAccountId);
+
+	        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+			return this.toApiJsonSerializer.serialize(settings, retailEntries,
+					SavingsApiSetConstants.RETAIL_ACCOUNT_RESPONSE_DATA_PARAMETERS);
+	    }
+	    
+	    
+	    @GET
+	    @Path("{retailAccountId}/retailTransactions")
+	    @Consumes({ MediaType.APPLICATION_JSON })
+	    @Produces({ MediaType.APPLICATION_JSON })
+	    public String retrieveRetailTransactions(@Context final UriInfo uriInfo,@PathParam("retailAccountId") final Long retailAccountId,
+	    		@QueryParam("startDate") final String startDate,@QueryParam("endDate") final String endDate ) {
+
+	    	validateAppuserSavingsAccountMapping(retailAccountId);
+	        
+	        final Collection<RetailSavingsAccountTransactionData> currentTransactions =this.retailAccountReadPlatformService.retrieveRetailTransactions(retailAccountId, DepositAccountType.SAVINGS_DEPOSIT,
+	        		startDate,endDate);
+	        
+	        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+			return this.retailToApiJsonSerializer.serialize(settings, currentTransactions,
+					SavingsApiSetConstants.RETAIL_TRANSACTION_RESPONSE_DATA_PARAMETERS);
+	    }
+	
 
 	private void validateAppuserSavingsAccountMapping(final Long accountId) {
 		AppUser user = this.context.authenticatedUser();
