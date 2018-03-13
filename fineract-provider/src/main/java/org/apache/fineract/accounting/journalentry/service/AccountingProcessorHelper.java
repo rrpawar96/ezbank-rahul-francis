@@ -751,10 +751,39 @@ public class AccountingProcessorHelper {
          * changing the expected portfolio behavior would also take care of
          * modifying the accounting code appropriately
          **/
-        if (chargePaymentDTOs.size() != 1) { throw new PlatformDataIntegrityException(
+      /*  if (chargePaymentDTOs.size() != 1) {
+        	
+        	System.out.println("more than one charge per transaction detected !!");
+        	
+        	throw new PlatformDataIntegrityException(
                 "Recent Portfolio changes w.r.t Charges for Savings have Broken the accounting code",
-                "Recent Portfolio changes w.r.t Charges for Savings have Broken the accounting code"); }
-        ChargePaymentDTO chargePaymentDTO = chargePaymentDTOs.get(0);
+                "Recent Portfolio changes w.r.t Charges for Savings have Broken the accounting code"); 
+        	
+        }*/
+        
+         GLAccount chargeSpecificAccount;
+         GLAccount savingsControlAccount;
+        
+        for(ChargePaymentDTO chargePaymentDTO:chargePaymentDTOs)
+        {
+        	 chargeSpecificAccount = getLinkedGLAccountForSavingsCharges(savingsProductId, accountTypeToBeCredited.getValue(),
+                     chargePaymentDTO.getChargeId());
+              savingsControlAccount = getLinkedGLAccountForSavingsProduct(savingsProductId, accountTypeToBeDebited.getValue(),
+                     paymentTypeId);
+             if (isReversal) {
+                 createDebitJournalEntryForSavings(office, currencyCode, chargeSpecificAccount, loanId, transactionId, transactionDate,
+                         totalAmount);
+                 createCreditJournalEntryForSavings(office, currencyCode, savingsControlAccount, loanId, transactionId, transactionDate,
+                         totalAmount);
+             } else {
+                 createDebitJournalEntryForSavings(office, currencyCode, savingsControlAccount, loanId, transactionId, transactionDate,
+                         totalAmount);
+                 createCreditJournalEntryForSavings(office, currencyCode, chargeSpecificAccount, loanId, transactionId, transactionDate,
+                         totalAmount);
+             }
+        }
+        
+       /* ChargePaymentDTO chargePaymentDTO = chargePaymentDTOs.get(0);
 
         final GLAccount chargeSpecificAccount = getLinkedGLAccountForSavingsCharges(savingsProductId, accountTypeToBeCredited.getValue(),
                 chargePaymentDTO.getChargeId());
@@ -770,7 +799,7 @@ public class AccountingProcessorHelper {
                     totalAmount);
             createCreditJournalEntryForSavings(office, currencyCode, chargeSpecificAccount, loanId, transactionId, transactionDate,
                     totalAmount);
-        }
+        }*/
     }
 
     public LoanTransaction getLoanTransactionById(final long loanTransactionId) {
@@ -1006,7 +1035,9 @@ public class AccountingProcessorHelper {
             totalCreditedAmount = totalCreditedAmount.add(amount);
             createCreditJournalEntryForShares(office, currencyCode, account, shareAccountId, transactionId, transactionDate, amount);
         }
-        if (totalAmount.compareTo(totalCreditedAmount) != 0) { throw new PlatformDataIntegrityException(
+        if (totalAmount.compareTo(totalCreditedAmount) != 0) {
+        	System.out.println("total excedited credit amount line 1016");
+        	throw new PlatformDataIntegrityException(
                 "Recent Portfolio changes w.r.t Charges for shares have Broken the accounting code",
                 "Recent Portfolio changes w.r.t Charges for shares have Broken the accounting code"); }
     }
@@ -1037,7 +1068,9 @@ public class AccountingProcessorHelper {
             totalCreditedAmount = totalCreditedAmount.add(amount);
             createDebitJournalEntryForShares(office, currencyCode, account, shareAccountId, transactionId, transactionDate, amount);
         }
-        if (totalAmount.compareTo(totalCreditedAmount) != 0) { throw new PlatformDataIntegrityException(
+        if (totalAmount.compareTo(totalCreditedAmount) != 0) {
+        	System.out.println("total excedited credit amount line 1049");
+        	throw new PlatformDataIntegrityException(
                 "Recent Portfolio changes w.r.t Charges for shares have Broken the accounting code",
                 "Recent Portfolio changes w.r.t Charges for shares have Broken the accounting code"); }
     }
