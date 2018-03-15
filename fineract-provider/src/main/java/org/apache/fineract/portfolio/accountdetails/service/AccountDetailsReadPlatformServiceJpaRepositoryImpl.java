@@ -420,6 +420,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
 
             final StringBuilder accountsSummary = new StringBuilder("l.id as id, l.account_no as accountNo, l.external_id as externalId,");
             accountsSummary
+            		.append(" l.client_id as clientId,cl.display_name as clientName,")
                     .append(" l.product_id as productId, lp.name as productName, lp.short_name as shortProductName,")
                     .append(" l.loan_status_id as statusId, l.loan_type_enum as loanType,")
                     .append(" glim.account_number as parentAccountNumber,")
@@ -458,7 +459,8 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     .append(" left join m_appuser dbu on dbu.id = l.disbursedon_userid")
                     .append(" left join m_appuser cbu on cbu.id = l.closedon_userid")
                     .append(" left join m_loan_arrears_aging la on la.loan_id = l.id")
-            		.append(" left join glim_accounts glim on glim.id=l.glim_id");
+            		.append(" left join glim_accounts glim on glim.id=l.glim_id")
+            		.append(" left join m_client cl on cl.id=l.client_id");
 
             return accountsSummary.toString();
         }
@@ -467,6 +469,8 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         public LoanAccountSummaryData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
 
             final Long id = JdbcSupport.getLong(rs, "id");
+            final Long clientId=rs.getLong("clientId");
+            final String clientName=rs.getString("clientName");
             final String accountNo = rs.getString("accountNo");
             final String parentAccountNumber=rs.getString("parentAccountNumber");
             final String externalId = rs.getString("externalId");
@@ -531,7 +535,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     disbursedByFirstname, disbursedByLastname, closedOnDate, closedByUsername, closedByFirstname, closedByLastname,
                     expectedMaturityDate, writtenOffOnDate, closedByUsername, closedByFirstname, closedByLastname);
 
-            return new LoanAccountSummaryData(id, accountNo,parentAccountNumber, externalId, productId, loanProductName, shortLoanProductName, loanStatus, loanType, loanCycle,
+            return new LoanAccountSummaryData(id,clientId,clientName, accountNo,parentAccountNumber, externalId, productId, loanProductName, shortLoanProductName, loanStatus, loanType, loanCycle,
                     timeline, inArrears,originalLoan,loanBalance,amountPaid);
         }
     }

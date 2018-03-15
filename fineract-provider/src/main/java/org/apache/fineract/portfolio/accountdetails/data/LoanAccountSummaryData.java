@@ -31,6 +31,8 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
 public class LoanAccountSummaryData {
 
     private final Long id;
+    private final Long clientId;
+    private final String clientName;
     private final String accountNo;
     private final String parentAccountNumber;
     private final String externalId;
@@ -46,10 +48,12 @@ public class LoanAccountSummaryData {
     private final BigDecimal loanBalance;
     private final BigDecimal amountPaid;
     
-    public LoanAccountSummaryData(final Long id, final String accountNo, final String externalId, final Long productId,
+    public LoanAccountSummaryData(final Long id,final Long clientId,final String clientName, final String accountNo, final String externalId, final Long productId,
             final String loanProductName, final String shortLoanProductName, final LoanStatusEnumData loanStatus, final EnumOptionData loanType, final Integer loanCycle,
             final LoanApplicationTimelineData timeline, final Boolean inArrears,final BigDecimal originalLoan,final BigDecimal loanBalance,final BigDecimal amountPaid) {
         this.id = id;
+        this.clientId=clientId;
+        this.clientName=clientName;
         this.accountNo = accountNo;
         this.parentAccountNumber=null;
         this.externalId = externalId;
@@ -67,10 +71,12 @@ public class LoanAccountSummaryData {
     }
     
     
-    public LoanAccountSummaryData(final Long id, final String accountNo,final String parentAccountNumber, final String externalId, final Long productId,
+    public LoanAccountSummaryData(final Long id,final Long clientId,final String clientName, final String accountNo,final String parentAccountNumber, final String externalId, final Long productId,
             final String loanProductName, final String shortLoanProductName, final LoanStatusEnumData loanStatus, final EnumOptionData loanType, final Integer loanCycle,
             final LoanApplicationTimelineData timeline, final Boolean inArrears,final BigDecimal originalLoan,final BigDecimal loanBalance,final BigDecimal amountPaid) {
         this.id = id;
+        this.clientId=clientId;
+        this.clientName=clientName;
         this.accountNo = accountNo;
         this.parentAccountNumber=parentAccountNumber;
         this.externalId = externalId;
