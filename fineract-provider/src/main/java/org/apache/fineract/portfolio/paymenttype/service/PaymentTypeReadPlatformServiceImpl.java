@@ -48,7 +48,7 @@ public class PaymentTypeReadPlatformServiceImpl implements PaymentTypeReadPlatfo
         this.context.authenticatedUser();
 
         final PaymentTypeMapper ptm = new PaymentTypeMapper();
-        final String sql = "select " + ptm.schema() + "order by position";
+        final String sql = "select " + ptm.schema() + " where pt.value <> "+"\"ATM\""+" order by position";
 
         return this.jdbcTemplate.query(sql, ptm, new Object[] {});
     }
