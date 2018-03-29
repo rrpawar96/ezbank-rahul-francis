@@ -56,6 +56,7 @@ public class SavingsAccountSummaryData {
 
     private final Long id;
     private final String accountNo;
+    private final Boolean isRetail;
     private final String externalId;
     private final Long productId;
     private final String productName;
@@ -72,12 +73,13 @@ public class SavingsAccountSummaryData {
     //differentiate deposit accounts Savings, FD and RD accounts
     private final EnumOptionData depositType;
 
-    public SavingsAccountSummaryData(final Long id, final String accountNo, final String externalId, final Long productId,
+    public SavingsAccountSummaryData(final Long id, final String accountNo,final Boolean isRetail, final String externalId, final Long productId,
             final String productName, final String shortProductName, final SavingsAccountStatusEnumData status, final CurrencyData currency,
             final BigDecimal accountBalance, final EnumOptionData accountType, final SavingsAccountApplicationTimelineData timeline, final EnumOptionData depositType, 
             final SavingsAccountSubStatusEnumData subStatus, final LocalDate lastActiveTransactionDate) {
         this.id = id;
         this.accountNo = accountNo;
+        this.isRetail=isRetail;
         this.externalId = externalId;
         this.productId = productId;
         this.productName = productName;

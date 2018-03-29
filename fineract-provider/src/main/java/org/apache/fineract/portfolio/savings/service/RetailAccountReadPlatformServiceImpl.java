@@ -181,6 +181,16 @@ public class RetailAccountReadPlatformServiceImpl implements RetailAccountReadPl
     public Collection<RetailAccountKeyValuePairData> getEntriesBySavingsIdAndTransaction(long savingsId,long transactionId)
     {
     	final String sql="select "+this.retailEntryMapper.schema()+"  where rt.retail_account_id=? and rd.retail_account_transaction_id=?";
+    			
+    	
+    	return this.jdbcTemplate.query(sql,this.retailEntryMapper,new Object[] {savingsId,transactionId} );
+    }
+    
+    
+    public Collection<RetailAccountKeyValuePairData> getEntriesBySavingsIdAndTransactionBetween(long savingsId,long transactionId,long lowerTPM,long upperTPM)
+    {
+    	final String sql="select "+this.retailEntryMapper.schema()+"  where rt.retail_account_id=? and rd.retail_account_transaction_id=?"
+    			+ " and rd.retail_account_entry_value between '"+lowerTPM+"' and '"+upperTPM+"'";
     	
     	return this.jdbcTemplate.query(sql,this.retailEntryMapper,new Object[] {savingsId,transactionId} );
     }
@@ -342,7 +352,7 @@ public class RetailAccountReadPlatformServiceImpl implements RetailAccountReadPl
     
     @Override
     public Collection<RetailSavingsAccountTransactionData> retrieveRetailTransactions(final Long retailAccountId, DepositAccountType depositAccountType,
-    		String startDate,String endDate) {
+    		String startDate,String endDate,Long lowerTPM,Long upperTPM) {
 
         final String sql = "select " + this.transactionsMapper.schema()
                 + " where sa.id = ? and sa.deposit_type_enum = ? and tr.transaction_date between '"+startDate+"' and '"+endDate+"' "
@@ -352,10 +362,30 @@ public class RetailAccountReadPlatformServiceImpl implements RetailAccountReadPl
         
         List<RetailSavingsAccountTransactionData> enhancedRetailTransactions=new ArrayList<RetailSavingsAccountTransactionData>();
         
-        for(RetailSavingsAccountTransactionData retailTransaction:retailTransactions)
-        {
-        	enhancedRetailTransactions.add(RetailSavingsAccountTransactionData.retailTemplate(retailTransaction, getEntriesBySavingsIdAndTransaction(retailAccountId,retailTransaction.getId())));
-        }
+        Collection<RetailAccountKeyValuePairData> retailData;
+        
+        	if(lowerTPM==null||upperTPM==null)
+        	{
+        		for(RetailSavingsAccountTransactionData retailTransaction:retailTransactions)
+    	        {
+    	        	enhancedRetailTransactions.add(RetailSavingsAccountTransactionData.retailTemplate(retailTransaction, getEntriesBySavingsIdAndTransaction(retailAccountId,retailTransaction.getId())));
+    	        }
+        	}
+        	else
+        	{
+        		  for(RetailSavingsAccountTransactionData retailTransaction:retailTransactions)
+        	        {
+        			  retailData=getEntriesBySavingsIdAndTransactionBetween(retailAccountId,retailTransaction.getId(),lowerTPM,upperTPM);
+        			  
+        			  if(retailData!=null)
+        			  {	
+        				  if(!retailData.isEmpty())
+        		enhancedRetailTransactions.add(RetailSavingsAccountTransactionData.retailTemplate(retailTransaction, retailData));  
+        			  }
+        	        	
+        	        }
+        	}
+      
         	
         return enhancedRetailTransactions;
         
