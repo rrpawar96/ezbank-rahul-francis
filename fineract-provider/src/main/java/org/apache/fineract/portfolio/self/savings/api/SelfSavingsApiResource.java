@@ -183,12 +183,13 @@ public class SelfSavingsApiResource {
 	    @Consumes({ MediaType.APPLICATION_JSON })
 	    @Produces({ MediaType.APPLICATION_JSON })
 	    public String retrieveRetailTransactions(@Context final UriInfo uriInfo,@PathParam("retailAccountId") final Long retailAccountId,
-	    		@QueryParam("startDate") final String startDate,@QueryParam("endDate") final String endDate ) {
+	    		@QueryParam("startDate") final String startDate,@QueryParam("endDate") final String endDate ,
+	    		@QueryParam("lowerTPM") final Long lowerTPM,@QueryParam("upperTPM") final Long upperTPM) {
 
 	    	validateAppuserSavingsAccountMapping(retailAccountId);
 	        
 	        final Collection<RetailSavingsAccountTransactionData> currentTransactions =this.retailAccountReadPlatformService.retrieveRetailTransactions(retailAccountId, DepositAccountType.SAVINGS_DEPOSIT,
-	        		startDate,endDate);
+	        		startDate,endDate,lowerTPM,upperTPM);
 	        
 	        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 			return this.retailToApiJsonSerializer.serialize(settings, currentTransactions,

@@ -285,7 +285,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         public SavingsAccountSummaryDataMapper() {
             final StringBuilder accountsSummary = new StringBuilder();
             accountsSummary.append("sa.id as id, sa.account_no as accountNo, sa.external_id as externalId, sa.status_enum as statusEnum, ");
-            accountsSummary.append("sa.account_type_enum as accountType, ");
+            accountsSummary.append("sa.is_retail as isRetail, sa.account_type_enum as accountType, ");
             accountsSummary.append("sa.account_balance_derived as accountBalance, ");
 
             accountsSummary.append("sa.submittedon_date as submittedOnDate,");
@@ -347,6 +347,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
 
             final Long id = JdbcSupport.getLong(rs, "id");
             final String accountNo = rs.getString("accountNo");
+            final Boolean isRetail=rs.getBoolean("isRetail");
             final String externalId = rs.getString("externalId");
             final Long productId = JdbcSupport.getLong(rs, "productId");
             final String productName = rs.getString("productName");
@@ -409,7 +410,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     activatedByUsername, activatedByFirstname, activatedByLastname, closedOnDate, closedByUsername, closedByFirstname,
                     closedByLastname);
 
-            return new SavingsAccountSummaryData(id, accountNo, externalId, productId, productName, shortProductName, status, currency, accountBalance,
+            return new SavingsAccountSummaryData(id, accountNo,isRetail, externalId, productId, productName, shortProductName, status, currency, accountBalance,
                     accountTypeData, timeline, depositTypeData, subStatus, lastActiveTransactionDate);
         }
     }
