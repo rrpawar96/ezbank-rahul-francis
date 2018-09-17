@@ -1175,12 +1175,20 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         Money minRequiredBalance = minRequiredBalanceDerived(getCurrency());
         LocalDate lastSavingsDate = null;
         final BigDecimal withdrawalFee = null;
+        
+        int size=transactionsSortedByDate.size();
+      
+        int count=1;
         for (final SavingsAccountTransaction transaction : transactionsSortedByDate) {
+        	
+        
+        	
             if (transaction.isNotReversed() && transaction.isCredit()) {
                 runningBalance = runningBalance.plus(transaction.getAmount(this.currency));
             } else if (transaction.isNotReversed() && transaction.isDebit()) {
                 runningBalance = runningBalance.minus(transaction.getAmount(this.currency));
             }else {
+            	count++;
                 continue;
             }
 
@@ -1207,14 +1215,30 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             // deal with potential minRequiredBalance and
             // enforceMinRequiredBalance
             if (!isException && transaction.canProcessBalanceCheck()) {
-                if (runningBalance.minus(minRequiredBalance).isLessThanZero()) { throw new InsufficientAccountBalanceException(
-                        "transactionAmount", getAccountBalance(), withdrawalFee, transactionAmount); }
+            			
+    				if (runningBalance.minus(minRequiredBalance).isLessThanZero()) {
+    					
+    					if(count==size)
+    					{
+    						
+    						throw new InsufficientAccountBalanceException(
+    	                            "transactionAmount", getAccountBalance(), withdrawalFee, transactionAmount);
+    					}
+    					
+    					}
+    			
+    			
+                
             }
             lastSavingsDate = transaction.transactionLocalDate();
-
+            
+            count++;
+            	
+            
         }
 		if (this.getSavingsHoldAmount().compareTo(BigDecimal.ZERO) == 1) {
-			if (runningBalance.minus(this.getSavingsHoldAmount()).isLessThanZero()) {
+			
+				if (runningBalance.minus(this.getSavingsHoldAmount()).isLessThanZero()) {
 				throw new InsufficientAccountBalanceException("transactionAmount", getAccountBalance(), withdrawalFee,
 						transactionAmount);
 			}
