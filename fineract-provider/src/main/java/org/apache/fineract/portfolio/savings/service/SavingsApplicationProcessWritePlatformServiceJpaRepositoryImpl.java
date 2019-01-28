@@ -39,6 +39,8 @@ import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
+import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
+import org.apache.fineract.infrastructure.configuration.service.ConfigurationReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -125,6 +127,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
     private final GroupRepositoryWrapper groupRepositoryWrapper;
     private final GroupSavingsIndividualMonitoringWritePlatformService gsimWritePlatformService;
     private final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository;
+    private final ConfigurationReadPlatformService configurationReadPlatformService;
    
 	
     @Autowired
@@ -143,7 +146,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GSIMRepositoy gsimRepository,final GroupRepositoryWrapper groupRepositoryWrapper,
             final GroupSavingsIndividualMonitoringWritePlatformService gsimWritePlatformService,
-            final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository) {
+            final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository, final ConfigurationReadPlatformService configurationReadPlatformService                                                              ) {
         this.context = context;
         this.savingAccountRepository = savingAccountRepository;
         this.savingAccountAssembler = savingAccountAssembler;
@@ -166,6 +169,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         this.groupRepositoryWrapper=groupRepositoryWrapper;
         this.gsimWritePlatformService=gsimWritePlatformService;
         this.retailAccountEntryTypeRepository=retailAccountEntryTypeRepository;
+        this.configurationReadPlatformService=configurationReadPlatformService;
     }
 
     /*
@@ -236,6 +240,14 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             if (account.isAccountNumberRequiresAutoGeneration()) {
             	
            	 final AccountNumberFormat accountNumberFormat = this.accountNumberFormatRepository.findByAccountType(EntityAccountType.SAVINGS);
+                final GlobalConfigurationPropertyData configuration = this.configurationReadPlatformService
+                        .retrieveGlobalConfiguration("Enable-Account-Seperator");
+                final Boolean isAccountSeperatorEnabled = configuration.isEnabled();
+                String childAccountSeperator="";
+                if(isAccountSeperatorEnabled)
+                {
+                    childAccountSeperator="-";
+                }
            	
            	 
            	// if application is of GLIM type
@@ -268,7 +280,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                				//gsimWritePlatformService.resetIsAcceptingChild(gsimRepository.findOneByIsAcceptingChild(true));
                				
                				accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
-                   			account.updateAccountNo(accountNumber+"-1");
+                   			account.updateAccountNo(accountNumber+childAccountSeperator+"1");
                    	
                    			gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group,BigDecimal.ZERO ,Long.valueOf(1),true,SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),
                    					applicationId);
@@ -282,7 +294,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                				//************** Parent-empty table********************
                				
                				accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
-                   			account.updateAccountNo(accountNumber+"-1");
+                   			account.updateAccountNo(accountNumber+childAccountSeperator+"1");
                    				
                				gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group, BigDecimal.ZERO ,Long.valueOf(1),true,
                						SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),applicationId);
@@ -302,7 +314,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
            				//**************Child-Not an empty table********************
            				
            				gsimAccount=gsimRepository.findOneByIsAcceptingChildAndApplicationId(true,applicationId);
-           				accountNumber=gsimAccount.getAccountNumber()+"-"+(gsimAccount.getChildAccountsCount()+1);
+           				accountNumber=gsimAccount.getAccountNumber()+childAccountSeperator+(gsimAccount.getChildAccountsCount()+1);
                			account.updateAccountNo(accountNumber);
                			this.gsimWritePlatformService.incrementChildAccountCount(gsimAccount);
                			account.setGsim(gsimAccount);
@@ -314,7 +326,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
            				//**************Child-empty table********************
            				// if the gsim info is empty set the current account as parent
            				accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
-               			account.updateAccountNo(accountNumber+"-1");
+               			account.updateAccountNo(accountNumber+childAccountSeperator+"1");
                			gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group, BigDecimal.ZERO ,Long.valueOf(1),true,
                					SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),applicationId);
                			account.setGsim(gsimAccount);
