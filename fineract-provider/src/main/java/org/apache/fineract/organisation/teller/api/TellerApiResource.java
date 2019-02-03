@@ -258,8 +258,10 @@ public class TellerApiResource {
         final Date fromDate = null;
         final Date toDate = null;
         final SearchParameters searchParameters = SearchParameters.forPagination(offset, limit, orderBy, sortOrder);
+     /*   final Page<CashierTransactionData> cashierTxns = this.readPlatformService.retrieveCashierTransactions(cashierId, false,
+                fromDate, toDate, currencyCode, searchParameters);*/
         final Page<CashierTransactionData> cashierTxns = this.readPlatformService.retrieveCashierTransactions(cashierId, false,
-                fromDate, toDate, currencyCode, searchParameters);
+                currencyCode, searchParameters);
 
         return this.jsonSerializer.serialize(cashierTxns);
     }
@@ -280,8 +282,10 @@ public class TellerApiResource {
         
         final SearchParameters searchParameters = SearchParameters.forPagination(offset, limit, orderBy, sortOrder);
 
+        /*final CashierTransactionsWithSummaryData cashierTxnWithSummary = this.readPlatformService.retrieveCashierTransactionsWithSummary(
+                cashierId, false, fromDate, toDate, currencyCode, searchParameters);*/
         final CashierTransactionsWithSummaryData cashierTxnWithSummary = this.readPlatformService.retrieveCashierTransactionsWithSummary(
-                cashierId, false, fromDate, toDate, currencyCode, searchParameters);
+                cashierId, false, currencyCode, searchParameters);
 
         return this.jsonSerializer.serialize(cashierTxnWithSummary);
     }
