@@ -35,9 +35,11 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
+import org.apache.fineract.infrastructure.configuration.service.ConfigurationReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.api.JsonQuery;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -191,6 +193,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final GLIMAccountInfoRepository glimRepository;
     private final LoanRepository loanRepository;
     private final GSIMReadPlatformService gsimReadPlatformService;
+    private final ConfigurationReadPlatformService configurationReadPlatformService;
     
 
     @Autowired
@@ -217,7 +220,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,final GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService,
             final GLIMAccountInfoRepository glimRepository,final LoanRepository loanRepository,
-            final GSIMReadPlatformService gsimReadPlatformService
+            final GSIMReadPlatformService gsimReadPlatformService,
+            final ConfigurationReadPlatformService configurationReadPlatformService
             ) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
@@ -258,6 +262,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.glimRepository=glimRepository;
         this.loanRepository=loanRepository;
         this.gsimReadPlatformService=gsimReadPlatformService;
+        this.configurationReadPlatformService=configurationReadPlatformService;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -388,6 +393,16 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             GroupLoanIndividualMonitoringAccount glimAccount;
             BigDecimal applicationId=BigDecimal.ZERO;
             Boolean isLastChildApplication=false;
+            final GlobalConfigurationPropertyData configuration = this.configurationReadPlatformService
+                    .retrieveGlobalConfiguration("Enable-Account-Seperator");
+            final Boolean isAccountSeperatorEnabled = configuration.isEnabled();
+            String childAccountSeperator="";
+            if(isAccountSeperatorEnabled)
+            {
+                childAccountSeperator="-";
+            }
+
+
    
             
             if (newLoanApplication.isAccountNumberRequiresAutoGeneration()) {
@@ -421,7 +436,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 			//	glimAccountInfoWritePlatformService.resetIsAcceptingChild(glimRepository.findOneByIsAcceptingChild(true));
                 				
                 				accountNumber=this.accountNumberGenerator.generate(newLoanApplication, accountNumberFormat);
-                    			newLoanApplication.updateAccountNo(accountNumber+"-1");
+                    			newLoanApplication.updateAccountNo(accountNumber+childAccountSeperator+"1");
                     		
                     			System.out.println("account number generated:"+newLoanApplication.getAccountNumber());
                 				
@@ -439,7 +454,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 				System.out.println("************** Parent-empty table********************");
                 				
                 				accountNumber=this.accountNumberGenerator.generate(newLoanApplication, accountNumberFormat);
-                    			newLoanApplication.updateAccountNo(accountNumber+"-1");
+                    			newLoanApplication.updateAccountNo(accountNumber+childAccountSeperator+"1");
                     			
                     			System.out.println("account number generated:"+newLoanApplication.getAccountNumber());
                 				glimAccountInfoWritePlatformService.addGLIMAccountInfo(accountNumber,group, command.bigDecimalValueOfParameterNamedDefaultToNullIfZero("totalLoan"),Long.valueOf(1),true,
@@ -466,7 +481,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             				System.out.println("**************Child-Not an empty table********************");
             				
             				glimAccount=glimRepository.findOneByIsAcceptingChildAndApplicationId(true,applicationId);
-            				accountNumber=glimAccount.getAccountNumber()+"-"+(glimAccount.getChildAccountsCount()+1);
+            				accountNumber=glimAccount.getAccountNumber()+accountNumber+(glimAccount.getChildAccountsCount()+1);
                 			newLoanApplication.updateAccountNo(accountNumber);
                 			
                 		//	glimAccountInfoWritePlatformService.resetIsAcceptingChild(glimAccount);
@@ -481,7 +496,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             				System.out.println("**************Child-empty table********************");
             				// if the glim info is empty set the current account as parent
             				accountNumber=this.accountNumberGenerator.generate(newLoanApplication, accountNumberFormat);
-                			newLoanApplication.updateAccountNo(accountNumber+"-1");
+                			newLoanApplication.updateAccountNo(accountNumber+childAccountSeperator+"1");
                 			glimAccountInfoWritePlatformService.addGLIMAccountInfo(accountNumber,group, command.bigDecimalValueOfParameterNamedDefaultToNullIfZero("totalLoan"),Long.valueOf(1),true,
                 					LoanStatus.SUBMITTED_AND_PENDING_APPROVAL.getValue(),applicationId);
                 			newLoanApplication.setGlim(glimRepository.findOneByAccountNumber(accountNumber));

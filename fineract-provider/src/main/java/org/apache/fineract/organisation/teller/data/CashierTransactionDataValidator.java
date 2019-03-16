@@ -66,7 +66,7 @@ public class CashierTransactionDataValidator {
 				.forPagination(offset, limit, orderBy, sortOrder);
 		final CashierTransactionsWithSummaryData cashierTxnWithSummary = this.tellerManagementReadPlatformService
 				.retrieveCashierTransactionsWithSummary(cashierId, false,
-						fromDate, toDate, currencyCode, searchParameters);
+						 currencyCode, searchParameters);
 		if (cashierTxnWithSummary.getNetCash().subtract(transactionAmount)
 				.compareTo(BigDecimal.ZERO) < 0) {
 			throw new CashierInsufficientAmountException();
