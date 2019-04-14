@@ -137,14 +137,14 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
     public CommandProcessingResult create(JsonCommand command) {
 
         final AppUser currentUser = this.context.authenticatedUser();
-        this.smsCampaignValidator.validateCreate(command.json());
+      //  this.smsCampaignValidator.validateCreate(command.json());
         final Long runReportId = command.longValueOfParameterNamed(SmsCampaignValidator.runReportId);
         Report report = this.reportRepository.findOne(runReportId);
         if (report == null) { throw new ReportNotFoundException(runReportId); }
         SmsCampaign smsCampaign = SmsCampaign.instance(currentUser, report, command);
-        if (smsCampaign.getRecurrenceStartDate() != null && smsCampaign.getRecurrenceStartDate().isBefore(DateUtils.getLocalDateOfTenant())) { throw new GeneralPlatformDomainRuleException(
+        /*if (smsCampaign.getRecurrenceStartDate() != null && smsCampaign.getRecurrenceStartDate().isBefore(DateUtils.getLocalDateOfTenant())) { throw new GeneralPlatformDomainRuleException(
                 "error.msg.campaign.recurrenceStartDate.in.the.past", "Recurrence start date cannot be the past date.",
-                smsCampaign.getRecurrenceStartDate()); }
+                smsCampaign.getRecurrenceStartDate()); }*/
         this.smsCampaignRepository.save(smsCampaign);
 
         return new CommandProcessingResultBuilder() //
