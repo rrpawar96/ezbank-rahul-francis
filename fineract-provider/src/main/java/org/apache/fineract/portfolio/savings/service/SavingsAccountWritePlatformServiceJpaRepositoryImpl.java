@@ -1732,10 +1732,10 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         } else {
             final LocalDate nextDueDate = savingsAccountCharge.getNextDueDateFrom(inactivationOnDate);
 
-            if (savingsAccountCharge.isChargeIsDue(nextDueDate)) {
+          /*  if (savingsAccountCharge.isChargeIsDue(nextDueDate)) {
                 baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("inactivation.of.charge.not.allowed.when.charge.is.due");
                 if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
-            } else if (savingsAccountCharge.isChargeIsOverPaid(nextDueDate)) {
+            } else*/ if (savingsAccountCharge.isChargeIsOverPaid(nextDueDate)) {
 
                 final List<SavingsAccountTransaction> chargePayments = new ArrayList<>();
                 SavingsAccountCharge updatedCharge = savingsAccountCharge;

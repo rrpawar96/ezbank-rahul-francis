@@ -61,6 +61,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 import org.springframework.stereotype.Service;
@@ -106,6 +107,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     private final ConfigurationDomainService configurationDomainService;
     private final CodeReadPlatformService codeReadPlatformService;
     private final DataTableValidator dataTableValidator;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     // private final GlobalConfigurationWritePlatformServiceJpaRepositoryImpl
     // configurationWriteService;
@@ -126,6 +128,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         this.configurationDomainService = configurationDomainService;
         this.dataTableValidator = dataTableValidator;
         // this.configurationWriteService = configurationWriteService;
+        this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
     }
 
     @Override
@@ -234,23 +237,31 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     }
 
     @Transactional
-    private void _registerDataTable(final String applicationTableName, final String dataTableName, final Integer category,
+    void _registerDataTable(final String applicationTableName, final String dataTableName, final Integer category,
             final String permissionsSql) {
 
         validateAppTable(applicationTableName);
         assertDataTableExists(dataTableName);
 
-        final String registerDatatableSql = "insert into x_registered_table (registered_table_name, application_table_name,category) values ('"
-                + dataTableName + "', '" + applicationTableName + "', '" + category + "')";
+        /*final String registerDatatableSql = "insert into x_registered_table (registered_table_name, application_table_name,category) values ('"
+                + dataTableName + "', '" + applicationTableName + "', '" + category + "')";*/
+
+        Map<String, Object> paramMap = new HashMap<>(3);
+        final String registerDatatableSql = "insert into x_registered_table (registered_table_name, application_table_name,category) values ( :dataTableName, :applicationTableName, :category)";
+        paramMap.put("dataTableName", dataTableName);
+        paramMap.put("applicationTableName", applicationTableName);
+        paramMap.put("category", category);
 
         try {
 
             final String[] sqlArray = { registerDatatableSql, permissionsSql };
             this.jdbcTemplate.batchUpdate(sqlArray);
+            this.namedParameterJdbcTemplate.update(registerDatatableSql, paramMap);
+            this.jdbcTemplate.update(permissionsSql);
 
             // add the registered table to the config if it is a ppi
             if (this.isSurveyCategory(category)) {
-                this.jdbcTemplate.execute("insert into c_configuration (name, value, enabled ) values('" + dataTableName + "', '0','0')");
+                this.namedParameterJdbcTemplate.update("insert into c_configuration (name, value, enabled ) values( :dataTableName , '0','0')", paramMap);
             }
 
         }
@@ -829,7 +840,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
      *            Name of data table
      * @param column
      *            JSON encoded array of column properties
-     * @see https://mifosforge.jira.com/browse/MIFOSX-1145
+     * @see ://mifosforge.jira.com/browse/MIFOSX-1145
      **/
     private void removeNullValuesFromStringColumn(final String datatableName, final JsonObject column,
             final Map<String, ResultsetColumnHeaderData> mapColumnNameDefinition) {
