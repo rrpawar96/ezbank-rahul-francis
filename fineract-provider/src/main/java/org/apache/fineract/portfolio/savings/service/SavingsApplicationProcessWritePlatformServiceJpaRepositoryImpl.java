@@ -146,7 +146,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService,
             final GSIMRepositoy gsimRepository,final GroupRepositoryWrapper groupRepositoryWrapper,
             final GroupSavingsIndividualMonitoringWritePlatformService gsimWritePlatformService,
-            final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository, final ConfigurationReadPlatformService configurationReadPlatformService                                                              ) {
+            final RetailAccountEntryTypeRepository retailAccountEntryTypeRepository, final ConfigurationReadPlatformService configurationReadPlatformService ) {
         this.context = context;
         this.savingAccountRepository = savingAccountRepository;
         this.savingAccountAssembler = savingAccountAssembler;
@@ -227,10 +227,8 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
            
             final SavingsAccount account = this.savingAccountAssembler.assembleFrom(command, submittedBy);
             this.savingAccountRepository.save(account);
-            
-            
-            
-            String accountNumber="";
+
+            String accountNumber;
             
             GroupSavingsIndividualMonitoring gsimAccount=null;
             BigDecimal applicationId=BigDecimal.ZERO;
@@ -244,129 +242,96 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                         .retrieveGlobalConfiguration("Enable-Account-Seperator");
                 final Boolean isAccountSeperatorEnabled = configuration.isEnabled();
                 String childAccountSeperator="";
-                if(isAccountSeperatorEnabled)
-                {
+                if(isAccountSeperatorEnabled) {
                     childAccountSeperator="-";
                 }
-           	
-           	 
-           	// if application is of GLIM type
-           	if(account.getAccountType()==5)
-           	{
+
+           	// if application is of GSIM type
+           	if(account.getAccountType()==5) {
            		final Long groupId = command.longValueOfParameterNamed("groupId");	
            		
            		Group group= this.groupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
            		
            		//GSIM specific parameters
-        		if(command.bigDecimalValueOfParameterNamedDefaultToNullIfZero("applicationId")!=null)
-        		{
+        		if(command.bigDecimalValueOfParameterNamedDefaultToNullIfZero("applicationId")!=null) {
         			applicationId=command.bigDecimalValueOfParameterNamedDefaultToNullIfZero("applicationId");
         		}
         		
-        		if(command.booleanObjectValueOfParameterNamed("lastApplication")!=null)
-        		{
+        		if(command.booleanObjectValueOfParameterNamed("lastApplication")!=null) {
         			isLastChildApplication=command.booleanPrimitiveValueOfParameterNamed("lastApplication");
         		}
-        		
-           		//System.out.println("*************group id:"+groupId);
-           		if(command.booleanObjectValueOfParameterNamed("isParentAccount")!=null)
-           		{	
+
+           		if(command.booleanObjectValueOfParameterNamed("isParentAccount")!=null) {
+
            			System.out.println("**************isParentAccount********************");
-           				
-           			//empty table check
-               			if(gsimRepository.count()!=0)
-               			{
-               				//**************Parent-Not an empty table********************
-               				//gsimWritePlatformService.resetIsAcceptingChild(gsimRepository.findOneByIsAcceptingChild(true));
-               				
-               				accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
-                   			account.updateAccountNo(accountNumber+childAccountSeperator+"1");
-                   	
-                   			gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group,BigDecimal.ZERO ,Long.valueOf(1),true,SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),
+                        accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
+               				if(isAccountSeperatorEnabled){
+                                account.updateAccountNo(accountNumber+childAccountSeperator+"1");
+                            }
+               				else {
+                                account.updateAccountNo(accountNumber);
+                            }
+
+                   			gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group,BigDecimal.ZERO ,
+                                    1l,true,SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),
                    					applicationId);
                    			account.setGsim(gsimRepository.findOneByAccountNumber(accountNumber));
                    			 this.savingAccountRepository.save(account);
-                   		   		
-                   			
-               			}
-               			else
-               			{
-               				//************** Parent-empty table********************
-               				
-               				accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
-                   			account.updateAccountNo(accountNumber+childAccountSeperator+"1");
-                   				
-               				gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group, BigDecimal.ZERO ,Long.valueOf(1),true,
-               						SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),applicationId);
-               				account.setGsim(gsimRepository.findOneByAccountNumber(accountNumber));
-                   			 this.savingAccountRepository.save(account);
-                
-               			}
-               			
+
            		}
-           		else
-           		{
-           			
-           			
-           			
-           			if(gsimRepository.count()!=0)
-           			{
+           		else {
+
+           			if(gsimRepository.count()!=0) {
            				//**************Child-Not an empty table********************
-           				
-           				gsimAccount=gsimRepository.findOneByIsAcceptingChildAndApplicationId(true,applicationId);
-           				accountNumber=gsimAccount.getAccountNumber()+childAccountSeperator+(gsimAccount.getChildAccountsCount()+1);
+                        gsimAccount=gsimRepository.findOneByIsAcceptingChildAndApplicationId(true,applicationId);
+                        if(isAccountSeperatorEnabled){
+                            accountNumber=gsimAccount.getAccountNumber()+childAccountSeperator+(gsimAccount.getChildAccountsCount()+1);
+                        }else{
+                            accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
+                        }
+
                			account.updateAccountNo(accountNumber);
                			this.gsimWritePlatformService.incrementChildAccountCount(gsimAccount);
                			account.setGsim(gsimAccount);
               			this.savingAccountRepository.save(account);
                			
            			}
-           			else
-           			{
+           			else {
            				//**************Child-empty table********************
            				// if the gsim info is empty set the current account as parent
-           				accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
-               			account.updateAccountNo(accountNumber+childAccountSeperator+"1");
-               			gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group, BigDecimal.ZERO ,Long.valueOf(1),true,
-               					SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),applicationId);
-               			account.setGsim(gsimAccount);
-               			 this.savingAccountRepository.save(account);
-               			
-               		
-           			
-               			
+                        accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
+                        if(isAccountSeperatorEnabled){
+                            accountNumber=accountNumber+childAccountSeperator+"1";
+
+                        }
+                        account.updateAccountNo(accountNumber);
+                        this.gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group,BigDecimal.ZERO ,
+                                Long.valueOf(1),true,SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),
+                                applicationId);
+                        account.setGsim(gsimRepository.findOneByAccountNumber(accountNumber));
+                        this.savingAccountRepository.save(account);
+
            			}
            			
            			// reset in cases of last child application of GSIM
         			
-        			if(isLastChildApplication)
-        			{
+        			if(isLastChildApplication) {
         				this.gsimWritePlatformService.resetIsAcceptingChild(gsimRepository.findOneByIsAcceptingChildAndApplicationId(true,applicationId));
         			}
-           			
-           			
+
            		}
            	}
-           	else   // for applications other than GSIM
-           	{
-           	 generateAccountNumber(account);
+           	else {
+           	 generateAccountNumber(account);    // for applications other than GSIM
+
            	}
-           	
-              
-             
-              
+
            }
-            
-            
+
             // end of gsim
-            
-            
-            
+
             //retail account
-           
-            
-            
-            
+
            if(account.isRetail())
            {
         	  JsonArray entries= command.arrayOfParameterNamed("retailEntries");
