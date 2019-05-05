@@ -2730,7 +2730,25 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
               }
               
         }
-       
+
+        /**
+         * iDT labs customization: charge should not overdraft when overdraft is not enabled
+         * and if enabled it should not overdraw beyond overdraft limit
+         */
+        if(savingsAccountCharge.getAmount(currency).minus(this.getAccountBalance()).isGreaterThanZero()
+                && !this.allowOverdraft) {
+
+            baseDataValidator.reset().failWithCode("Overdraft is not enabled for account No "+this.accountNumber
+            +" and hence charge cannot exceed available balance");
+            if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
+
+        }
+        else if(this.allowOverdraft && this.overdraftLimit.compareTo(savingsAccountCharge.amount()) >=0){
+
+            baseDataValidator.reset().failWithCode("charge is exceeding overdraft limit ");
+            if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
+        }
+
 
         this.payCharge(savingsAccountCharge, chargePaid, transactionDate, user);
     }
