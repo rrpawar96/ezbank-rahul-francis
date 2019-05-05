@@ -301,11 +301,13 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
            				// if the gsim info is empty set the current account as parent
                         accountNumber=this.accountNumberGenerator.generate(account, accountNumberFormat);
                         if(isAccountSeperatorEnabled){
-                            accountNumber=accountNumber+childAccountSeperator+"1";
-
+                            account.updateAccountNo(accountNumber+childAccountSeperator+"1");
                         }
-                        account.updateAccountNo(accountNumber);
-                        this.gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group,BigDecimal.ZERO ,
+                        else {
+                            account.updateAccountNo(accountNumber);
+                        }
+
+                        gsimWritePlatformService.addGSIMAccountInfo(accountNumber,group,BigDecimal.ZERO ,
                                 Long.valueOf(1),true,SavingsAccountStatusType.SUBMITTED_AND_PENDING_APPROVAL.getValue(),
                                 applicationId);
                         account.setGsim(gsimRepository.findOneByAccountNumber(accountNumber));
