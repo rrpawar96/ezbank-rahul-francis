@@ -2735,18 +2735,24 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
          * iDT labs customization: charge should not overdraft when overdraft is not enabled
          * and if enabled it should not overdraw beyond overdraft limit
          */
-        if(savingsAccountCharge.getAmount(currency).minus(this.getAccountBalance()).isGreaterThanZero()
-                && !this.allowOverdraft) {
 
-            baseDataValidator.reset().failWithCode("Overdraft is not enabled for account No "+this.accountNumber
-            +" and hence charge cannot exceed available balance");
-            if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
+             // when charge exceeds account balance
+        if(savingsAccountCharge.getAmount(currency).minus(this.getAccountBalance()).isGreaterThanZero()) {
 
-        }
-        else if(this.allowOverdraft && this.overdraftLimit.compareTo(savingsAccountCharge.amount()) >=0){
+            // 1) check whether it is enabled for overdraft and that overdraft limit is set
+             if(!this.allowOverdraft() || this.overdraftLimit ==null) {
 
-            baseDataValidator.reset().failWithCode("charge is exceeding overdraft limit ");
-            if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
+                 baseDataValidator.reset().failWithCode("Charge is exceeding available balance: Account should be enabled for overdraft and overdraft limit should be set ");
+                 if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
+
+             }
+
+             // 2) If account is enabled for overdraft, make sure it is within overdraft limit
+            if(this.overdraftLimit.compareTo(savingsAccountCharge.amount())<0){
+                baseDataValidator.reset().failWithCode("charge is exceeding overdraft limit ");
+                if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
+            }
+
         }
 
 
