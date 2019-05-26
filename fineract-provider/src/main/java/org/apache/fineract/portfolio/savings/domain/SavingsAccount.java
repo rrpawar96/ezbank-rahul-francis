@@ -2737,7 +2737,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
          */
 
              // when charge exceeds account balance
-        if(savingsAccountCharge.getAmount(currency).minus(this.getAccountBalance()).isGreaterThanZero()) {
+        if(this.getAccountBalance().compareTo(savingsAccountCharge.amount()) <0) {
 
             // 1) check whether it is enabled for overdraft and that overdraft limit is set
              if(!this.allowOverdraft() || this.overdraftLimit ==null) {
@@ -2748,9 +2748,11 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
              }
 
              // 2) If account is enabled for overdraft, make sure it is within overdraft limit
-            if(this.overdraftLimit.compareTo(savingsAccountCharge.amount())<0){
+            if(this.overdraftLimit.add(this.getAccountBalance()).compareTo(savingsAccountCharge.amount()) < 0) {
+
                 baseDataValidator.reset().failWithCode("charge is exceeding overdraft limit ");
                 if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
+
             }
 
         }
