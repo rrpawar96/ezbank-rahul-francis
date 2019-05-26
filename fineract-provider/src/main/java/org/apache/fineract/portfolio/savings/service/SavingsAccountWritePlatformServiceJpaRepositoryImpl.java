@@ -371,7 +371,24 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     	
     }
     
-
+    @Transactional
+    @Override
+    public CommandProcessingResult gsimWithdrawal(final Long gsimId, final JsonCommand command) {
+   
+        
+        JsonArray savingsArray=command.arrayOfParameterNamed("savingsArray");
+        
+        CommandProcessingResult result=null;
+        for(JsonElement element:savingsArray)
+        {
+            
+            result=withdrawal(element.getAsJsonObject().get("childAccountId").getAsLong(), JsonCommand.fromExistingCommand(command, element));
+        }
+    
+        
+        return result;
+        
+    }
     @Transactional
     @Override
     public CommandProcessingResult deposit(final Long savingsId, final JsonCommand command) {
