@@ -19,4 +19,4 @@
 
 --adding new configuration to enable/disable loan over payment
 
-INSERT INTO `mifostenant-actb`.`c_configuration` (`name`, `enabled`,`description`) VALUES ('Enable-Loan-Overpayment',FALSE, 'configuration to enable loan payment beyond outstanding balance');
+INSERT INTO `c_configuration` (`name`, `enabled`,`description`) VALUES ('Enable-Loan-Overpayment',FALSE, 'configuration to enable loan payment beyond outstanding balance');
