@@ -36,9 +36,6 @@ import java.util.Map;
 public class CashierTransaction extends AbstractPersistableCustom<Long> {
 
 	@Transient
-    private Office office;
-	
-	@Transient
     private Teller teller;
 	
     @ManyToOne(fetch = FetchType.LAZY)
@@ -71,6 +68,10 @@ public class CashierTransaction extends AbstractPersistableCustom<Long> {
     @Column(name = "currency_code", nullable = true)
     private String currencyCode;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "office_id", nullable = true)
+    private Office office;
+
     /**
      * Creates a new cashier.
      */
@@ -80,6 +81,7 @@ public class CashierTransaction extends AbstractPersistableCustom<Long> {
     
     public static CashierTransaction fromJson(
     		final Cashier cashier,
+    		final Office office,
     		final JsonCommand command) {
         final Integer txnType = command.integerValueOfParameterNamed("txnType");
         final BigDecimal txnAmount = command.bigDecimalValueOfParameterNamed("txnAmount");
@@ -89,14 +91,16 @@ public class CashierTransaction extends AbstractPersistableCustom<Long> {
         final Long entityId = command.longValueOfParameterNamed("entityId");
         final String currencyCode = command.stringValueOfParameterNamed("currencyCode");
 
+
         // TODO: get client/loan/savings details
         return new CashierTransaction (cashier, txnType, txnAmount, txnDate, 
-        		entityType, entityId, txnNote, currencyCode);
+        		entityType, entityId, txnNote, currencyCode,office);
         
     }
     
     public CashierTransaction (Cashier cashier, Integer txnType, BigDecimal txnAmount, 
-    		LocalDate txnDate, String entityType, Long entityId, String txnNote, String currencyCode) {
+    		LocalDate txnDate, String entityType, Long entityId, String txnNote, String currencyCode,
+            Office office) {
     	this.cashier = cashier;
     	this.txnType = txnType;
     	if (txnDate != null) {
@@ -108,6 +112,7 @@ public class CashierTransaction extends AbstractPersistableCustom<Long> {
     	this.txnNote = txnNote;
     	this.createdDate = new Date(); 
     	this.currencyCode = currencyCode;
+    	this.office=office;
     }
     
     public Map<String, Object> update(final JsonCommand command) {

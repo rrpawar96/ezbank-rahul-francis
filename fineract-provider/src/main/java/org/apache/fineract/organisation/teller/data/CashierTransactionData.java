@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Date;
 
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
+import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.teller.domain.CashierTxnType;
 
 public final class CashierTransactionData implements Serializable {
@@ -51,6 +52,13 @@ public final class CashierTransactionData implements Serializable {
     
     private final Collection<CurrencyData> currencyOptions;
 
+    /**
+     * idt customization adding ability to allocate
+     * cash in different office locations
+     */
+    private final Collection<OfficeData> officeOptions;
+
+
     /*
      * Creates a new cashier.
      */
@@ -58,7 +66,8 @@ public final class CashierTransactionData implements Serializable {
     		final BigDecimal txnAmount, final Date txnDate, String txnNote, 
     		String entityType, Long entityId, Date createdDate, 
     		Long officeId, String officeName, Long tellerId, String tellerName, String cashierName,
-    		CashierData cashierData, Date startDate, Date endDate, final Collection<CurrencyData> currencyOptions) {
+    		CashierData cashierData, Date startDate, Date endDate, final Collection<CurrencyData> currencyOptions,
+            final Collection<OfficeData> officeOptions) {
         this.id = id;
         this.cashierId = cashierId;
         this.txnType = txnType;
@@ -80,6 +89,7 @@ public final class CashierTransactionData implements Serializable {
         this.endDate = endDate;
         
         this.currencyOptions = currencyOptions;
+        this.officeOptions=officeOptions;
     }
 
     public static CashierTransactionData instance(final Long id, final Long cashierId, CashierTxnType txnType,
@@ -90,16 +100,17 @@ public final class CashierTransactionData implements Serializable {
     		Date startDate, Date endDate) {
         return new CashierTransactionData(id, cashierId, txnType, txnAmount, txnDate, txnNote, entityType, 
         		entityId, createdDate, officeId, officeName, tellerId,
-        		tellerName, cashierName, cashierData, startDate, endDate, null);
+        		tellerName, cashierName, cashierData, startDate, endDate, null,null);
     }
     
     public static CashierTransactionData template (final Long cashierId,  
     		final Long tellerId, final String tellerName,
     		final Long officeId, final String officeName, final String cashierName,
-    		final CashierData cashierData, Date startDate, Date endDate, final Collection<CurrencyData> currencyOptions) {
+    		final CashierData cashierData, Date startDate, Date endDate, final Collection<CurrencyData> currencyOptions,
+            final Collection<OfficeData> officeOptions) {
         return new CashierTransactionData(null, cashierId, null, null, null, null, null, 
         		null, null, officeId, officeName, tellerId, tellerName, cashierName, cashierData,
-        		startDate, endDate, currencyOptions);
+        		startDate, endDate, currencyOptions,officeOptions);
     }
 
     public Long getId() {
@@ -170,4 +181,7 @@ public final class CashierTransactionData implements Serializable {
     	return cashierData;
     }
 
+    public Collection<OfficeData> getOfficeOptions() {
+        return officeOptions;
+    }
 }
