@@ -448,8 +448,10 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
         // Fetching all currency type from m_organisation_currency table
         final Collection<CurrencyData> currencyOptions = this.currencyReadPlatformService.retrieveAllowedCurrencies();
 
+        final Collection<OfficeData> officeOptions=this.officeReadPlatformService.retrieveAllOfficesForDropdown();
+
         return CashierTransactionData.template(cashierId, tellerId, tellerName, officeId, officeName, cashierName, cashierData, startDate,
-                endDate, currencyOptions);
+                endDate, currencyOptions,officeOptions);
     }
 
     @Override

@@ -383,6 +383,8 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             final Cashier cashier = this.cashierRepository.findOne(cashierId);
             if (cashier == null) { throw new CashierNotFoundException(cashierId); }
 
+
+
             this.fromApiJsonDeserializer.validateForCashTxnForCashier(command.json());
 
             final String entityType = command.stringValueOfParameterNamed("entityType");
@@ -410,7 +412,10 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
                 }
             }
 
-            final CashierTransaction cashierTxn = CashierTransaction.fromJson(cashier, command);
+            final Office office=this.officeRepositoryWrapper.
+                                    findOneWithNotFoundDetection(command.longValueOfParameterNamed("officeId"));
+
+            final CashierTransaction cashierTxn = CashierTransaction.fromJson(cashier, office, command);
             cashierTxn.setTxnType(txnType.getId());
 
             this.cashierTxnRepository.save(cashierTxn);

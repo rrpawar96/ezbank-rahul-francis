@@ -53,7 +53,7 @@ public final class TellerCommandFromApiJsonDeserializer {
      */
     private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("officeId", "name", "description", "startDate", "endDate",
             "status", "dateFormat", "locale", "isFullDay", "staffId", "hourStartTime", "minStartTime", "hourEndTime", "minEndTime",
-            "txnAmount", "txnDate", "txnNote", "entityType", "entityId", "currencyCode"));
+            "txnAmount", "txnDate", "txnNote", "entityType", "entityId", "currencyCode","officeId"));
 
     private final FromJsonHelper fromApiJsonHelper;
 
