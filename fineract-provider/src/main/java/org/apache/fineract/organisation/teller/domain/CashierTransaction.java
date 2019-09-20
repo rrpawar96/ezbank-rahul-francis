@@ -56,14 +56,15 @@ public class CashierTransaction extends AbstractPersistableCustom<Long> {
     private String txnNote;
     
     @Column(name = "entity_type", nullable = true)
-    private String entityType;
+    private String entityType; // entityType = txnType in Cashier_transaction for acc_gl_journal_entry entity_type
     
     @Column(name = "entity_id", nullable = true)
-    private Long entityId;
+    private Long entityId; // use Cashier_transaction id for acc_gl_journal_entry entity-id
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_date", nullable = false)
     private Date createdDate;
+
     
     @Column(name = "currency_code", nullable = true)
     private String currencyCode;

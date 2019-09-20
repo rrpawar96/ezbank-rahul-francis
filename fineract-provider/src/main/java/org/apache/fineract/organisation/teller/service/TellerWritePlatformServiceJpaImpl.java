@@ -44,6 +44,7 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepository;
 import org.apache.fineract.organisation.staff.exception.StaffNotFoundException;
 import org.apache.fineract.organisation.teller.data.CashierTransactionDataValidator;
+import org.apache.fineract.organisation.teller.data.CashierTransactionData;
 import org.apache.fineract.organisation.teller.domain.Cashier;
 import org.apache.fineract.organisation.teller.domain.CashierRepository;
 import org.apache.fineract.organisation.teller.domain.CashierTransaction;
@@ -56,6 +57,7 @@ import org.apache.fineract.organisation.teller.exception.CashierNotFoundExceptio
 import org.apache.fineract.organisation.teller.serialization.TellerCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.client.domain.ClientTransaction;
 import org.apache.fineract.useradministration.domain.AppUser;
+
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -409,6 +411,7 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
                     // ClientNotFoundException(entityId); }
                 } else {
                     // TODO : Invalid type handling
+                   String newEntityType = "7" ;
                 }
             }
 
@@ -420,22 +423,28 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
 
             this.cashierTxnRepository.save(cashierTxn);
 
-            // Pass the journal entries
+            // Pass the journal entries into the GLs
+
             FinancialActivityAccount mainVaultFinancialActivityAccount = this.financialActivityAccountRepositoryWrapper
                     .findByFinancialActivityTypeWithNotFoundDetection(FINANCIAL_ACTIVITY.CASH_AT_MAINVAULT.getValue());
             FinancialActivityAccount tellerCashFinancialActivityAccount = this.financialActivityAccountRepositoryWrapper
                     .findByFinancialActivityTypeWithNotFoundDetection(FINANCIAL_ACTIVITY.CASH_AT_TELLER.getValue());
             GLAccount creditAccount = null;
             GLAccount debitAccount = null;
+
             if (txnType.equals(CashierTxnType.ALLOCATE)) {
                 debitAccount = tellerCashFinancialActivityAccount.getGlAccount();
                 creditAccount = mainVaultFinancialActivityAccount.getGlAccount();
+
+
             } else if (txnType.equals(CashierTxnType.SETTLE)) {
                 debitAccount = mainVaultFinancialActivityAccount.getGlAccount();
                 creditAccount = tellerCashFinancialActivityAccount.getGlAccount();
+
             }
 
-            final Office cashierOffice = cashier.getTeller().getOffice();
+            // final Office cashierOffice = cashier.getTeller().getOffice();
+            final Office cashierOffice = cashierTxn.getOffice();
 
             final Long time = System.currentTimeMillis();
             final String uniqueVal = String.valueOf(time) + currentUser.getId() + cashierOffice.getId();
@@ -443,20 +452,26 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             ClientTransaction clientTransaction = null;
             final Long shareTransactionId = null;
 
+            // Guchie Updates
+            // entityType = trxnType in Cashier_transaction for acc_gl_journal_entry entity_type
+            // use Cashier_transaction id for acc_gl_journal_entry entity-id
+
             final JournalEntry debitJournalEntry = JournalEntry.createNew(cashierOffice, null, // payment
                                                                                                // detail
-                    debitAccount, cashierTxn.getCurrencyCode(), 
+                    debitAccount, cashierTxn.getCurrencyCode(),
                     transactionId, false, // manual entry
                     cashierTxn.getTxnDate(), JournalEntryType.DEBIT, cashierTxn.getTxnAmount(), cashierTxn.getTxnNote(), // Description
-                    null, null, null, // entity Type, entityId, reference number
+
+                    cashierTxn.getTxnType(), cashierTxn.getId(), null, // entity Type, entityId, reference number
                     null, null, clientTransaction, shareTransactionId); // Loan and Savings Txn
+
 
             final JournalEntry creditJournalEntry = JournalEntry.createNew(cashierOffice, null, // payment
                                                                                                 // detail
                     creditAccount, cashierTxn.getCurrencyCode(), 
                     transactionId, false, // manual entry
                     cashierTxn.getTxnDate(), JournalEntryType.CREDIT, cashierTxn.getTxnAmount(), cashierTxn.getTxnNote(), // Description
-                    null, null, null, // entity Type, entityId, reference number
+                    cashierTxn.getTxnType(), cashierTxn.getId(), null, // entity Type, entityId, reference number
                     null, null, clientTransaction, shareTransactionId); // Loan and Savings Txn
 
             this.glJournalEntryRepository.saveAndFlush(debitJournalEntry);

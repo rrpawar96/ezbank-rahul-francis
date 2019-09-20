@@ -60,7 +60,7 @@ public final class CashierTransactionData implements Serializable {
 
 
     /*
-     * Creates a new cashier.
+     * Creates a new cashier transaction
      */
     private CashierTransactionData(final Long id, final Long cashierId, CashierTxnType txnType, 
     		final BigDecimal txnAmount, final Date txnDate, String txnNote, 
@@ -90,6 +90,7 @@ public final class CashierTransactionData implements Serializable {
         
         this.currencyOptions = currencyOptions;
         this.officeOptions=officeOptions;
+
     }
 
     public static CashierTransactionData instance(final Long id, final Long cashierId, CashierTxnType txnType,

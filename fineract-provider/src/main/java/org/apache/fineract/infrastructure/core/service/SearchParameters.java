@@ -43,11 +43,12 @@ public final class SearchParameters {
     private final Long savingsId;
     private final Boolean orphansOnly;
 
-    // Provisning Entries Search Params
+    // Provisioning Entries Search Params
     private final Long provisioningEntryId;
     private final Long productId;
     private final Long categoryId;
     private final boolean isSelfUser;
+
 
     public static SearchParameters from(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy) {
@@ -280,9 +281,36 @@ public final class SearchParameters {
     }
 
     public SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
-            final String hierarchy, final String firstname, final String lastname, final Integer offset, final Integer limit,
-            final String orderBy, final String sortOrder, final Long staffId, final String accountNo, final Long loanId,
-            final Long savingsId, final Boolean orphansOnly, final String currencyCode) {
+                            final String hierarchy, final String firstname, final String lastname, final Integer offset, final Integer limit,
+                            final String orderBy, final String sortOrder, final Long staffId, final String accountNo, final Long loanId,
+                            final Long savingsId, final Boolean orphansOnly, final String currencyCode, String fromDate) {
+        this.sqlSearch = sqlSearch;
+        this.officeId = officeId;
+        this.externalId = externalId;
+        this.name = name;
+        this.hierarchy = hierarchy;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.offset = offset;
+        this.limit = limit;
+        this.orderBy = orderBy;
+        this.sortOrder = sortOrder;
+        this.staffId = staffId;
+        this.accountNo = accountNo;
+        this.loanId = loanId;
+        this.savingsId = savingsId;
+        this.orphansOnly = orphansOnly;
+        this.currencyCode = currencyCode;
+        this.provisioningEntryId = null;
+        this.productId = null;
+        this.categoryId = null;
+        this.isSelfUser = false;
+    }
+
+    public SearchParameters(final String sqlSearch, final Long officeId, final String externalId, final String name,
+                            final String hierarchy, final String firstname, final String lastname, final Integer offset, final Integer limit,
+                            final String orderBy, final String sortOrder, final Long staffId, final String accountNo, final Long loanId,
+                            final Long savingsId, final Boolean orphansOnly, final String currencyCode ) {
         this.sqlSearch = sqlSearch;
         this.officeId = officeId;
         this.externalId = externalId;
