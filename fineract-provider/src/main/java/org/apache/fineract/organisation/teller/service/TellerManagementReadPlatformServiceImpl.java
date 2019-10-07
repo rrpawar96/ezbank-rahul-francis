@@ -802,8 +802,7 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append("	txn.txn_type as cash_txn_type, ");
             sqlBuilder.append("	txn.txn_amount as txn_amount, txn.txn_date as txn_date, txn.txn_note as txn_note, ");
             sqlBuilder.append("	txn.entity_type as entity_type, txn.entity_id as entity_id, txn.created_date as created_date, ");
-            sqlBuilder
-                    .append("	o.id as office_id, o.name as office_name, t.id as teller_id, t.name as teller_name, s.display_name as cashier_name ");
+            sqlBuilder.append("	o.id as office_id, o.name as office_name, t.id as teller_id, t.name as teller_name, s.display_name as cashier_name ");
             sqlBuilder.append("	from m_cashier_transactions txn ");
             sqlBuilder.append("	left join m_cashiers c on c.id = txn.cashier_id ");
             sqlBuilder.append("	left join m_tellers t on t.id = c.teller_id ");
@@ -855,7 +854,7 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append(" and sav_txn.transaction_date = date(now()) ");
             sqlBuilder.append("	and (sav_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) ");
             sqlBuilder.append("	AND acnttrans.id IS NULL  ");
-            sqlBuilder.append("	) ");
+            sqlBuilder.append("	AND payType.is_cash_payment = 1 ) ");
             sqlBuilder.append("	UNION ");
             sqlBuilder.append("	( ");
             sqlBuilder.append("	select loan_txn.id as txn_id, c.id as cashier_id, ");
@@ -895,7 +894,7 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
             sqlBuilder.append(" and loan_txn.transaction_date = date(now()) ");
             sqlBuilder.append("	and (loan_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1) ");
             sqlBuilder.append("	AND acnttrans.id IS NULL  ");
-            sqlBuilder.append("	) ");
+            sqlBuilder.append("	AND payType.is_cash_payment = 1) ");
             sqlBuilder.append("	UNION ");
             sqlBuilder.append("	( ");
             sqlBuilder.append("	SELECT cli_txn.id AS txn_id, c.id AS cashier_id, ");
@@ -930,7 +929,7 @@ public class TellerManagementReadPlatformServiceImpl implements TellerManagement
            // sqlBuilder.append("	and cli_txn.transaction_date between c.start_date and date_add(c.end_date, interval 1 day) ");
             sqlBuilder.append(" and cli_txn.transaction_date = date(now()) ");
             sqlBuilder.append(" and (cli_txn.payment_detail_id IS NULL OR payType.is_cash_payment = 1)  ");
-            sqlBuilder.append("	) ");
+            sqlBuilder.append("	AND payType.is_cash_payment = 1 ) ");
             sqlBuilder.append("	) txns ");
             sqlBuilder.append("	group by cash_txn_type ");
 
