@@ -1332,7 +1332,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     final String bankNumber = rs.getString("bankNumber");
                     final String voucherNumber = rs.getString("voucherNumber");
                     final String paymentDescription = rs.getString("paymentDescription");
-;                    paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
+                    paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
                             bankNumber,voucherNumber,paymentDescription);
                 }
             }
